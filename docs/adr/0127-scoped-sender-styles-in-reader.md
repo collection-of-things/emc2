@@ -55,7 +55,8 @@ message unmounts. Request CSP is unchanged: no `<style>` element is inserted.
   the message, without a visible bar.
 
 Engines without constructable stylesheets keep the themed fallback text, as
-before.
+before. So do engines that parse the scoped sheet to no rules, which is how an
+engine without `@scope` drops it.
 
 ## Consequences
 

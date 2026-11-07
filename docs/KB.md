@@ -3582,10 +3582,6 @@ html and body (`body > table td` becomes `:scope > table td`). Selectors with a
 non-leading html/body or a sibling of it are dropped. Width media queries
 become `@container` queries.
 
-<!-- coderabbit-ai-generated:v1 -->
-
-<!-- coderabbit-ai-generated-section:v1:352692896d10a021c25c55d9b0767df36533c80ecceecab208299778d82d93ce -->
-
 All formatted mail renders in the reader document; no iframe is used. For mail
 with supported rules, `src/mail/scoped-mail.ts` installs one constructable
 stylesheet per message, wrapped in
@@ -3595,8 +3591,6 @@ on unmount, and request CSP is unchanged. The container queries measure the
 `.formatted-mail-frame` wrapper. The themed fallback text remains if
 constructable stylesheets are unavailable or parsing the scoped sheet yields
 no rules. Mail without supported styles keeps the existing themed reader.
-
-<!-- /coderabbit-ai-generated:v1 -->
 
 Mail wider than its box zooms down to fit (minimum 0.5). Zoom resets before
 each measurement, which runs on mount, input changes, resize and image load.
