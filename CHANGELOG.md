@@ -12,7 +12,7 @@ unversioned history without treating it as a release record.
 
 ### Added
 
-- Start scan on an assistant card runs it now on unread inbox mail with the saved provider key and puts reply proposals in Review. Start agent turns on automatic replies for new mail.
+- One Start agent button prepares replies for unread inbox mail now with the saved provider key and turns on automatic replies for new mail. It is on the Agent review page and on each assistant card; a running card shows Scan now. Replies go to Review; nothing is sent.
 - Anthropic (Claude API) is a provider choice under Bring your own key.
 - Approving replies the app prepared with a provider key no longer needs MCP enabled, including replies prepared before this version.
 

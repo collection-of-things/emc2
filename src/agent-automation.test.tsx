@@ -35,15 +35,19 @@ async function mount(options: { key: boolean; automation: AgentAutomationSetting
 }
 const settings = (enabled: boolean): AgentAutomationSettings => ({ agentId: "synthetic-agent", enabled, scope: "important", instruction: "", dailyLimit: 20, revision: "3c3e0f3e-6d0b-4b8c-9a55-8f1b0f0e1d10", day: new Date().toLocaleDateString("en-CA"), count: 3, lastRunAt: 1, lastResult: "Prepared 3 replies for review." });
 
-test("Start scan runs a saved-key assistant now without turning the switch on", async () => {
+test("Start agent turns on replies for new mail and scans unread mail now", async () => {
   const ui = await mount({ key: true, automation: null });
   try {
-    const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start scan")!;
+    assert.equal([...ui.container.querySelectorAll("button")].some((button) => button.textContent === "Start scan"), false, "one button, not two");
+    const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start agent")!;
     await ui.click(start);
-    const call = ui.calls.at(-1)!;
-    assert.equal(call.method, "POST"); assert.ok(call.url.endsWith("/automation/scan"));
-    assert.match(ui.container.textContent!, /Scan started for 3 unread emails/);
-    assert.equal(ui.toggle()!.checked, false);
+    const put = ui.calls.find((call) => call.method === "PUT")!; assert.equal(put.body.enabled, true);
+    const scan = ui.calls.at(-1)!; assert.equal(scan.method, "POST"); assert.ok(scan.url.endsWith("/automation/scan"));
+    assert.match(ui.container.textContent!, /Agent started\. Automatic replies on for new mail\. Scan started for 3 unread emails/);
+    assert.equal(ui.toggle()!.checked, true);
+    const again = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Scan now")!;
+    await ui.click(again);
+    assert.ok(ui.calls.at(-1)!.url.endsWith("/automation/scan"));
   } finally { await ui.close(); }
 });
 
@@ -57,10 +61,10 @@ test("the user switches automatic replies on and off per assistant", async () =>
     const off = ui.calls.at(-1)!;
     assert.equal(off.method, "PUT"); assert.equal(off.body.enabled, false); assert.equal(off.body.revision, settings(true).revision);
     assert.equal(ui.toggle()!.checked, false);
-    assert.match(ui.container.textContent!, /Off\. New mail is not prepared automatically\. Start scan runs this assistant once now/);
+    assert.match(ui.container.textContent!, /Off\. Start agent prepares replies for unread inbox mail now and turns on automatic replies for new mail/);
     const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start agent")!;
     await ui.click(start);
-    assert.equal(ui.calls.at(-1)!.body.enabled, true); assert.equal(ui.toggle()!.checked, true);
+    assert.equal(ui.calls.filter((call) => call.method === "PUT").at(-1)!.body.enabled, true); assert.ok(ui.calls.at(-1)!.url.endsWith("/automation/scan")); assert.equal(ui.toggle()!.checked, true);
     assert.equal([...ui.container.querySelectorAll("button")].some((button) => button.textContent === "Start agent"), false, "hidden while running");
     const limit = [...ui.container.querySelectorAll("label")].find((label) => label.childNodes[0]?.textContent === "Daily limit")!.querySelector("input")!;
     await act(async () => {
