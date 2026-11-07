@@ -23,7 +23,7 @@ unversioned history without treating it as a release record.
 
 ### Fixed
 
-- Mail with sender styles no longer shows its own scrollbar while images are hidden, and the reader scrolls with the pointer over the message. Styled mail now renders in the reader itself with sender rules scoped to the message ([#240](https://github.com/collection-of-things/emc2/pull/240), [ADR 0127](docs/adr/0127-scoped-sender-styles-in-reader.md)).
+- Mail with sender styles no longer shows its own scrollbar while images are hidden, and the reader scrolls with the pointer over the message. Styled mail now renders in the reader itself with sender rules scoped to the message ([#240](https://github.com/collection-of-things/emc2/pull/240), [ADR 0130](docs/adr/0130-scoped-sender-styles-in-reader.md)).
 - Hidden-image placeholders narrow with the reader the same way their images do, so showing images no longer changes the layout width. ([#240](https://github.com/collection-of-things/emc2/pull/240))
 
 ### Removed

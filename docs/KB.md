@@ -3604,7 +3604,7 @@ attachment metadata. Synthetic checks are in `src/sender-css.test.tsx` and
 `src/FormattedMail.test.tsx`. jsdom parses `@scope` but does not cascade it,
 so those tests flatten the installed sheet before reading computed styles.
 Native layout and physical wheel input are separate proof. See
-[ADR 0127](adr/0127-scoped-sender-styles-in-reader.md), which supersedes the
+[ADR 0130](adr/0130-scoped-sender-styles-in-reader.md), which supersedes the
 separate document in [ADR 0102](adr/0102-isolated-sender-styles.md).
 
 Styled mail keeps the full reader width (`.message-body:has(.formatted-mail)`);

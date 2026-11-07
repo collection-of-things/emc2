@@ -1,4 +1,4 @@
-# ADR 0127: Render styled mail in the reader with scoped sender styles
+# ADR 0130: Render styled mail in the reader with scoped sender styles
 
 Date: 2026-11-07
 Status: Proposed; pending maintainer review.
