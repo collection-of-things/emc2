@@ -253,10 +253,12 @@ async function automate(mailIds: string[], scan?: string) {
     const manual = Boolean(scan);
     let prepared = 0;
     let result: string | undefined;
+    // A stop without a message (switch off, update, revoked access) must not read as "nothing to do".
+    let stopped = false;
     for (const mailId of mailIds) {
       let next = step(agentId, mailId, manual);
       if ("skip" in next) continue;
-      if ("stop" in next) { result = next.stop ?? result; break; }
+      if ("stop" in next) { result = next.stop ?? result; stopped = true; break; }
       if (inFlight.has(agentId)) {
         // Only eligible mail waits for a manual Prepare draft (at most its 30-second, or 120-second for Claude, deadline).
         const revision = next.config.revision;
@@ -264,7 +266,7 @@ async function automate(mailIds: string[], scan?: string) {
         // Read everything again: the user may have changed the switch, options or key meanwhile.
         next = step(agentId, mailId, manual);
         if ("skip" in next) continue;
-        if ("stop" in next) { result = next.stop ?? result; break; }
+        if ("stop" in next) { result = next.stop ?? result; stopped = true; break; }
         if (next.config.revision !== revision) { result = "Provider key changed. New mail will use it from the next sync."; break; }
       }
       try {
@@ -286,7 +288,7 @@ async function automate(mailIds: string[], scan?: string) {
       }
     }
     if (prepared || result || manual)
-      automationStatus(agentId, () => ({ lastRunAt: Date.now(), lastResult: result ?? (manual && !prepared ? "Scan finished. No unread email in scope needed a reply." : `Prepared ${prepared} ${prepared === 1 ? "reply" : "replies"} for review.`) }));
+      automationStatus(agentId, () => ({ lastRunAt: Date.now(), lastResult: result ?? (manual && stopped ? `Scan stopped early after ${prepared} ${prepared === 1 ? "reply" : "replies"}. Start scan again to continue.` : manual && !prepared ? "Scan finished. No unread email in scope needed a reply." : `Prepared ${prepared} ${prepared === 1 ? "reply" : "replies"} for review.`) }));
   }
   if (created) providerDependencies.changed?.();
 }
