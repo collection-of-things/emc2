@@ -77,16 +77,16 @@ instruction, to that provider.
 Attachments and other mail are excluded. Review the resulting pending proposal in
 action history and approve it to create a local draft. Nothing is sent.
 
-Approving a proposal the app prepared does not need MCP. Proposals prepared
-before version 0.2.33 carry no app origin and still need MCP on. Saving a key and
+Approving a proposal the app prepared does not need MCP. Older drafts prepared with
+a saved key also approve without MCP. Saving a key and
 preparing a proposal do not enable MCP or sending. See
 [ADR 0045](adr/0045-agent-review-byok.md).
 
-Without an API key, choose Claude Code (signed in) as the provider and click
-Use Claude Code. The app runs the `claude` CLI already signed in on this device,
-with all tools, MCP servers, user settings and hooks off. Click Start agent on
-the card to prepare replies for new mail automatically. See
-[ADR 0127](adr/0127-in-app-agent-without-key-or-mcp.md).
+To run an assistant now, click Start scan on its card. It prepares replies for
+unread inbox mail in scope with the saved key, up to the daily limit, and puts
+them in Review. Start agent turns on automatic replies for new mail. Anthropic
+(Claude API) is available as a provider with your own Anthropic key. See
+[ADR 0128](adr/0128-start-scan-and-anthropic-byok.md).
 
 ### Connect an MCP client
 
@@ -168,7 +168,7 @@ desktop. Credentials are never stored in `settings.env`.
 
 Requests with browser origins or non-local hostnames are rejected. Disabling MCP
 blocks MCP access and approval of MCP-created proposals; replies the app
-prepared itself stay approvable, except older ones prepared before 0.2.33. Revoking a grant blocks its access and all its
+prepared itself stay approvable. Revoking a grant blocks its access and all its
 pending approvals. Keep copied client
 configurations private because they contain credentials. A grant permits its
 selected reads, proposal preparation and any explicitly selected local creation

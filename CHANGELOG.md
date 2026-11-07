@@ -12,7 +12,13 @@ unversioned history without treating it as a release record.
 
 ### Added
 
-- Start an assistant without an API key or MCP: choose Claude Code (signed in) under Bring your own key to use the Claude Code app already signed in on this device. It runs with all tools off. A Start agent button turns on automatic replies, and approving replies the app prepared no longer needs MCP enabled.
+- Start scan on an assistant card runs it now on unread inbox mail with the saved provider key and puts reply proposals in Review. Start agent turns on automatic replies for new mail.
+- Anthropic (Claude API) is a provider choice under Bring your own key.
+- Approving replies the app prepared with a provider key no longer needs MCP enabled, including replies prepared before this version.
+
+### Removed
+
+- The Claude Code (signed in) provider added in 0.2.33. Saved Claude Code settings are removed and automatic replies for those assistants are turned off; save a provider API key instead.
 
 ## 0.2.32 - 2026-11-07
 

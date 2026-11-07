@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.2.32",
   "license": "MIT",
-  "webDeployment": { "protocol": 1, "profile": 1 },
+  "webDeployment": {
+    "protocol": 1,
+    "profile": 1
+  },
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-desktop.mjs",
@@ -25,6 +28,7 @@
     "build:web": "tsc --noEmit && vite build && node scripts/build-browser.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@fontsource-variable/host-grotesk": "5.3.0",
     "@fontsource/instrument-serif": "5.3.0",
@@ -73,7 +77,7 @@
   "author": "Screen",
   "build": {
     "appId": "dev.screen.aggregate-mail",
-    "productName": "Emc\u00b2",
+    "productName": "Emc²",
     "directories": {
       "output": "release"
     },

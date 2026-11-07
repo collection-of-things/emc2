@@ -1,7 +1,8 @@
 # ADR 0127: In-app agent with signed-in Claude Code, without an API key or MCP
 
 Date: 2026-11-07
-Status: Accepted by explicit user direction for the local candidate. Installed
+Status: Accepted by explicit user direction for the local candidate.
+Superseded in part by [ADR 0128](0128-start-scan-and-anthropic-byok.md) (Claude Code provider removed). Installed
 and native (macOS, Windows) acceptance are separate.
 Extends [ADR 0045](0045-agent-review-byok.md) and
 [ADR 0123](0123-automatic-assistant-replies.md). They are unchanged otherwise.

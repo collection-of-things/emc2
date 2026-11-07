@@ -84,7 +84,7 @@ export type AgentProposal = {
   sourceMailId?: string;
   sourceFingerprint?: string;
   sourceChanged?: boolean;
-  /** "app": prepared by the in-app agent (provider key or signed-in Claude Code); approval does not need MCP. */
+  /** "app": prepared by the in-app agent with a provider key; approval does not need MCP. */
   origin?: "app";
   digest: string;
   createdAt: number;
