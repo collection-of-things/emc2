@@ -288,7 +288,7 @@ async function automate(mailIds: string[], scan?: string) {
       }
     }
     if (prepared || result || manual)
-      automationStatus(agentId, () => ({ lastRunAt: Date.now(), lastResult: result ?? (manual && stopped ? `Scan stopped early after ${prepared} ${prepared === 1 ? "reply" : "replies"}. Start scan again to continue.` : manual && !prepared ? "Scan finished. No unread email in scope needed a reply." : `Prepared ${prepared} ${prepared === 1 ? "reply" : "replies"} for review.`) }));
+      automationStatus(agentId, () => ({ lastRunAt: Date.now(), lastResult: manual && stopped ? `Scan stopped early after ${prepared} ${prepared === 1 ? "reply" : "replies"}.${result ? ` ${result}` : ""} Start scan again to continue.` : result ?? (manual && !prepared ? "Scan finished. No unread email in scope needed a reply." : `Prepared ${prepared} ${prepared === 1 ? "reply" : "replies"} for review.`) }));
   }
   if (created) providerDependencies.changed?.();
 }
