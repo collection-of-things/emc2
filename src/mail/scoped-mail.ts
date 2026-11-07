@@ -39,6 +39,7 @@ export function useScopedSheet(css: string): { scope: string; failed: boolean } 
       if (!Sheet || typeof Sheet.prototype.replaceSync !== "function") throw Error("Constructable stylesheets unavailable");
       sheet = new Sheet();
       sheet.replaceSync(scopedSheet(css, scope));
+      if (!sheet.cssRules.length) throw Error("Scoped stylesheet contains no rules");
     } catch { setFailed(true); return; }
     // Some DOM implementations leave the list undefined until first assigned.
     doc.adoptedStyleSheets = [...(doc.adoptedStyleSheets ?? []), sheet];

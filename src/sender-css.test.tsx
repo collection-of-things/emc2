@@ -133,6 +133,33 @@ test("styled mail renders in the reader document with its sheet scoped to the cu
   }
 });
 
+test("styled mail uses themed fallback when the engine silently discards scoped rules", async () => {
+  const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: 'https://app.example.test' });
+  const saved = new Map<string, PropertyDescriptor | undefined>();
+  for (const [key, value] of Object.entries({ window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true })) {
+    saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    Object.defineProperty(globalThis, key, { value, configurable: true });
+  }
+  // Model an engine with constructable sheets that does not understand @scope.
+  dom.window.CSSStyleSheet.prototype.replaceSync = function () {};
+  const root = createRoot(dom.window.document.getElementById('root')!);
+  try {
+    await act(async () => root.render(<FormattedMail
+      html="<style>p{color:red}</style><p>Sender content</p>" showImages={false} privacy={false}
+      fallbackText="Themed fallback" renderText={(text) => text} redactText={(text) => text} />));
+    const doc = dom.window.document;
+    assert.equal(doc.querySelector('.formatted-mail-fallback')?.textContent, 'Themed fallback');
+    assert.equal(doc.querySelector('[data-mail-scope]'), null);
+    assert.equal((doc.adoptedStyleSheets ?? []).length, 0, 'an empty sheet is never adopted');
+  } finally {
+    await act(async () => root.unmount());
+    dom.window.close();
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+});
+
 test("code surfaces keep the veil-safe ink under sender colors", async () => {
   const dom = new JSDOM('<!doctype html><main><div id="root"></div></main>', { url: 'https://app.example.test' });
   const saved = new Map<string, PropertyDescriptor | undefined>();
