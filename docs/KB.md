@@ -3743,7 +3743,16 @@ only on its exact account/message targets. Drafts, compose editing/saving,
 Contacts, settings preferences and unrelated mail remain available. Automatic
 Mark as read is skipped for pending targets only; unrelated mail keeps normal
 read behavior. Local selection remains available while another batch finishes.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:6b70947643c6e620f34e26a013f275b7d3ebf7ecdb33c05d06db22aee638491c -->
+
 Failed and unknown results remain available; no provider action retries itself.
+Manual dismissal survives a later refresh failure and pane navigation; the failure
+is reported in a notification without restoring dismissed results. Automatic
+success clearing still allows refresh failures to restore the result details.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 Single-message mutations and Forward preparation also run outside foreground
 editor busy state. Confirmed Trash, Snooze and labels release their modal before

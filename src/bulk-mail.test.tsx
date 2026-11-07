@@ -27,7 +27,7 @@ async function mount(api: Api = async <T,>() => ({ results: [] } as T), reload =
   function Harness({ items, scope, active }: { items: Mail[]; scope: string; active: boolean }) {
     const batch = useBulkMailAction();
     const [cursor, setCursor] = useState(items[0]?.id);
-    return <NotificationContext.Provider value={push}><div ref={ref} className="list"><BulkMailSelection batch={batch} active={active} messages={items} accounts={[
+    return <NotificationContext.Provider value={push}><div ref={ref} className="list"><BulkMailSelection key={scope} batch={batch} active={active} messages={items} accounts={[
       { id: "a", email: "a@example.test", provider: "imap" }, { id: "b", email: "b@example.test", provider: "imap" },
     ]} scope={scope} selectedId={cursor} onSelect={setCursor} api={api} reload={reload} disabled={false} syncing={syncing} onBlockingChange={noop} selectionShortcut={selectionShortcut}>
       <MailList messages={items} accounts={[]} listRef={ref} selectedId={cursor} focusSelection={true} density="comfortable" narrow={false} sort="relevance"
@@ -321,4 +321,46 @@ test("uncertain batch results remain visible after switching from the list to a 
     assert.match(document.querySelector('.bulk-result')!.textContent!, /No actions were retried/);
     assert.equal(requests, 1);
   } finally { finish?.(); await ui.close(); }
+});
+
+
+for (const dismissed of [false, true]) {
+  test(`late refresh failure ${dismissed ? "keeps manually dismissed results hidden" : "preserves visible results"} after navigation`, async () => {
+    let rejectReload: ((error: Error) => void) | undefined;
+    const errors: string[] = [];
+    const ui = await mount(async <T,>(_url: string, _method?: string, body?: unknown) => ({
+      results: (body as { items: Mail[] }).items.map(item => ({ ...item, status: "unknown" })),
+    } as T), () => new Promise<void>((_resolve, reject) => { rejectReload = reject; }),
+    undefined, false, (text, kind) => { if (kind === "error") errors.push(text); });
+    try {
+      await ui.render(messages.slice(0, 2));
+      await act(async () => ui.master().click());
+      await ui.click("Done");
+      assert.ok(document.querySelector('.bulk-result'));
+      if (dismissed) await ui.click("Dismiss results");
+      await ui.render(messages.slice(0, 2), "reader", false);
+      await act(async () => rejectReload!(new Error("Synthetic refresh failure")));
+      assert.equal(!!document.querySelector('.bulk-result'), !dismissed);
+      assert.ok(errors.some(text => text.includes("Refreshing mail failed")));
+      await ui.render(messages.slice(0, 2), "inbox");
+      assert.equal(!!document.querySelector('.bulk-result'), !dismissed);
+      if (!dismissed) assert.match(document.querySelector('.bulk-result')!.textContent!, /Refreshing mail failed/);
+    } finally { await ui.close(); }
+  });
+}
+
+test("automatic success clearing still reports a late refresh failure", async () => {
+  let rejectReload: ((error: Error) => void) | undefined;
+  const ui = await mount(async <T,>(_url: string, _method?: string, body?: unknown) => ({
+    results: (body as { items: Mail[] }).items.map(item => ({ ...item, status: "done" })),
+  } as T), () => new Promise<void>((_resolve, reject) => { rejectReload = reject; }), undefined, false, noop);
+  try {
+    await ui.render(messages.slice(0, 2));
+    await act(async () => ui.master().click());
+    await ui.click("Done");
+    assert.equal(document.querySelector('.bulk-result'), null);
+    await ui.render(messages.slice(0, 2), "reader", false);
+    await act(async () => rejectReload!(new Error("Synthetic refresh failure")));
+    assert.match(document.querySelector('.bulk-result')!.textContent!, /Refreshing mail failed/);
+  } finally { await ui.close(); }
 });

@@ -9,14 +9,16 @@ type Outcome = { results: MailBatchResult[]; items: RendererMail[]; refreshFaile
 // App owns the job so a pane remount cannot lose its lock or uncertain results.
 export function useBulkMailAction() {
   const lock = useRef(false);
+  const dismissed = useRef(false);
   const targets = useRef(new Map<string, string>());
   const [pending, setPending] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const run = async ({ action, items, until, api, reload }: {
-    action: BulkMailAction; items: RendererMail[]; until?: number; api: Api; reload: () => Promise<unknown>;
+  const run = async ({ action, items, until, api, reload, reportRefreshFailure }: {
+    action: BulkMailAction; items: RendererMail[]; until?: number; api: Api; reload: () => Promise<unknown>; reportRefreshFailure: () => void;
   }) => {
     if (lock.current || !items.length) return;
     lock.current = true;
+    dismissed.current = false;
     targets.current = new Map(items.map(item => [selectionKey(item), item.accountId]));
     setPending(true); setOutcome(null);
     const submitted = items.map(({ id, accountId }) => ({ id, accountId }));
@@ -30,10 +32,14 @@ export function useBulkMailAction() {
     }
     const result = { results, items };
     setOutcome(result);
-    try { await reload(); } catch { setOutcome({ ...result, refreshFailed: true }); }
+    try { await reload(); } catch {
+      if (dismissed.current) reportRefreshFailure();
+      else setOutcome({ ...result, refreshFailed: true });
+    }
     finally { targets.current.clear(); lock.current = false; setPending(false); }
   };
-  return { pending, outcome, setOutcome, run,
+  const dismissOutcome = () => { dismissed.current = true; setOutcome(null); };
+  return { pending, outcome, setOutcome, dismissOutcome, run,
     has: (mail: MailIdentity) => targets.current.has(selectionKey(mail)),
     hasAccount: (accountId: string) => [...targets.current.values()].includes(accountId),
   };

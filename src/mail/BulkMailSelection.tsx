@@ -27,7 +27,7 @@ export function BulkMailSelection({ messages, accounts, scope, selectedId, onSel
   disabled: boolean; syncing?: boolean; active?: boolean; onBlockingChange: (blocking: boolean) => void; children: ReactNode;
 }) {
   const [selection, setSelection] = useState<{ scope: string; items: MailIdentity[] }>({ scope, items: [] });
-  const { pending, outcome, setOutcome } = batch;
+  const { pending, outcome, setOutcome, dismissOutcome } = batch;
   const push = useContext(NotificationContext);
   const succeeded = !!outcome && !outcome.refreshFailed && outcome.results.every(item => item.status === "done");
   // The success Notice publishes its toast in its own effect, which runs first.
@@ -121,7 +121,9 @@ export function BulkMailSelection({ messages, accounts, scope, selectedId, onSel
     // Copy only the submitted rows before the request; do not retain the mailbox index.
     const targets = submitted.map(item => available.get(selectionKey(item))).filter((mail): mail is RendererMail => !!mail);
     setConfirmation(null); setSnoozing(false); clear();
-    return batch.run({ action, items: targets, until, api, reload });
+    return batch.run({ action, items: targets, until, api, reload,
+      reportRefreshFailure: () => push?.("Refreshing mail failed. Refresh separately to check the cache.", "error"),
+    });
   };
   const sentOnly = items.length > 0 && items.every(item => available.get(selectionKey(item))?.direction === "sent");
   const label = (id: string) => {
@@ -180,7 +182,7 @@ export function BulkMailSelection({ messages, accounts, scope, selectedId, onSel
             </li>)}</ul></details>
         </>}
         {outcome.refreshFailed && <p>Refreshing mail failed. Refresh separately to check the cache.</p>}
-        <button className="button" onClick={() => setOutcome(null)}>Dismiss results</button>
+        <button className="button" onClick={dismissOutcome}>Dismiss results</button>
       </details></>)}
       <div inert={!!confirmation || snoozing}>{children}</div>
       {confirmation && createPortal(<Dialog title="Move messages to Trash" onClose={() => setConfirmation(null)}>

@@ -8,9 +8,17 @@ unversioned history without treating it as a release record.
 
 <!-- coderabbit-ai-generated-section:v1:10a62c2f2d2afe77c5bf0f5fc94b37678824483358a7fec6cf871a95dbeb33d9 -->
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:2548ff6ff60a7e641b103dd2390c90fd86774099f2aaf599ea0ea6de8b42b846 -->
+
 ## Unreleased
 
 ### Fixed
+
+- Keep dismissed bulk action results hidden when a later mail refresh fails, including after navigation; report the refresh failure in a notification.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 - Keep Drafts, compose editing and saving, Contacts, Settings and unrelated mail available while bulk or single-message actions finish. Only conflicting message actions and affected account operations wait. ([#238](https://github.com/collection-of-things/emc2/issues/238))
 - Keep independent settings and accounts usable during Sent imports and settings requests. Account connection checks can continue after closing their dialog, with later errors reported in notifications. ([#238](https://github.com/collection-of-things/emc2/issues/238))
