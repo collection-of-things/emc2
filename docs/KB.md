@@ -568,7 +568,7 @@ external write is involved.
 ## Agent review provider keys
 
 `shared/agent-provider.ts` contains the sanitized provider settings shape and
-OpenAI/DeepSeek presets and the keyless `claude-code` provider (saved like a key for every `hasKey` check, including automation PUT). `server/agent-provider.ts` mounts authenticated settings
+OpenAI/DeepSeek/Anthropic presets. Anthropic uses the official `@anthropic-ai/sdk` Messages API through the same DNS-pinned dispatcher (no retries, no redirects, 120-second deadline, server-side refusal fallback on Opus 5.5, Sonnet 5.5 and Fable 5.1). `server/agent-provider.ts` mounts authenticated settings
 routes at `/api/agent/grants/:id/provider`: GET returns settings or null, PUT
 saves bounded fields with an optional new key and the current revision (null
 for a first save), and DELETE requires the saved revision. Keys remain in the
@@ -635,10 +635,7 @@ Synthetic checks: `server/agent-provider.test.ts`,
 `src/agent-automation.test.tsx`, `src/agent-provider.test.tsx`. See
 [ADR 0123](adr/0123-automatic-assistant-replies.md).
 
-Provider `claude-code` runs the signed-in `claude` CLI with no key, tools, MCP,
-settings or session (`cliCompletion` in `server/agent-provider.ts`, runner
-injectable as `runCli`). App-prepared proposals carry `origin: "app"` and are
-approved without MCP on. See [ADR 0127](adr/0127-in-app-agent-without-key-or-mcp.md).
+`POST /api/agent/grants/:id/automation/scan` (Start scan) queues one run of that assistant over its cached unread, unarchived received mail, newest first, even while automatic replies are off. It uses the saved scope, instruction and daily limit (defaults if none) and records the result as `lastResult`. App-prepared proposals carry `origin: "app"`; untagged drafts created before `originCutoff` (#241 merge) by an assistant with a saved key count as app-prepared; MCP drafts stay untagged and need MCP on. Both approve with MCP off. See [ADR 0128](adr/0128-start-scan-and-anthropic-byok.md).
 
 Mounted `src/workbench.test.tsx` regressions hold an old workspace response
 across acknowledged and stored-but-lost preparation, then require a new read

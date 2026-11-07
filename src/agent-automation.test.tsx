@@ -19,6 +19,7 @@ async function mount(options: { key: boolean; automation: AgentAutomationSetting
   const api: Api = async <T,>(url: string, method = "GET", body?: unknown): Promise<T> => {
     calls.push({ url, method, body });
     if (url.endsWith("/provider")) return structuredClone(provider) as T;
+    if (url.endsWith("/automation/scan")) return { queued: 3 } as T;
     assert.ok(url.endsWith("/automation"));
     if (method === "PUT") automation = { ...automation, ...(body as any), agentId: grant.id, revision: crypto.randomUUID() };
     return structuredClone(automation) as T;
@@ -34,6 +35,18 @@ async function mount(options: { key: boolean; automation: AgentAutomationSetting
 }
 const settings = (enabled: boolean): AgentAutomationSettings => ({ agentId: "synthetic-agent", enabled, scope: "important", instruction: "", dailyLimit: 20, revision: "3c3e0f3e-6d0b-4b8c-9a55-8f1b0f0e1d10", day: new Date().toLocaleDateString("en-CA"), count: 3, lastRunAt: 1, lastResult: "Prepared 3 replies for review." });
 
+test("Start scan runs a saved-key assistant now without turning the switch on", async () => {
+  const ui = await mount({ key: true, automation: null });
+  try {
+    const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start scan")!;
+    await ui.click(start);
+    const call = ui.calls.at(-1)!;
+    assert.equal(call.method, "POST"); assert.ok(call.url.endsWith("/automation/scan"));
+    assert.match(ui.container.textContent!, /Scan started for 3 unread emails/);
+    assert.equal(ui.toggle()!.checked, false);
+  } finally { await ui.close(); }
+});
+
 test("the user switches automatic replies on and off per assistant", async () => {
   const ui = await mount({ key: true, automation: settings(true) });
   try {
@@ -44,7 +57,7 @@ test("the user switches automatic replies on and off per assistant", async () =>
     const off = ui.calls.at(-1)!;
     assert.equal(off.method, "PUT"); assert.equal(off.body.enabled, false); assert.equal(off.body.revision, settings(true).revision);
     assert.equal(ui.toggle()!.checked, false);
-    assert.match(ui.container.textContent!, /Off\. This assistant prepares replies only when you click Prepare draft/);
+    assert.match(ui.container.textContent!, /Off\. New mail is not prepared automatically\. Start scan runs this assistant once now/);
     const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start agent")!;
     await ui.click(start);
     assert.equal(ui.calls.at(-1)!.body.enabled, true); assert.equal(ui.toggle()!.checked, true);
@@ -72,7 +85,7 @@ test("without a key the switch stays off and points to Bring your own key", asyn
   const ui = await mount({ key: false, automation: null });
   try {
     assert.equal(ui.toggle()!.checked, false); assert.equal(ui.toggle()!.disabled, true);
-    assert.match(ui.container.textContent!, /Add a provider key, or choose Claude Code \(signed in\), under Bring your own key/);
+    assert.match(ui.container.textContent!, /Add a provider key under Bring your own key to start this agent/);
     assert.equal(ui.calls.some((call) => call.method !== "GET"), false);
   } finally { await ui.close(); }
 });

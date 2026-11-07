@@ -25,6 +25,7 @@
     "build:web": "tsc --noEmit && vite build && node scripts/build-browser.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@fontsource-variable/host-grotesk": "5.3.0",
     "@fontsource/instrument-serif": "5.3.0",

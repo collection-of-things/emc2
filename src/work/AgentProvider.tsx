@@ -1,6 +1,6 @@
 import { Notice, useFeedbackState } from "../ui/Toasts";
 import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { agentProviders, localAgentProvider, type AgentProvider as Provider, type AgentProviderSettings } from "../../shared/agent-provider";
+import { agentProviders, type AgentProvider as Provider, type AgentProviderSettings } from "../../shared/agent-provider";
 import type { AgentGrant, AgentProposal } from "../../shared/workspace";
 import type { RendererState as State } from "../../shared/types";
 import type { Api } from "../api";
@@ -54,8 +54,7 @@ export function AgentProvider({ grant, state, api, mcpEnabled, disabled, onPrepa
   }, [permission, disabled, evidence]);
   const permitted = grant.tools.includes("read_email") && grant.tools.includes("propose_draft");
   const unchanged = saved && saved.provider === provider && saved.baseURL === baseURL && saved.model === model && !apiKey;
-  const local = localAgentProvider(provider);
-  const needsKey = !local && (!saved || saved.baseURL !== baseURL);
+  const needsKey = !saved || saved.baseURL !== baseURL;
   const changed = () => { epoch.current++; setStatus(""); setError(""); };
   const run = async (operation: () => Promise<void>) => {
     if (busy.current || disabled) return;
@@ -79,8 +78,7 @@ export function AgentProvider({ grant, state, api, mcpEnabled, disabled, onPrepa
       if (!active.current || epoch.current !== version) return;
       setSaved(value); setBaseURL(value.baseURL); setModel(value.model); setApiKey("");
       // The key is saved either way; say plainly when automatic replies did not turn on.
-      if (automaticFailed) setError(localAgentProvider(value.provider) ? "Claude Code selected, but automatic replies could not be turned on. Use the Prepare replies automatically switch on this card." : "Key saved locally, encrypted, but automatic replies could not be turned on. Use the Prepare replies automatically switch on this card.");
-      else if (localAgentProvider(value.provider)) setStatus(automatic ? "Agent started with Claude Code. Automatic replies are on for new mail; switch them off on this card at any time." : "Claude Code selected. Not tested yet. Next, choose an email below and click Prepare draft.");
+      if (automaticFailed) setError("Key saved locally, encrypted, but automatic replies could not be turned on. Use the Prepare replies automatically switch on this card.");
       else setStatus(automatic ? "Key saved locally, encrypted. Automatic replies are on for new mail; switch them off on this card at any time." : "Key saved locally, encrypted. Connection not tested. Next, choose an email below and click Prepare draft.");
     } catch { if (active.current && epoch.current === version) setError("Settings were not confirmed. Your entries are still here. Check the fields or reopen Agent Reviews to reload a changed revision."); }
   });
@@ -133,23 +131,23 @@ export function AgentProvider({ grant, state, api, mcpEnabled, disabled, onPrepa
           choices={Object.entries(agentProviders).map(([id, value]) => ({ id: id as Provider, label: value.name }))}
           onChange={(next) => { changed(); setProvider(next); setBaseURL(agentProviders[next].baseURL); setModel(agentProviders[next].model); setApiKey(""); }} /></div>
         {provider === "custom" && <PrivateField label="HTTPS base URL" value={baseURL} onChange={(value) => { changed(); setBaseURL(value); }} maxLength={2000} required />}
-        {local ? <p className="work-meta">Uses the Claude Code CLI already signed in on this device; it sends the selected email to Anthropic under your Claude account. No API key or MCP needed. It runs with all tools off, so it can only write reply text.</p> : <label>API key<input type="password" autoComplete="new-password" value={apiKey} maxLength={4096} onChange={(event) => { changed(); setApiKey(event.target.value); }} /></label>}
+        <label>API key<input type="password" autoComplete="new-password" value={apiKey} maxLength={4096} onChange={(event) => { changed(); setApiKey(event.target.value); }} /></label>
         {provider === "custom" ? <PrivateField label="Model" value={model} onChange={(value) => { changed(); setModel(value); }} maxLength={200} required /> : <details>
           <summary>Advanced: model</summary>
           <PrivateField label="Model" value={model} onChange={(value) => { changed(); setModel(value); }} maxLength={200} required />
         </details>}
-        {!saved && permitted && <p className="work-meta">{local ? "Saving also turns on automatic replies: each new email in this assistant's accounts is sent to Claude Code to prepare a reply for review. Switch it off on this card at any time." : <>Saving a key also turns on automatic replies: each new email in this assistant's accounts is sent to this provider to prepare a reply for review. Switch it off on this card at any time.</>}</p>}
-        {!local && <p className="work-meta">{saved?.hasKey ? "Key saved locally, encrypted. Connection not tested by saving. Change provider or key here; leave the key blank to keep it for the same endpoint." : "No key saved."} Changing the endpoint requires a new key.</p>}
-        <div className="work-controls"><button className="button" disabled={!model.trim() || !baseURL || needsKey && !apiKey}>{local ? "Use Claude Code" : "Save key"}</button>
-          {saved && <button type="button" onClick={() => void remove()}>{localAgentProvider(saved.provider) ? "Stop using Claude Code" : "Remove key"}</button>}</div>
+        {!saved && permitted && <p className="work-meta">Saving a key also turns on automatic replies: each new email in this assistant's accounts is sent to this provider to prepare a reply for review. Switch it off on this card at any time.</p>}
+        <p className="work-meta">{saved?.hasKey ? "Key saved locally, encrypted. Connection not tested by saving. Change provider or key here; leave the key blank to keep it for the same endpoint." : "No key saved."} Changing the endpoint requires a new key.</p>
+        <div className="work-controls"><button className="button" disabled={!model.trim() || !baseURL || needsKey && !apiKey}>Save key</button>
+          {saved && <button type="button" onClick={() => void remove()}>Remove key</button>}</div>
       </form>
       {!permitted ? <p>This agent needs permission to read the selected email and propose a draft. Create a Reply assistant with those permissions.</p> : saved?.hasKey ? <div className="settings-form work-form">
         <h4>Choose an email and prepare a reply</h4>
         <SourceSelect state={eligible} accountFilter="all" selected={selected} onChange={(ids) => { changed(); setSelected(ids); }} />
         {source && <MailPrivacy mail={source}><p>Selected: <Redact text={source.subject || "(no subject)"} /> · <Redact text={accountLabel(state.accounts.find((account) => account.id === source.accountId)!, state.accounts.findIndex((account) => account.id === source.accountId), privacy)} /></p></MailPrivacy>}
         <PrivateField label="Reply instruction (optional)" value={instruction} onChange={(value) => { changed(); setInstruction(value); }} multiline maxLength={2000} />
-        <p className="work-meta">Destination: {local ? "Anthropic, through the Claude Code CLI on this device" : <Redact text={saved?.baseURL || baseURL || "Choose a provider"} />}. Prepare draft sends only the selected cached email's subject, sender, recipient and plain text (up to 24,000 characters), plus your instruction, to this provider. No attachments are sent.</p>
-        <p className="work-meta">The result is a pending proposal. Review and approve it to create a draft. Nothing is sent. MCP is not needed to approve it; proposals from older versions still need MCP on.</p>
+        <p className="work-meta">Destination: <Redact text={saved?.baseURL || baseURL || "Choose a provider"} />. Prepare draft sends only the selected cached email's subject, sender, recipient and plain text (up to 24,000 characters), plus your instruction, to this provider. No attachments are sent.</p>
+        <p className="work-meta">The result is a pending proposal. Review and approve it to create a draft. Nothing is sent. MCP is not needed to approve it.</p>
         {saved && !unchanged && <p>Save these settings before preparing a draft.</p>}
         <button type="button" className="button" disabled={!saved?.hasKey || !unchanged || !source || unresolved} onClick={() => void prepare()}>{pending ? "Working…" : "Prepare draft"}</button>
       </div> : <p className="work-meta">Save a key first. Then choose an email and prepare a draft for review.</p>}
