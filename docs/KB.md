@@ -3582,15 +3582,23 @@ html and body (`body > table td` becomes `:scope > table td`). Selectors with a
 non-leading html/body or a sibling of it are dropped. Width media queries
 become `@container` queries.
 
-All formatted mail renders in the reader document; no iframe is used. For mail
-with supported rules, `src/mail/scoped-mail.ts` installs one constructable
-stylesheet per message, wrapped in
+Formatted mail renders in the reader document; no iframe is used. Mail with
+supported sender rules renders in an open shadow root on a
+`.formatted-mail-frame` element (`src/mail/ShadowMail.tsx`), so app CSS does
+not reach the mail and sender CSS does not reach the app. The shadow root
+adopts two constructable sheets from `src/mail/scoped-mail.ts`: a base sheet
+(message root reset to `all: initial` with 14px/1.5 system UI, hidden
+scrollbars, focus ring, selection, and a copy of the `.address` privacy-bar
+rules from `src/styles/base.css`), and the sender sheet wrapped in
 `@scope ([data-mail-scope="<id>"]) to (.address)`, followed by the reader's
-link, quote, code-ink, measure and readable-ink controls. The sheet is removed
-on unmount, and request CSP is unchanged. The container queries measure the
-`.formatted-mail-frame` wrapper. The themed fallback text remains if
-constructable stylesheets are unavailable or parsing the scoped sheet yields
-no rules. Mail without supported styles keeps the existing themed reader.
+link, quote, code-ink, measure, placeholder and readable-ink controls. Both
+are removed on unmount, and request CSP is unchanged. The frame is the
+container that the converted width queries measure. Window key handlers in
+`src/App.tsx` read `composedPath()[0]`, because events from the shadow tree
+are retargeted to the frame. The themed fallback text remains if shadow
+roots or constructable stylesheets are unavailable or the sender sheet
+parses to no rules. Mail without supported styles keeps the themed reader in
+the light DOM.
 
 Mail wider than its box zooms down to fit (minimum 0.5). Zoom resets before
 each measurement, which runs on mount, input changes, resize and image load.
@@ -3601,14 +3609,18 @@ ratio, so hiding images does not widen table layouts.
 Cross-leaf text redaction, link checks and remote/CID image consent stay in the
 existing formatter. Embedded blob results are bound to exact message and
 attachment metadata. Synthetic checks are in `src/sender-css.test.tsx` and
-`src/FormattedMail.test.tsx`. jsdom parses `@scope` but does not cascade it,
-so those tests flatten the installed sheet before reading computed styles.
+`src/FormattedMail.test.tsx`; they query styled mail through the frame's
+shadow root. jsdom parses `@scope` but does not cascade it, so those tests
+flatten the installed sheets before reading computed styles. jsdom also
+applies document styles inside shadow trees, which browsers do not, so
+isolation from app CSS needs a Chromium check.
 Native layout and physical wheel input are separate proof. See
 [ADR 0130](adr/0130-scoped-sender-styles-in-reader.md), which supersedes the
 separate document in [ADR 0102](adr/0102-isolated-sender-styles.md).
 
-Styled mail keeps the full reader width (`.message-body:has(.formatted-mail)`);
-plain-text bodies retain the 65ch line limit.
+Styled mail keeps the full reader width
+(`.message-body:has(.formatted-mail, .formatted-mail-frame)`; `:has` cannot
+see into the shadow tree); plain-text bodies retain the 65ch line limit.
 
 <!-- coderabbit-ai-generated:v1 -->
 

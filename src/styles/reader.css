@@ -234,7 +234,8 @@ article.message {
 }
 .message-images .message-body { margin-top: 12px; }
 .message-return { margin: 0 0 12px; color: var(--text-2); font-size: calc(12px * var(--text-scale, 1)); }
-.message-body:has(.formatted-mail) { max-width: 100%; }
+/* :has cannot see into the shadow tree of styled mail, so the frame counts. */
+.message-body:has(.formatted-mail, .formatted-mail-frame) { max-width: 100%; }
 /* Sender width queries measure the message, not the window. */
 .formatted-mail-frame { container-type: inline-size; min-width: 0; }
 .formatted-mail { color: var(--text); }

@@ -6,6 +6,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { FormattedMail } from "./mail/FormattedMail";
 import { fitWidth, MIN_FIT } from "./mail/scoped-mail";
+
+// Styled mail renders in a shadow tree on its frame; queries go through it.
+const mailOf = (node: ParentNode): ParentNode => node.querySelector(".formatted-mail-frame")?.shadowRoot ?? node;
 import { MAIL_HTML_LIMIT, MAIL_NODE_LIMIT, MAIL_DEPTH_LIMIT } from "../shared/mail-content";
 import { redactPrivateText } from "./privacy";
 import { PrivacyContext, Redact } from "./ui/Privacy";
@@ -306,13 +309,13 @@ test("styled mail re-inks sender text that matches its background and re-evaluat
   try {
     await update();
     assert.equal(container.querySelector("iframe"), null, "styled mail renders in the reader document");
-    const pre = container.querySelector<HTMLElement>(".formatted-mail .sender-0")!;
+    const pre = mailOf(container).querySelector<HTMLElement>(".formatted-mail .sender-0")!;
     assert.equal(pre.textContent, "Your weekly digest ", "padding entities collapse to one space");
     assert.equal(pre.getAttribute("data-ink"), null, "real jsdom color (black) needs no ink");
     colors.set(pre, "rgb(254, 254, 254)");
     await update();
     assert.equal(pre.getAttribute("data-ink"), "dark", "near-white text on white is re-inked dark");
-    const body = container.querySelector(".formatted-mail p")!;
+    const body = mailOf(container).querySelector(".formatted-mail p")!;
     assert.equal(body.textContent, "Visible body text");
     assert.equal(body.getAttribute("data-ink"), null, "real jsdom #222 keeps its sender color");
     pre.setAttribute("data-ink", "light");
@@ -320,13 +323,13 @@ test("styled mail re-inks sender text that matches its background and re-evaluat
     assert.equal(pre.getAttribute("data-ink"), "dark", "re-render re-evaluates the mark");
     // A privacy-mode address control is skipped even at preheader contrast.
     await update(true);
-    const address = container.querySelector<HTMLElement>(".formatted-mail .address")!;
+    const address = mailOf(container).querySelector<HTMLElement>(".formatted-mail .address")!;
     assert.ok(address, "revealed address control renders");
     colors.set(address, "rgb(254, 254, 254)");
     await update(true);
     assert.equal(address.textContent, "reader@example.com");
     assert.equal(address.getAttribute("data-ink"), null);
-    assert.equal(container.querySelector(".formatted-mail .sender-0")!.getAttribute("data-ink"), "dark", "the preheader stays marked under privacy");
+    assert.equal(mailOf(container).querySelector(".formatted-mail .sender-0")!.getAttribute("data-ink"), "dark", "the preheader stays marked under privacy");
   } finally {
     await act(async () => root.unmount());
     dom.window.close();
@@ -544,7 +547,7 @@ test("styled mail selects ink over translucent host layers and canvas fallbacks"
             renderText={(text) => text} redactText={(text) => text} />
         </div>,
       ));
-      assert.equal(container.querySelector(".formatted-mail p")!.getAttribute("data-ink"), ink,
+      assert.equal(mailOf(container).querySelector(".formatted-mail p")!.getAttribute("data-ink"), ink,
         `app=${app}, body=${body}, canvas=${canvas}`);
     }
   } finally {

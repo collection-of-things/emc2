@@ -1,9 +1,10 @@
-import { Fragment, createElement, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, createElement, useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { imageSource, type MailAttachment } from "../../shared/types";
 import { embeddedImageTypes, mailLink, mailStyle, mailStylesheet, parseMailContent, privateMailLink, type MailContentNode } from "../../shared/mail-content";
 import { segmentPrivateParts, type PrivacySegment } from "../privacy";
 import { useRemoteImage } from "./remote-image";
-import { useFitWidth, useReadableInk, useScopedSheet } from "./scoped-mail";
+import { useFitWidth, useReadableInk } from "./scoped-mail";
+import { ShadowMail } from "./ShadowMail";
 
 type Presentation = { className?: string; id?: string };
 
@@ -133,20 +134,20 @@ export function FormattedMail({ mailId, attachments = [], html, showImages, rend
   };
   const formatted = !!nodes && !!(textParts.join("").trim() || hasImage(nodes, attachments));
   const scoped = styled && formatted;
-  const root = useRef<HTMLDivElement>(null);
-  const sheet = useScopedSheet(scoped ? stylesheet.css : "");
-  useReadableInk(root, scoped && !sheet.failed);
-  useFitWidth(root, [html, showImages, privacy, scoped, sheet.failed]);
-  if (scoped && sheet.failed) return <div className="formatted-mail formatted-mail-fallback">{fallback ?? renderText(fallbackText || textParts.join(''))}</div>;
+  const scope = useId();
+  // A callback ref: styled mail mounts its root later, inside the shadow tree.
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  useReadableInk(root, scoped);
+  useFitWidth(root, [html, showImages, privacy, scoped]);
   // The mail renders in the reader's own document, so the reader is its only
   // scroller. Wide mail is zoomed to fit; what still overflows scrolls inside
   // this box without a visible bar.
-  const body = <div ref={root} className={formatted ? "formatted-mail" : "formatted-mail formatted-mail-fallback"} data-mail-scope={scoped ? sheet.scope : undefined}
+  const body = <div ref={setRoot} className={formatted ? "formatted-mail" : "formatted-mail formatted-mail-fallback"} data-mail-scope={scoped ? scope : undefined}
     style={{ maxWidth: "100%", minWidth: 0, overflowX: "auto", overflowWrap: formatted ? "break-word" : "anywhere", contain: "layout paint", isolation: "isolate", whiteSpace: formatted ? "normal" : "pre-wrap" }}>
     {formatted ? nodes.map(render) : fallback ?? renderText(fallbackText)}
   </div>;
-  // Sender width queries measure this frame, the width the message gets.
-  return scoped ? <div className="formatted-mail-frame">{body}</div> : body;
+  return scoped ? <ShadowMail css={stylesheet.css} scope={scope}
+    fallback={<div className="formatted-mail formatted-mail-fallback">{fallback ?? renderText(fallbackText || textParts.join(''))}</div>}>{body}</ShadowMail> : body;
 }
 
 // Holds a blocked image's place at its own size (24px when unsized); the reason

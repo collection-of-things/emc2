@@ -981,7 +981,9 @@ export function App() {
       gmailPrefix.current = { key: "", at: 0 };
       if (settingsModal || workModal || quickSource || meetingMail || updateInstalling || contextMenu || event.defaultPrevented || event.isComposing ||
         event.repeat && !["ArrowUp", "ArrowDown"].includes(event.key)) return;
-      const target = event.target;
+      // Keys from styled mail are retargeted to its shadow host; the original
+      // target keeps links and privacy controls inside the mail interactive.
+      const target = event.composedPath?.()[0] ?? event.target;
       if (event.key.toLowerCase() === "k" && !event.altKey && !event.shiftKey &&
         (interactionPlatform() === "darwin" ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey)) {
         if (!toolbarBlocked && !settings) { event.preventDefault(); setFiltersOpen(false); if (compose) leaveCompose({ type: "commands" }); else setPalette((value) => !value); }
