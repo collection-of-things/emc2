@@ -82,9 +82,10 @@ a saved key also approve without MCP. Saving a key and
 preparing a proposal do not enable MCP or sending. See
 [ADR 0045](adr/0045-agent-review-byok.md).
 
-To run an assistant now, click Start scan on its card. It prepares replies for
-unread inbox mail in scope with the saved key, up to the daily limit, and puts
-them in Review. Start agent turns on automatic replies for new mail. Anthropic
+To run assistants, click Start agent on the Agent review page (every assistant
+with a saved key) or on an assistant card. It prepares replies for unread inbox
+mail in scope now, up to the daily limit, and turns on automatic replies for new
+mail. Replies go to Review. A running card shows Scan now. Anthropic
 (Claude API) is available as a provider with your own Anthropic key. See
 [ADR 0128](adr/0128-start-scan-and-anthropic-byok.md).
 
