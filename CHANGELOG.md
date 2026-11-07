@@ -16,6 +16,16 @@ unversioned history without treating it as a release record.
 - Anthropic (Claude API) is a provider choice under Bring your own key.
 - Approving replies the app prepared with a provider key no longer needs MCP enabled, including replies prepared before this version.
 
+### Changed
+
+- Newsletters wider than the reader shrink to fit, down to half size, instead of scrolling sideways.
+- Hidden-image placeholders use a neutral grey box with a hairline outline that stays visible on light and dark sender backgrounds.
+
+### Fixed
+
+- Mail with sender styles no longer shows its own scrollbar while images are hidden, and the reader scrolls with the pointer over the message. Styled mail now renders in the reader itself with sender rules scoped to the message ([ADR 0127](docs/adr/0127-scoped-sender-styles-in-reader.md)).
+- Hidden-image placeholders narrow with the reader the same way their images do, so showing images no longer changes the layout width.
+
 ### Removed
 
 - The Claude Code (signed in) provider added in 0.2.33. Saved Claude Code settings are removed and automatic replies for those assistants are turned off; save a provider API key instead.
