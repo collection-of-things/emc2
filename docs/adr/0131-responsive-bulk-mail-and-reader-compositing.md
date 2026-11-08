@@ -12,8 +12,10 @@ in App, above keyed mail panes. Confirmation and snooze dialogs still block
 navigation, but a submitted batch does not make the list or reader inert.
 Users can open cached mail, navigate folders and search while the batch runs.
 Conflicting mail actions remain disabled until the request and cache refresh
-settle. Opening mail during a batch does not automatically mark it read; use
-Mark as read or reopen after completion. A pending status remains visible.
+settle. Opening unrelated mail still automatically marks it read. Opening a
+pending target skips that request, and its Mark as read action stays disabled.
+Reopen the target after completion to mark it read. A pending status remains
+visible.
 
 Pane remounts retain the job lock and failed/unknown result details. Capture
 only the submitted rows, rather than retaining the selection's full mailbox
