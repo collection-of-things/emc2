@@ -147,7 +147,7 @@ export function AgentProvider({ grant, state, api, mcpEnabled, disabled, onPrepa
         {source && <MailPrivacy mail={source}><p>Selected: <Redact text={source.subject || "(no subject)"} /> · <Redact text={accountLabel(state.accounts.find((account) => account.id === source.accountId)!, state.accounts.findIndex((account) => account.id === source.accountId), privacy)} /></p></MailPrivacy>}
         <PrivateField label="Reply instruction (optional)" value={instruction} onChange={(value) => { changed(); setInstruction(value); }} multiline maxLength={2000} />
         <p className="work-meta">Destination: <Redact text={saved?.baseURL || baseURL || "Choose a provider"} />. Prepare draft sends only the selected cached email's subject, sender, recipient and plain text (up to 24,000 characters), plus your instruction, to this provider. No attachments are sent.</p>
-        <p className="work-meta">The result is a pending proposal. Review and approve it to create a draft. Nothing is sent. { !mcpEnabled && "The existing approval path requires MCP enabled in Settings; this form does not enable it." }</p>
+        <p className="work-meta">The result is a pending proposal. Review and approve it to create a draft. Nothing is sent. MCP is not needed to approve it.</p>
         {saved && !unchanged && <p>Save these settings before preparing a draft.</p>}
         <button type="button" className="button" disabled={!saved?.hasKey || !unchanged || !source || unresolved} onClick={() => void prepare()}>{pending ? "Working…" : "Prepare draft"}</button>
       </div> : <p className="work-meta">Save a key first. Then choose an email and prepare a draft for review.</p>}

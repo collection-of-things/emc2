@@ -84,6 +84,8 @@ export type AgentProposal = {
   sourceMailId?: string;
   sourceFingerprint?: string;
   sourceChanged?: boolean;
+  /** "app": prepared by the in-app agent with a provider key; approval does not need MCP. */
+  origin?: "app";
   digest: string;
   createdAt: number;
   status: "pending" | "executing" | "succeeded" | "failed" | "unknown" | "rejected";

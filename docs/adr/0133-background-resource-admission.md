@@ -1,8 +1,8 @@
-# ADR 0129: Declare resources for background action admission
+# ADR 0133: Declare resources for background action admission
 
 Date: 2026-11-07
 Status: Implementation candidate; pending maintainer review.
-Amends: [ADR 0128](0128-operation-scoped-mail-waits.md).
+Amends: [ADR 0132](0132-operation-scoped-mail-waits.md).
 
 ## Context
 

@@ -19,6 +19,7 @@ async function mount(options: { key: boolean; automation: AgentAutomationSetting
   const api: Api = async <T,>(url: string, method = "GET", body?: unknown): Promise<T> => {
     calls.push({ url, method, body });
     if (url.endsWith("/provider")) return structuredClone(provider) as T;
+    if (url.endsWith("/automation/scan")) return { queued: 3 } as T;
     assert.ok(url.endsWith("/automation"));
     if (method === "PUT") automation = { ...automation, ...(body as any), agentId: grant.id, revision: crypto.randomUUID() };
     return structuredClone(automation) as T;
@@ -34,6 +35,22 @@ async function mount(options: { key: boolean; automation: AgentAutomationSetting
 }
 const settings = (enabled: boolean): AgentAutomationSettings => ({ agentId: "synthetic-agent", enabled, scope: "important", instruction: "", dailyLimit: 20, revision: "3c3e0f3e-6d0b-4b8c-9a55-8f1b0f0e1d10", day: new Date().toLocaleDateString("en-CA"), count: 3, lastRunAt: 1, lastResult: "Prepared 3 replies for review." });
 
+test("Start agent turns on replies for new mail and scans unread mail now", async () => {
+  const ui = await mount({ key: true, automation: null });
+  try {
+    assert.equal([...ui.container.querySelectorAll("button")].some((button) => button.textContent === "Start scan"), false, "one button, not two");
+    const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start agent")!;
+    await ui.click(start);
+    const put = ui.calls.find((call) => call.method === "PUT")!; assert.equal(put.body.enabled, true);
+    const scan = ui.calls.at(-1)!; assert.equal(scan.method, "POST"); assert.ok(scan.url.endsWith("/automation/scan"));
+    assert.match(ui.container.textContent!, /Agent started\. Automatic replies on for new mail\. Scan started for 3 unread emails/);
+    assert.equal(ui.toggle()!.checked, true);
+    const again = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Scan now")!;
+    await ui.click(again);
+    assert.ok(ui.calls.at(-1)!.url.endsWith("/automation/scan"));
+  } finally { await ui.close(); }
+});
+
 test("the user switches automatic replies on and off per assistant", async () => {
   const ui = await mount({ key: true, automation: settings(true) });
   try {
@@ -44,9 +61,11 @@ test("the user switches automatic replies on and off per assistant", async () =>
     const off = ui.calls.at(-1)!;
     assert.equal(off.method, "PUT"); assert.equal(off.body.enabled, false); assert.equal(off.body.revision, settings(true).revision);
     assert.equal(ui.toggle()!.checked, false);
-    assert.match(ui.container.textContent!, /Off\. This assistant prepares replies only when you click Prepare draft/);
-    await ui.click(ui.toggle()!);
-    assert.equal(ui.calls.at(-1)!.body.enabled, true); assert.equal(ui.toggle()!.checked, true);
+    assert.match(ui.container.textContent!, /Off\. Start agent prepares replies for unread inbox mail now and turns on automatic replies for new mail/);
+    const start = [...ui.container.querySelectorAll("button")].find((button) => button.textContent === "Start agent")!;
+    await ui.click(start);
+    assert.equal(ui.calls.filter((call) => call.method === "PUT").at(-1)!.body.enabled, true); assert.ok(ui.calls.at(-1)!.url.endsWith("/automation/scan")); assert.equal(ui.toggle()!.checked, true);
+    assert.equal([...ui.container.querySelectorAll("button")].some((button) => button.textContent === "Start agent"), false, "hidden while running");
     const limit = [...ui.container.querySelectorAll("label")].find((label) => label.childNodes[0]?.textContent === "Daily limit")!.querySelector("input")!;
     await act(async () => {
       Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!.call(limit, "");
@@ -70,7 +89,7 @@ test("without a key the switch stays off and points to Bring your own key", asyn
   const ui = await mount({ key: false, automation: null });
   try {
     assert.equal(ui.toggle()!.checked, false); assert.equal(ui.toggle()!.disabled, true);
-    assert.match(ui.container.textContent!, /Add a provider key under Bring your own key/);
+    assert.match(ui.container.textContent!, /Add a provider key under Bring your own key to start this agent/);
     assert.equal(ui.calls.some((call) => call.method !== "GET"), false);
   } finally { await ui.close(); }
 });

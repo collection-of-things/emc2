@@ -1,4 +1,4 @@
-// Readable ink for the isolated mail document (ADR 0125). Sender text below
+// Readable ink for sender-styled mail (ADR 0125). Sender text below
 // 3:1 contrast against its effective background is re-inked to the stronger
 // of a fixed dark or light; text at 3:1 or better keeps the sender color.
 
@@ -67,11 +67,11 @@ function inkOnBackground(text: Rgba, background: Rgba): "dark" | "light" | null 
 const DIRECT_TEXT = /[^\s\u034F\u200B\u200C\u2060\uFEFF\u00AD]/;
 const PROTECTED = ".address,.formatted-mail-image-placeholder";
 
-// Batched in three phases — clear, read computed styles, then mark — so each
+// Batched in three phases , clear, read computed styles, then mark , so each
 // element costs no extra style recalculation.
 export function applyReadableInk(body: HTMLElement, surface: Rgba) {
   const view = body.ownerDocument.defaultView!;
-  for (const element of body.querySelectorAll("[data-ink]")) element.removeAttribute("data-ink");
+  for (const element of [body, ...body.querySelectorAll("[data-ink]")]) element.removeAttribute("data-ink");
   // Cache one composited color per ancestor instead of copying each ancestor's
   // entire layer chain for every descendant. This bounds scratch memory to O(n).
   const backgrounds = new Map<Element, Rgba>();
@@ -79,7 +79,7 @@ export function applyReadableInk(body: HTMLElement, surface: Rgba) {
     const cached = backgrounds.get(element);
     if (cached) return cached;
     const layer = parseColor(view.getComputedStyle(element).backgroundColor);
-    const below = element.parentElement && !(layer && layer[3] >= 1) ? backgroundOf(element.parentElement) : surface;
+    const below = element !== body && element.parentElement && !(layer && layer[3] >= 1) ? backgroundOf(element.parentElement) : surface;
     const background = layer ? composite(layer, below) : below;
     backgrounds.set(element, background);
     return background;
@@ -88,11 +88,12 @@ export function applyReadableInk(body: HTMLElement, surface: Rgba) {
   // querySelectorAll visits parents before children. Carry protection forward
   // rather than walking back through the same ancestors for every text node.
   const protectedElements = new Set<Element>(body.closest(PROTECTED) ? [body] : []);
-  for (const element of body.querySelectorAll<HTMLElement>("*")) {
-    if (element.matches(PROTECTED) || element.parentElement && protectedElements.has(element.parentElement)) {
+  for (const element of [body, ...body.querySelectorAll<HTMLElement>("*")]) {
+    if (protectedElements.has(element) || element.matches(PROTECTED) || element.parentElement && protectedElements.has(element.parentElement)) {
       protectedElements.add(element);
       continue;
     }
+
     if (![...element.childNodes].some((node) => node.nodeType === node.TEXT_NODE && DIRECT_TEXT.test(node.nodeValue || ""))) continue;
     const color = parseColor(view.getComputedStyle(element).color);
     if (!color) continue;

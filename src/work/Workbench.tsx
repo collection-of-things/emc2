@@ -21,7 +21,7 @@ import { SessionActions, SessionDialog, WorkSessions, useWorkSessions } from "./
 import { EventDetail, EventForm } from "./EventPanel";
 import { blankEvent, eventFields, useCalendarEvents, type EventFields } from "./events";
 import { AgentProvider } from "./AgentProvider";
-import { AgentAutomation } from "./AgentAutomation";
+import { AgentAutomation, startAgent } from "./AgentAutomation";
 import type { WorkspaceState } from "./useWorkspace";
 import { deadlineDate, localDate, localTimeInput, openCommitment } from "../../shared/commitment-dates";
 import { commitmentMails } from "./commitment-privacy";
@@ -276,6 +276,20 @@ export function Workbench({ mode, state, api, work, accountFilter, initialSource
   // Per assistant, so a key change on one card never reloads another.
   const [automationReload, setAutomationReload] = useState<Record<string, number>>({});
   const [automationRefresh, setAutomationRefresh] = useState(0);
+  const [starting, setStarting] = useState(false);
+  // Agent review's Start agent runs every assistant that has a saved provider key.
+  const startAll = async () => {
+    setStarting(true);
+    let started = 0, queued = 0, failed = 0;
+    for (const grant of grants) {
+      try { const result = await startAgent(api, grant); if (result) { started++; queued += result.queued; } }
+      catch { failed++; }
+    }
+    setStarting(false);
+    setAutomationRefresh((value) => value + 1);
+    if (!started && !failed) onNotice("No assistant has a provider key yet. Open Manage assistants and save a key first.");
+    else onNotice(`${started ? `Agent started for ${started} ${started === 1 ? "assistant" : "assistants"}: scanning ${queued} unread ${queued === 1 ? "email" : "emails"} now, and new mail from here on. Replies appear in the Review queue.` : ""}${failed ? ` ${failed} could not start; check Manage assistants.` : ""}`.trim());
+  };
   const [shownToken, setShownToken] = useState<string | undefined>();
   const [editingGrant, setEditingGrant] = useState<string | null>(null);
   const privacyContext = useContext(PrivacyContext);
@@ -435,7 +449,7 @@ export function Workbench({ mode, state, api, work, accountFilter, initialSource
         <div className="work-controls"><button type="button" disabled={pending || work.refreshing} aria-label="Refresh workspace" onClick={() => void load()}>Refresh</button>{(mode === "actions" || mode === "calendar") && <button className="button" type="button" disabled={blocked} onClick={() => setEditor("new")}>Add task</button>}{mode === "projects" && <>
           <button type="button" disabled={blocked} onClick={() => setProjectEditor("new")}>New project</button>
           {selectedProject && <><button type="button" disabled={blocked} onClick={() => setProjectEditor(selectedProject)}>Edit project / add emails</button><button className="button" type="button" disabled={blocked} onClick={() => { setDraft({ projectId: selectedProject.id }); setEditor("new"); }}>Add task</button></>}
-        </>}{mode === "agents" && onManageAssistants && <button type="button" onClick={onManageAssistants}>Manage assistants</button>}</div>
+        </>}{mode === "agents" && <button type="button" className="button" disabled={pending || starting || agentStale} onClick={() => void startAll()}>{starting ? "Starting…" : "Start agent"}</button>}{mode === "agents" && onManageAssistants && <button type="button" onClick={onManageAssistants}>Manage assistants</button>}</div>
       </div>
       {mode === "agents" && <div className="agent-navigation"><span id={agentTabs} hidden>Agent sections</span><Segmented labelledBy={agentTabs} value={agentTab}
         choices={[{ id: "review", label: `Review queue (${workspace.proposals.filter((item) => item.status === "pending").length})` }, { id: "activity", label: "Activity" }]}
@@ -568,7 +582,7 @@ export function Workbench({ mode, state, api, work, accountFilter, initialSource
         {mode === "agents" && <div className="agent-review-layout"><div className="agent-proposals">
 
         {!workspace.proposals.some((proposal) => (proposal.status === "pending") === (agentTab === "review")) && <p className="agent-empty">{agentTab === "review" ? "Nothing waiting for review. Proposed changes will appear here." : "No completed actions yet."}</p>}
-        {workspace.proposals.map((proposal)=><div hidden={(proposal.status === "pending") !== (agentTab === "review")} key={proposal.id}><Proposal permissionAvailable={!agentStale && grants.some((grant) => grant.id === proposal.agentId)} key={proposal.id+proposal.digest} proposal={proposal} state={state} pending={pending} onOpen={onOpen} onReview={async(approve)=>{
+        {workspace.proposals.map((proposal)=><div hidden={(proposal.status === "pending") !== (agentTab === "review")} key={proposal.id}><Proposal mcpEnabled={mcpEnabled} permissionAvailable={!agentStale && grants.some((grant) => grant.id === proposal.agentId)} key={proposal.id+proposal.digest} proposal={proposal} state={state} pending={pending} onOpen={onOpen} onReview={async(approve)=>{
           const out: { result?: AgentProposal } = {};
           if(!await mutate(async()=>{ out.result = await api<AgentProposal>(`/agent/proposals/${encodeURIComponent(proposal.id)}/${approve?"approve":"reject"}`,"POST",{digest:proposal.digest}); })) return;
           await onMailChanged();
@@ -631,13 +645,14 @@ function GrantEditor({ grant, state, privacy, pending, onCancel, onSave }: { gra
   </form>;
 }
 
-function Proposal({ permissionAvailable, proposal, state, pending, onOpen, onReview }: { permissionAvailable: boolean; proposal: AgentProposal; state: State; pending: boolean; onOpen: (mail: Mail)=>void; onReview:(approve:boolean)=>Promise<void> }) {
+function Proposal({ permissionAvailable, mcpEnabled = true, proposal, state, pending, onOpen, onReview }: { permissionAvailable: boolean; mcpEnabled?: boolean; proposal: AgentProposal; state: State; pending: boolean; onOpen: (mail: Mail)=>void; onReview:(approve:boolean)=>Promise<void> }) {
   const payload=proposal.payload;
   const [reviewed,setReviewed]=useState(false);
   const source=state.messages.find((mail)=>mail.id===proposal.sourceMailId);
   const account=state.accounts.find((account)=>account.id===proposal.accountId);
   const unavailable=!!proposal.sourceMailId&&!source;
   const stale = proposal.sourceChanged;
+  const needsMcp = proposal.origin !== "app" && !mcpEnabled;
   const action = { send: "Reply (opens as draft)", draft: "Save reply draft", archive: "Archive email", read: "Mark email as read" }[proposal.action];
   const sources = [...new Set([...("mailId" in payload ? [payload.mailId] : []), ...(proposal.sourceMailId ? [proposal.sourceMailId] : [])])];
   const sourceMails = sources.map((id) => state.messages.find((mail) => mail.id === id)).filter((mail): mail is Mail => !!mail);
@@ -651,8 +666,9 @@ function Proposal({ permissionAvailable, proposal, state, pending, onOpen, onRev
     {stale&&<p role="alert">Evidence changed since this proposal. Reject it and request a fresh proposal.</p>}
     {proposal.action === "send" && proposal.status === "pending" && <p>Approval saves this reply to Drafts and opens it for editing. Nothing is sent until you press Send.</p>}
     {unavailable&&<p role="alert">Source unavailable. Refresh evidence before approval.</p>}
+    {proposal.status === "pending" && needsMcp && <p role="alert">This proposal came from MCP or an older version. Turn on MCP in Settings to approve it.</p>}
     {proposal.status === "pending" && !permissionAvailable && <p role="alert">Assistant access is unavailable. This proposal cannot run.</p>}
-    {proposal.status === "pending"&&<><label><input type="checkbox" checked={reviewed} onChange={(event)=>setReviewed(event.target.checked)}/>I reviewed the exact account, recipients, content, attachments and change above.</label><button type="button" disabled={pending||!permissionAvailable||!reviewed||unavailable||stale||!account} onClick={()=>void onReview(true)}>{proposal.action==="send"?"Approve and open in Drafts":proposal.action === "draft" ? "Approve and save draft" : proposal.action === "archive" ? "Approve and archive email" : "Approve and mark as read"}</button><button type="button" disabled={pending} onClick={()=>void onReview(false)}>Reject proposal</button></>}
+    {proposal.status === "pending"&&<><label><input type="checkbox" checked={reviewed} onChange={(event)=>setReviewed(event.target.checked)}/>I reviewed the exact account, recipients, content, attachments and change above.</label><button type="button" disabled={pending||!permissionAvailable||!reviewed||unavailable||stale||!account||needsMcp} onClick={()=>void onReview(true)}>{proposal.action==="send"?"Approve and open in Drafts":proposal.action === "draft" ? "Approve and save draft" : proposal.action === "archive" ? "Approve and archive email" : "Approve and mark as read"}</button><button type="button" disabled={pending} onClick={()=>void onReview(false)}>Reject proposal</button></>}
     {proposal.receipt&&<p>{new Date(proposal.receipt.at).toLocaleString()} · <Redact text={proposal.receipt.message}/></p>}
   </article>;
   return sourceMails.length ? <MailPrivacy mail={sourceMails}>{card}</MailPrivacy> : card;

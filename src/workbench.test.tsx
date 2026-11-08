@@ -50,6 +50,21 @@ test("Projects hides known account names while preserving exact cross-account ap
  }finally{await ui.close();}
 });
 
+test("Agent review's Start agent starts every assistant with a saved key without opening settings",async()=>{
+ const ui=await mount("agents");try{
+  await ui.click(ui.button("Start agent"));
+  assert.match(ui.notices.at(-1)??"",/No assistant has a provider key yet/);
+  ui.grants.push({id:"key-grant",token:"synthetic-start-only",name:"Reply assistant",accountIds:["a"],tools:["read_email","propose_draft"],createdAt:1});
+  ui.configureProvider();
+  await ui.click(ui.button("Refresh workspace"));
+  await ui.click(ui.button("Start agent"));
+  const put=ui.requests.find(request=>request.method==="PUT"&&request.url==="/agent/grants/key-grant/automation") as {body?:{enabled?:boolean}}|undefined;
+  assert.equal(put?.body?.enabled,true,"turns on replies for new mail");
+  assert.ok(ui.requests.some(request=>request.method==="POST"&&request.url==="/agent/grants/key-grant/automation/scan"),"scans unread mail now");
+  assert.match(ui.notices.at(-1)??"",/Agent started for 1 assistant: scanning 4 unread emails now/);
+ }finally{await ui.close();}
+});
+
 test("Refresh workspace reloads each assistant's automatic reply status",async()=>{
  const ui=await mount("assistants");try{
   ui.grants.push({id:"status-grant",token:"synthetic-status-only",name:"Reply assistant",accountIds:["a"],tools:["read_email","propose_draft"],createdAt:1});
@@ -209,6 +224,8 @@ async function mount(mode: "actions"|"calendar"|"projects"|"agents"|"assistants"
     else if(url==="/oauth/google/start"&&method==="POST")result={url:"#google-consent"};
     else if(url==="/agent/grants"&&method==="POST") { const input=body as Pick<AgentGrant,"name"|"accountIds"|"tools">;const grant:AgentGrant={...input,id:"created-agent",token:"synthetic-only",createdAt:1};grants.push(grant);result=grant; }
     else if(url==="/agent/grants")result=structuredClone(grants);
+    else if(url.endsWith("/automation/scan")&&method==="POST")result={queued:4};
+    else if(url.endsWith("/automation")&&method==="PUT")result={...(body as object),agentId:"x",revision:"r"};
     else if(url.endsWith("/automation")&&method==="GET")result=null;
     else if(url.endsWith("/provider")&&method==="GET")result=configuredProvider?{provider:"openai",baseURL:"https://api.openai.com/v1",model:"gpt-4.1-mini",hasKey:true,revision:"provider-revision"}:null;
     else if(url.endsWith("/provider/prepare")&&method==="POST"){
@@ -409,7 +426,7 @@ test("reply proposals freeze exact payload, need reviewed evidence and approve i
  assert.ok(card.textContent?.includes("uploaded.txt (text/plain, 12345 bytes)"), "uploaded references show their exact stored size");
  assert.equal(card.querySelectorAll(".work-source").length, 1);
  assert.equal(card.querySelector("details code")?.textContent, proposal.digest);
- assert.ok(ui.container.textContent?.includes("Exact body"));assert.ok(ui.container.textContent?.includes("copy@example.com"));assert.ok(!ui.container.innerHTML.includes("bm90ZQ=="));const review=[...ui.container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].at(-1)!;assert.equal(ui.button("Approve and open in Drafts").disabled,true);await ui.click(review);assert.equal(ui.button("Approve and open in Drafts").disabled,false);assert.ok(ui.container.textContent?.includes("Nothing is sent until you press Send"));proposal.sourceChanged=true;await ui.click(ui.button("Refresh workspace"));assert.equal(ui.button("Approve and open in Drafts").disabled,true);assert.ok(ui.container.textContent?.includes("Evidence changed"));
+ assert.ok(ui.container.textContent?.includes("Exact body"));assert.ok(ui.container.textContent?.includes("copy@example.com"));assert.ok(!ui.container.innerHTML.includes("bm90ZQ=="));const review=[...ui.container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].at(-1)!;assert.equal(ui.button("Approve and open in Drafts").disabled,true);await ui.click(review);assert.ok(ui.container.textContent?.includes("Turn on MCP in Settings to approve it"));assert.equal(ui.button("Approve and open in Drafts").disabled,true,"an MCP proposal cannot be approved with MCP off");ui.enable();await ui.click(ui.button("Refresh workspace"));assert.equal(ui.container.textContent?.includes("Turn on MCP in Settings to approve it"),false);assert.equal(ui.button("Approve and open in Drafts").disabled,false);assert.ok(ui.container.textContent?.includes("Nothing is sent until you press Send"));proposal.sourceChanged=true;await ui.click(ui.button("Refresh workspace"));assert.equal(ui.button("Approve and open in Drafts").disabled,true);assert.ok(ui.container.textContent?.includes("Evidence changed"));
  proposal.sourceChanged=false;await ui.click(ui.button("Refresh workspace"));await ui.click(ui.button("Approve and open in Drafts"));assert.equal(ui.requests.filter(request=>request.url.endsWith("/approve")).length,1);
 }finally{await ui.close();}});
 

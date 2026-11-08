@@ -1,8 +1,8 @@
-# ADR 0128: Keep background mail waits out of foreground busy state
+# ADR 0132: Keep background mail waits out of foreground busy state
 
 Date: 2026-11-07
 Status: Implementation candidate; pending maintainer review.
-Amends: [ADR 0127](0127-responsive-bulk-mail-and-reader-compositing.md).
+Amends: [ADR 0131](0131-responsive-bulk-mail-and-reader-compositing.md).
 
 ## Context
 
@@ -52,6 +52,6 @@ account-disconnect guards, local selection, one batch admission, Sent import,
 Forward context and delayed Trash completion. Existing partial-result,
 privacy, keyboard, draft recovery and send checks remain applicable.
 
-The previous screenshots capture the initial ADR 0127 candidate. They do not
+The previous screenshots capture the initial ADR 0131 candidate. They do not
 prove this correction. Installed interaction and real-provider behavior remain
 separate acceptance; no real accounts or mail are used in synthetic checks.

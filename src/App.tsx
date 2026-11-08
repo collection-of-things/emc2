@@ -350,7 +350,7 @@ export function App() {
   // Only draft/send admission owns this flag; background requests use resource scopes.
   const [composeBusy, setComposeBusy] = useState(false);
   const backgroundActions = useBackgroundActions();
-  const mailBusy = (mail: MailIdentity) => composeBusy || backgroundActions.blocksMail(mail.accountId) || bulkBatch.has(mail) || mailMutations.has(mail);
+  const mailBusy = (mail: MailIdentity) => composeBusy || backgroundActions.blocksMail(mail.accountId) || bulkBatch.has(mail) || mailMutations.has(mail) || pendingReads.current.has(mail.id);
   const mailWorkPending = bulkBatch.pending || mailMutations.pending;
   const accountBusy = (id: string) => backgroundActions.blocked({ kind: "account", accountId: id }) || bulkBatch.hasAccount(id) || mailMutations.hasAccount(id) ||
     (pendingReads.current.size > 0 && state.messages.some(mail => mail.accountId === id && pendingReads.current.has(mail.id)));
@@ -781,7 +781,7 @@ export function App() {
     } finally { undoLock.current = false; }
   };
   const markRead = (mail: Mail) => {
-    if (mail.direction === "sent" || mailBusy(mail)) return;
+    if (mail.direction === "sent" || bulkBatch.has(mail) || mailMutations.has(mail)) return;
     void markMailRead(mail, pendingReads.current, async () => {
       setReading(new Set(pendingReads.current));
       await api(`/messages/${encodeURIComponent(mail.id)}`, "PATCH", { action: "read" });
@@ -995,7 +995,9 @@ export function App() {
       gmailPrefix.current = { key: "", at: 0 };
       if (settingsModal || workModal || quickSource || meetingMail || updateInstalling || contextMenu || event.defaultPrevented || event.isComposing ||
         event.repeat && !["ArrowUp", "ArrowDown"].includes(event.key)) return;
-      const target = event.target;
+      // Keys from styled mail are retargeted to its shadow host; the original
+      // target keeps links and privacy controls inside the mail interactive.
+      const target = event.composedPath?.()[0] ?? event.target;
       if (event.key.toLowerCase() === "k" && !event.altKey && !event.shiftKey &&
         (interactionPlatform() === "darwin" ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey)) {
         if (!toolbarBlocked && !settings) { event.preventDefault(); setFiltersOpen(false); if (compose) leaveCompose({ type: "commands" }); else setPalette((value) => !value); }

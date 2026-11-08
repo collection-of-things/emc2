@@ -1084,3 +1084,23 @@ test("finishing background Trash preserves a different reader opened while it wa
     assert.equal(app.mutations.filter(item => item.action === "trash").length, 1);
   } finally { await app.finish(gate); await app.close(); }
 });
+
+// Hold the provider read to verify exact-message mutation admission.
+test("pending reads block conflicting message actions while unrelated mail stays usable", async () => {
+  const app = await mount();
+  const read = app.holdRead();
+  try {
+    await app.open();
+    const menu = await app.rowMenu();
+    assert.equal(app.button("Pin email", menu).disabled, true);
+    assert.equal(app.button("Archive", menu).disabled, true);
+    await app.key("Escape");
+    await app.click(app.row("b:1:5"));
+    const other = await app.rowMenu("b:1:5");
+    assert.equal(app.button("Pin email", other).disabled, false);
+    assert.equal(app.mutations.length, 1);
+  } finally {
+    await app.finish(read);
+    await app.close();
+  }
+});

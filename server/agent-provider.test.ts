@@ -123,6 +123,63 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
       assert.equal(approved.status, 200); assert.equal(approved.body.status, "succeeded");
       assert.equal(store.all("draft").length, 1); assert.equal(calls.length, 1, "approval creates a local draft only");
     });
+    await t.test("Anthropic uses the Messages API with the saved key and its draft approves with MCP off", async () => {
+      const route = await fixture();
+      const saved = await request<AgentProviderSettings>(route, "PUT", { provider: "anthropic", model: "claude-opus-5-5", apiKey: secret, revision: null });
+      assert.equal(saved.status, 200); assert.equal(saved.body.baseURL, "https://api.anthropic.com");
+      respond = () => Response.json({ id: "msg_synthetic", type: "message", role: "assistant", model: "claude-opus-5-5", content: [{ type: "text", text: "A synthetic Claude reply." }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } });
+      const result = await prepare(route, saved.body); assert.equal(result.status, 201);
+      assert.equal(calls.length, 1); const call = calls[0];
+      assert.equal(call.url, "https://api.anthropic.com/v1/messages");
+      assert.equal(call.options.redirect, "error"); assert.ok((call.options as { dispatcher?: unknown }).dispatcher, "DNS-pinned dispatcher");
+      assert.equal(new Headers(call.options.headers).get("authorization"), `Bearer ${secret}`);
+      const outgoing = JSON.parse(String(call.options.body));
+      assert.equal(outgoing.model, "claude-opus-5-5"); assert.equal(outgoing.tools, undefined); assert.match(outgoing.system, /untrusted/);
+      assert.equal(outgoing.fallbacks, "default");
+      for (const forbidden of ["UNRELATED-SECRET", "NEIGHBOR-SECRET", "DO-NOT-INCLUDE"]) assert.equal(String(call.options.body).includes(forbidden), false);
+      assert.equal((result.body.payload as { body: string }).body, "A synthetic Claude reply."); assert.equal(result.body.origin, "app");
+      store.put("mcp", "settings", { enabled: false, allowSending: false, token: null });
+      const approved = await request<AgentProposal>(`/agent/proposals/${result.body.id}/approve`, "POST", { digest: result.body.digest });
+      assert.equal(approved.status, 200); assert.equal(approved.body.status, "succeeded");
+      store.remove("proposal", result.body.id);
+      respond = () => Response.json({ type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } }, { status: 401 });
+      assert.equal((await prepare(route, saved.body)).status, 401);
+      respond = () => Response.json({ id: "msg_r", type: "message", role: "assistant", model: "claude-opus-5-5", content: [], stop_reason: "refusal", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 0 } });
+      assert.equal((await prepare(route, saved.body)).status, 502);
+      assert.equal(store.all("proposal").length, 0, "failures create no proposal");
+    });
+    await t.test("Start scan runs a saved-key assistant now over unread inbox mail while the switch is off", async () => {
+      const route = await fixture(); await save(route);
+      assert.equal(store.get("agentAutomation", agent.id), undefined);
+      store.put("mail", "read-mail", { ...mail, id: "read-mail", messageId: "<read@example.test>", unread: false });
+      const scan = await request<{ queued: number }>(`/agent/grants/${agent.id}/automation/scan`, "POST", {});
+      assert.equal(scan.status, 202); assert.equal(scan.body.queued, 2, "unread received mail in the grant's account only");
+      await runAgentAutomations([]);
+      const proposals = store.all("proposal");
+      assert.equal(proposals.length, 2, "one reply per unread email; the read one is skipped");
+      assert.ok(proposals.every((proposal) => proposal.origin === "app")); assert.equal(store.get("agentAutomation", agent.id)?.enabled, false, "scan does not turn the switch on");
+      assert.match(store.get("agentAutomation", agent.id)?.lastResult ?? "", /Prepared 2 replies/);
+      await fixture(["read_email"]);
+      assert.equal((await request(`/agent/grants/${agent.id}/automation/scan`, "POST", {})).status, 403);
+    });
+    await t.test("older drafts from a saved-key assistant approve with MCP off; removed Claude Code settings are cleared", async () => {
+      const route = await fixture(); await save(route);
+      store.put("mcp", "settings", { enabled: false, allowSending: false, token: null });
+      const legacy = await prepare(route, (await request<AgentProviderSettings>(route)).body);
+      const { origin: _origin, ...untagged } = legacy.body;
+      // An untagged draft from after the origin change is treated as MCP and still needs MCP.
+      store.put("proposal", untagged.id, untagged);
+      assert.equal((await request(`/agent/proposals/${untagged.id}/approve`, "POST", { digest: untagged.digest })).status, 403);
+      const old = { ...untagged, createdAt: Date.parse("2026-11-06T12:00:00Z") }; store.put("proposal", old.id, old);
+      const shown = await request<{ proposals: AgentProposal[] }>("/workspace");
+      assert.equal(shown.body.proposals.find((proposal) => proposal.id === old.id)?.origin, "app");
+      assert.equal((await request<AgentProposal>(`/agent/proposals/${old.id}/approve`, "POST", { digest: old.digest })).status, 200);
+      store.put("agentProvider", agent.id, { provider: "claude-code", baseURL: "local:claude-code", model: "sonnet", apiKey: "", revision: crypto.randomUUID() } as never);
+      store.put("agentAutomation", agent.id, { agentId: agent.id, enabled: true, scope: "all", instruction: "", dailyLimit: 20, revision: crypto.randomUUID() });
+      mountAgentProvider(express(), { resolve: (host) => resolveAddresses(host), deadline: () => deadline() });
+      assert.equal(store.get("agentProvider", agent.id), undefined);
+      assert.equal(store.get("agentAutomation", agent.id)?.enabled, false);
+    });
     await t.test("provider content cannot control recipient, account or action; prompt and output have limits", async () => {
       const route = await fixture(); const config = await save(route);
       store.put("mail", mail.id, { ...mail, body: "x".repeat(30000) });

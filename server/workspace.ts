@@ -83,10 +83,12 @@ function checkProject(projectId: string | undefined, accountId: string) {
 }
 async function visibleProposals() {
   const proposals = all("proposal");
-  if (!proposals.some(p => p.sourceMailId)) return proposals.map(p => ({ ...p, sourceChanged: false }));
+  // The review screen uses origin to decide whether approval needs MCP.
+  const shown = (p: AgentProposal) => appPrepared(p) ? { ...p, origin: "app" as const } : p;
+  if (!proposals.some(p => p.sourceMailId)) return proposals.map(p => ({ ...shown(p), sourceChanged: false }));
   const view = new Map((await readConversationMail(proposals.flatMap(proposal => proposal.sourceMailId ? [proposal.sourceMailId] : []))).map(m => [m.id, m]));
   const fingerprints = proposalFingerprints(proposals.flatMap(proposal => proposal.sourceMailId ? [proposal.sourceMailId] : []), view);
-  return proposals.map(proposal => ({ ...proposal, sourceChanged: Boolean(proposal.sourceMailId &&
+  return proposals.map(proposal => ({ ...shown(proposal), sourceChanged: Boolean(proposal.sourceMailId &&
     (!view.has(proposal.sourceMailId) || fingerprints.get(proposal.sourceMailId) !== proposal.sourceFingerprint)) }));
 }
 export function proposalFingerprints(ids: string[], view: Map<string, Mail>) {
@@ -193,7 +195,13 @@ export function assertAgent(agentId: string, tool: AgentTool, accountId?: string
     throw new AgentPermissionError(tool);
   return grant!;
 }
-export function propose(agentId: string, action: AgentAction, value: unknown, sourceMailId?: string): AgentProposal {
+// App-prepared replies never used MCP. Builds from #241 on tag them with origin "app";
+// MCP drafts stay untagged. Untagged drafts made before that merge, by an assistant
+// with a saved provider key, count as app-prepared.
+export const originCutoff = Date.parse("2026-11-07T16:48:45Z");
+const appPrepared = (proposal: AgentProposal) => proposal.origin === "app" ||
+  (!proposal.origin && proposal.action === "draft" && proposal.createdAt < originCutoff && !!get("agentProvider", proposal.agentId));
+export function propose(agentId: string, action: AgentAction, value: unknown, sourceMailId?: string, origin?: "app"): AgentProposal {
   let accountId: string;
   let payload: AgentProposal["payload"];
   if (action === "draft") {
@@ -214,7 +222,7 @@ export function propose(agentId: string, action: AgentAction, value: unknown, so
   assertAgent(agentId, toolFor(action), accountId);
   if (sourceMailId)
     sourceIds([sourceMailId], accountId);
-  const content = { id: randomUUID(), agentId, accountId, action, payload, sourceMailId, sourceFingerprint: sourceMailId ? fingerprint(sourceMailId) : undefined, createdAt: Date.now() };
+  const content = { id: randomUUID(), agentId, accountId, action, payload, sourceMailId, sourceFingerprint: sourceMailId ? fingerprint(sourceMailId) : undefined, ...(origin ? { origin } : {}), createdAt: Date.now() };
   const proposal: AgentProposal = { ...content, digest: digest(content), status: "pending" };
   put("proposal", proposal.id, proposal);
   return proposal;
@@ -227,7 +235,8 @@ async function approve(id: string, expected: string) {
     if (current.status !== "pending" || current.digest !== expected)
       return fail(409, "Proposal changed or has already been consumed.");
     assertAgent(current.agentId, toolFor(current.action), current.accountId);
-    if (!all("mcp")[0]?.enabled)
+    // In-app agent proposals never used MCP, so turning MCP off does not revoke them.
+    if (!appPrepared(current) && !all("mcp")[0]?.enabled)
       return fail(403, "MCP is disabled. Agent approvals are revoked.");
     if (current.sourceMailId && (!get("mail", current.sourceMailId) || fingerprint(current.sourceMailId) !== current.sourceFingerprint))
       return fail(409, "Conversation evidence changed. Request a fresh proposal.");
@@ -237,7 +246,7 @@ async function approve(id: string, expected: string) {
   });
   const validateExecution = () => {
     assertAgent(proposal.agentId, toolFor(proposal.action), proposal.accountId);
-    if (!all("mcp")[0]?.enabled)
+    if (!appPrepared(proposal) && !all("mcp")[0]?.enabled)
       fail(403, "MCP was disabled before execution.");
     if (proposal.sourceMailId && (!get("mail", proposal.sourceMailId) || fingerprint(proposal.sourceMailId) !== proposal.sourceFingerprint))
       fail(409, "Conversation evidence changed before execution.");

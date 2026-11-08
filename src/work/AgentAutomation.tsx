@@ -10,6 +10,20 @@ import { Redact } from "../ui/Privacy";
 export const automationDefaults = { enabled: true, scope: "important" as AgentAutomationScope, instruction: "", dailyLimit: 20 };
 export const automationRoute = (grant: AgentGrant) => `/agent/grants/${encodeURIComponent(grant.id)}/automation`;
 
+// Start agent from anywhere: turn on replies for new mail, then scan unread mail now.
+// Returns null when the assistant cannot run (no permission or no saved key).
+export async function startAgent(api: Api, grant: AgentGrant): Promise<{ queued: number } | null> {
+  if (!(grant.tools.includes("read_email") && grant.tools.includes("propose_draft"))) return null;
+  const key = await api<AgentProviderSettings | null>(`/agent/grants/${encodeURIComponent(grant.id)}/provider`);
+  if (!key?.hasKey) return null;
+  const route = automationRoute(grant);
+  const current = await api<AgentAutomationSettings | null>(route);
+  if (!current?.enabled) {
+    const { scope, instruction, dailyLimit } = current ?? automationDefaults;
+    await api(route, "PUT", { enabled: true, scope, instruction, dailyLimit, revision: current?.revision ?? null });
+  }
+  return api<{ queued: number }>(`${route}/scan`, "POST", {});
+}
 // The user's per-assistant switch for preparing replies to new mail.
 export function AgentAutomation({ grant, api, disabled, reload, mcpEnabled }: { grant: AgentGrant; api: Api; disabled: boolean; reload: number; mcpEnabled: boolean }) {
   const scopeLabel = useId();
@@ -52,6 +66,15 @@ export function AgentAutomation({ grant, api, disabled, reload, mcpEnabled }: { 
   if (!permitted) return null;
   const dailyLimit = Math.max(1, Math.min(200, Math.trunc(Number(limit)) || 1));
   // The switch keeps saved options; Save options stores the edited ones.
+  // Start agent = turn on replies for new mail, then scan the unread mail already here.
+  const scan = async (started = false) => {
+    setPending(true); setError(""); setStatus("");
+    try {
+      const { queued } = await api<{ queued: number }>(`${route}/scan`, "POST", {});
+      if (active.current) setStatus((started ? "Agent started. Automatic replies on for new mail. " : "") + (queued ? `Scan started for ${queued} unread ${queued === 1 ? "email" : "emails"}. Replies appear in Review as they are prepared; Refresh workspace shows the result here.` : "No unread inbox email to scan now."));
+    } catch { if (active.current) setError("Scan could not start. Check the provider key and try again."); }
+    finally { if (active.current) setPending(false); }
+  };
   const save = async (enabled: boolean, message: string, edited?: { scope: AgentAutomationScope; instruction: string; dailyLimit: number }, options = edited ?? { scope: saved?.scope ?? automationDefaults.scope, instruction: saved?.instruction ?? "", dailyLimit: saved?.dailyLimit ?? automationDefaults.dailyLimit }) => {
     const request = ++saves.current;
     setPending(true); setError(""); setStatus("");
@@ -72,11 +95,17 @@ export function AgentAutomation({ grant, api, disabled, reload, mcpEnabled }: { 
     <label className="settings-row"><span>Prepare replies automatically</span>
       <input type="checkbox" role="switch" checked={enabled} disabled={!loaded || pending || disabled || !provider?.hasKey && !enabled}
         onChange={(event) => void save(event.target.checked, event.target.checked ? "Automatic replies on." : "Automatic replies off.")} /></label>
-    {!loaded ? null : !provider?.hasKey ? <p className="work-meta">Add a provider key under Bring your own key to run this assistant automatically.</p> : <>
+    {!loaded ? null : !provider?.hasKey ? <p className="work-meta">Add a provider key under Bring your own key to start this agent.</p> : <>
       <p className="work-meta">{enabled
         ? <>On. For each new email in its accounts, this assistant sends the email's subject, sender, recipient and plain text to <Redact text={provider.baseURL} /> and puts a reply proposal in the Review queue. Nothing is sent. {count} of {saved!.dailyLimit} today.</>
-        : "Off. This assistant prepares replies only when you click Prepare draft."}
-        {enabled && !mcpEnabled && " Approving a proposal requires MCP enabled in Settings."}</p>
+        : "Off. Start agent prepares replies for unread inbox mail now and turns on automatic replies for new mail."}
+      </p>
+      <div className="work-controls">
+        {enabled
+          ? <button type="button" className="button" disabled={pending || disabled} onClick={() => void scan()}>Scan now</button>
+          : <button type="button" className="button" disabled={pending || disabled} onClick={() => void save(true, "Agent started. Automatic replies on.").then(() => scan(true))}>Start agent</button>}
+      </div>
+      <p className="work-meta">{enabled ? "Scan now" : "Start agent"} sends each unread inbox email in scope ({(saved?.scope ?? automationDefaults.scope) === "all" ? "all mail" : "Important only"}, up to the daily limit) to <Redact text={provider.baseURL} /> and puts reply proposals in the Review queue. Nothing is sent.</p>
       {saved?.lastRunAt && saved.lastResult && <p className="work-meta">Last run {new Date(saved.lastRunAt).toLocaleString()}: {saved.lastResult}</p>}
       <details>
         <summary>Automatic reply options</summary>

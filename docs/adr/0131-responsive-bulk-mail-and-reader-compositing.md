@@ -1,4 +1,4 @@
-# ADR 0127: Browse mail during bulk actions and bound reader scratch memory
+# ADR 0131: Browse mail during bulk actions and bound reader scratch memory
 
 Date: 2026-11-07
 Status: Implementation candidate; pending maintainer review.
