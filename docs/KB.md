@@ -3763,3 +3763,53 @@ allows same-origin images. Other asset paths and mailbox APIs remain protected.
 `server/browser-access.test.ts` covers this boundary, including unlisted files,
 traversal attempts and foreign origins. Native installed icon appearance and
 home-screen icon caching require separate device verification.
+
+
+### Responsive bulk actions and readable-text processing
+
+Bulk jobs live above keyed mail panes, so opening cached mail or changing
+folders preserves their admission lock and action results. Confirmations still
+block navigation until confirmation; submitted work locks conflicting actions
+only on its exact account/message targets. Drafts, compose editing/saving,
+Contacts, settings preferences and unrelated mail remain available. Automatic
+Mark as read is skipped for pending targets only; unrelated mail keeps normal
+read behavior. Local selection remains available while another batch finishes.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:6b70947643c6e620f34e26a013f275b7d3ebf7ecdb33c05d06db22aee638491c -->
+
+Failed and unknown results remain available; no provider action retries itself.
+Manual dismissal survives a later refresh failure and pane navigation; the failure
+is reported in a notification without restoring dismissed results. Automatic
+success clearing still allows refresh failures to restore the result details.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+Single-message mutations and Forward preparation also run outside foreground
+editor busy state. Confirmed Trash, Snooze and labels release their modal before
+provider waits. Late completion preserves a different reader or composer opened
+in the meantime. Account disconnect/reconnect waits only for that account's
+jobs; provider configuration and backup controls wait without blocking settings
+navigation or preference editing. Sent import and settings saves have separate
+admission state. See [ADR 0132](adr/0132-operation-scoped-mail-waits.md).
+
+General background actions now declare account, settings-section or connection
+resources through `src/background-actions.ts`. One account's Sent import cannot
+disable another account's actions or signature saves. Settings jobs retain their
+own admission locks across section changes. The aggregate pending bit drives
+progress and replacement protection, never unrelated controls. Connection checks
+can continue after Close/Escape; App owns late errors and a dialog generation
+prevents completion from replacing a new form. Composer admission and work/event
+editor recovery still protect their retained inputs. For the conflict policy and
+synthetic checks, see [ADR 0133](adr/0133-background-resource-admission.md).
+
+Readable-text processing caches a composited background color per ancestor,
+with linear background-cache storage rather than copied background chains.
+The contrast threshold, translucent surfaces, privacy controls and explicit
+image consent are unchanged. `scripts/benchmark-readable-ink.ts` measures a
+fixed synthetic traversal; its timing and temporary heap growth are separate
+from native rendering and total app RAM. See [ADR 0131](adr/0131-responsive-bulk-mail-and-reader-compositing.md).
+
+Pending automatic reads block mutations for that same message until completion;
+unrelated messages remain usable. Readable-ink caching stops at the message
+root and includes its direct text, preserving the scoped reader behavior.
