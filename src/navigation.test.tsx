@@ -3613,7 +3613,12 @@ test("bulk mutation locks apply to their exact messages and leave unrelated mail
 });
 
 test("a slow single-message mutation keeps Drafts and other messages available", async () => {
-  const app = await mount();
+  const app = await mount(true, state => {
+    // Isolate the pending pin from the unrelated message's own read admission.
+    const unrelated = state.messages.find(mail => mail.id === "a:2");
+    assert.ok(unrelated);
+    unrelated.unread = false;
+  });
   try {
     await app.open("a:1");
     app.holdRead();
