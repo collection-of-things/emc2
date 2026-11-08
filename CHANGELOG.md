@@ -14,11 +14,7 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
-### Added
-
-- One Start agent button prepares replies for unread inbox mail now with the saved provider key and turns on automatic replies for new mail. It is on the Agent review page and on each assistant card; a running card shows Scan now. Replies go to Review; nothing is sent.
-- Anthropic (Claude API) is a provider choice under Bring your own key.
-- Approving replies the app prepared with a provider key no longer needs MCP enabled, including replies prepared before this version.
+## 0.2.36 - 2026-11-08
 
 ### Changed
 
@@ -30,20 +26,25 @@ unversioned history without treating it as a release record.
 - Prevent conflicting actions on a message while its read request is pending, while keeping unrelated mail usable. ([#239](https://github.com/collection-of-things/emc2/pull/239))
 - Keep dismissed bulk action results hidden when a later mail refresh fails, including after navigation; report the refresh failure in a notification.
 
-<!-- /coderabbit-ai-generated:v1 -->
-
 - Keep Drafts, compose editing and saving, Contacts, Settings and unrelated mail available while bulk or single-message actions finish. Only conflicting message actions and affected account operations wait. ([#238](https://github.com/collection-of-things/emc2/issues/238))
 - Keep independent settings and accounts usable during Sent imports and settings requests. Account connection checks can continue after closing their dialog, with later errors reported in notifications. ([#238](https://github.com/collection-of-things/emc2/issues/238))
 - Reduce repeated background-color processing when rendering deeply nested formatted mail. ([#238](https://github.com/collection-of-things/emc2/issues/238))
 
 - Cloudflare website previews build the static page before uploading it and include the required preview configuration. ([#240](https://github.com/collection-of-things/emc2/pull/240))
-- Mail with sender styles no longer shows its own scrollbar while images are hidden, and the reader scrolls with the pointer over the message. Styled mail now renders in the reader itself with sender rules scoped to the message ([#240](https://github.com/collection-of-things/emc2/pull/240), [ADR 0130](docs/adr/0130-scoped-sender-styles-in-reader.md)).
+- Mail with sender styles no longer shows its own scrollbar while images are hidden, and the reader scrolls with the pointer over the message. Styled mail now renders in the reader itself with sender rules scoped to the message ([#240](https://github.com/collection-of-things/emc2/pull/240), [ADR 0130](https://github.com/collection-of-things/emc2/blob/v0.2.36/docs/adr/0130-scoped-sender-styles-in-reader.md)).
 - Hidden-image placeholders narrow with the reader the same way their images do, so showing images no longer changes the layout width. ([#240](https://github.com/collection-of-things/emc2/pull/240))
+
+## 0.2.35 - 2026-11-07
+
+### Added
+
+- One Start agent button prepares replies for unread inbox mail now with the saved provider key and turns on automatic replies for new mail. It is on the Agent review page and on each assistant card; a running card shows Scan now. Replies go to Review; nothing is sent.
+- Anthropic (Claude API) is a provider choice under Bring your own key.
+- Approving replies the app prepared with a provider key no longer needs MCP enabled, including replies prepared before this version.
 
 ### Removed
 
 - The Claude Code (signed in) provider added in 0.2.33. Saved Claude Code settings are removed and automatic replies for those assistants are turned off; save a provider API key instead.
-
 
 ## 0.2.32 - 2026-11-07
 
