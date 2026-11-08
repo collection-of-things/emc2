@@ -18,7 +18,7 @@ unversioned history without treating it as a release record.
 
 ### Changed
 
-- Newsletters wider than the reader shrink to fit, down to half size, instead of scrolling sideways. ([#240](https://github.com/collection-of-things/emc2/pull/240))
+- Newsletters wider than the reader shrink to fit, down to half size. Mail that remains too wide at that limit can still scroll sideways without a visible scrollbar. ([#240](https://github.com/collection-of-things/emc2/pull/240))
 - Hidden-image placeholders use a neutral grey box with a hairline outline that stays visible on light and dark sender backgrounds. ([#240](https://github.com/collection-of-things/emc2/pull/240))
 
 ### Fixed
