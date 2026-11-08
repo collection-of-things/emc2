@@ -67,7 +67,8 @@ function reader(opened = true, accountFilter = "a", selectedId: string | null = 
     setState(update: (state: { accounts: { id: string }[]; messages: Mail[] }) => { accounts: { id: string }[]; messages: Mail[] }) { scope.state = update(scope.state); },
     loadRevision: { current: 0 },
     pendingReads: { current: new Set<string>() },
-    bulkBatch: { pending: false },
+    bulkBatch: { pending: false, has: (mail: Mail) => scope.bulkBatch.pending && mail.id === b.id && mail.accountId === b.accountId },
+    mailMutations: { has: (_mail: Mail) => false },
     mailBusy: (_mail: Mail) => scope.busy || scope.bulkBatch.pending,
     api: async (...args: unknown[]) => { requests.push(args); },
     reload: async () => {},
@@ -200,7 +201,7 @@ for (const view of ["actions", "projects", "calendar"]) test(`${view} mail-actio
 });
 
 
-test("opening during bulk work reads cached content without queuing a provider read", async () => {
+test("opening a pending bulk target reads cached content without queuing a provider read", async () => {
   const { scope, requests } = reader();
   scope.bulkBatch.pending = true;
   scope.openMail(b);
