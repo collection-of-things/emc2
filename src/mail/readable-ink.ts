@@ -1,4 +1,4 @@
-// Readable ink for the isolated mail document (ADR 0125). Sender text below
+// Readable ink for sender-styled mail (ADR 0125). Sender text below
 // 3:1 contrast against its effective background is re-inked to the stronger
 // of a fixed dark or light; text at 3:1 or better keeps the sender color.
 
@@ -67,7 +67,7 @@ const PROTECTED = ".address,.formatted-mail-image-placeholder";
 // element costs no extra style recalculation.
 export function applyReadableInk(body: HTMLElement, surface: Rgba) {
   const view = body.ownerDocument.defaultView!;
-  for (const element of body.querySelectorAll("[data-ink]")) element.removeAttribute("data-ink");
+  for (const element of [body, ...body.querySelectorAll("[data-ink]")]) element.removeAttribute("data-ink");
   // Shared ancestors are read once per call: each element's layer list is the
   // parent's list below its own background, so deep chains cost one computed
   // style per element instead of one per descendant.
@@ -76,13 +76,15 @@ export function applyReadableInk(body: HTMLElement, surface: Rgba) {
     const cached = layerCache.get(element);
     if (cached) return cached;
     const layer = parseColor(view.getComputedStyle(element).backgroundColor);
-    const above = element.parentElement && !(layer && layer[3] >= 1) ? layersOf(element.parentElement) : [];
+    // Layers stop at the message root; the caller's surface covers the host.
+    const above = element !== body && element.parentElement && !(layer && layer[3] >= 1) ? layersOf(element.parentElement) : [];
     const layers = layer && layer[3] > 0 ? [layer, ...above] : above;
     layerCache.set(element, layers);
     return layers;
   };
   const candidates: { element: HTMLElement; color: Rgba; layers: Rgba[] }[] = [];
-  for (const element of body.querySelectorAll<HTMLElement>("*")) {
+  // The root counts too: sender body rules style it, and it can hold text itself.
+  for (const element of [body, ...body.querySelectorAll<HTMLElement>("*")]) {
     if (element.closest(PROTECTED)) continue;
     if (![...element.childNodes].some((node) => node.nodeType === node.TEXT_NODE && DIRECT_TEXT.test(node.nodeValue || ""))) continue;
     const color = parseColor(view.getComputedStyle(element).color);

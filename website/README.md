@@ -172,8 +172,18 @@ they do not affect the built bundle.
 
 ## Deployment
 
-Any static host serves `dist/`. The previous Lakebed capsule deployment is
-retired; wiring a host is a follow-up.
+Any static host serves `dist/`. Cloudflare Workers Builds runs from `/website`
+with `npx wrangler preview` for branch previews. `wrangler.jsonc` runs
+`npm run build` before uploading `dist/`, even when the dashboard's Build
+command is empty. Its empty `previews` block enables the preview command;
+the site needs no server or runtime bindings. Wrangler is pinned in
+`package.json` and the lockfile.
+
+To check the build and deployment configuration without uploading anything,
+run `npx wrangler deploy --dry-run` from this directory. `npm run preview`
+still serves the Astro build locally. Production publishing is a separate
+action through `npx wrangler deploy`.
+The previous Lakebed capsule deployment is retired.
 
 The page includes Vercel Web Analytics. On a Vercel deployment with
 Analytics enabled in the project dashboard it records cookieless page views
