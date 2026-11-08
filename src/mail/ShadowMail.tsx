@@ -19,8 +19,13 @@ export function ShadowMail({ css, scope, fallback, children }: { css: string; sc
     if (!sheets || !root) { setFailed(true); return; }
     root.adoptedStyleSheets = sheets;
     setShadow(root);
+    setFailed(false);
     return () => { root.adoptedStyleSheets = []; };
   }, [css, scope]);
-  if (failed) return <>{fallback}</>;
-  return <div ref={host} className="formatted-mail-frame">{shadow && createPortal(children, shadow)}</div>;
+  // The host stays mounted while the fallback shows, so a later css or scope
+  // change can install its sheets and recover.
+  return <>
+    <div ref={host} className="formatted-mail-frame" hidden={failed}>{!failed && shadow && createPortal(children, shadow)}</div>
+    {failed && fallback}
+  </>;
 }

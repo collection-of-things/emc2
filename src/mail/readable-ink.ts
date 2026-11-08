@@ -67,7 +67,7 @@ const PROTECTED = ".address,.formatted-mail-image-placeholder";
 // element costs no extra style recalculation.
 export function applyReadableInk(body: HTMLElement, surface: Rgba) {
   const view = body.ownerDocument.defaultView!;
-  for (const element of body.querySelectorAll("[data-ink]")) element.removeAttribute("data-ink");
+  for (const element of [body, ...body.querySelectorAll("[data-ink]")]) element.removeAttribute("data-ink");
   // Shared ancestors are read once per call: each element's layer list is the
   // parent's list below its own background, so deep chains cost one computed
   // style per element instead of one per descendant.
@@ -83,7 +83,8 @@ export function applyReadableInk(body: HTMLElement, surface: Rgba) {
     return layers;
   };
   const candidates: { element: HTMLElement; color: Rgba; layers: Rgba[] }[] = [];
-  for (const element of body.querySelectorAll<HTMLElement>("*")) {
+  // The root counts too: sender body rules style it, and it can hold text itself.
+  for (const element of [body, ...body.querySelectorAll<HTMLElement>("*")]) {
     if (element.closest(PROTECTED)) continue;
     if (![...element.childNodes].some((node) => node.nodeType === node.TEXT_NODE && DIRECT_TEXT.test(node.nodeValue || ""))) continue;
     const color = parseColor(view.getComputedStyle(element).color);

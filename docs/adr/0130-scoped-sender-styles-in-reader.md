@@ -92,7 +92,7 @@ bars, are copied into the base sheet and must be kept in step with
 ## Proof
 
 Synthetic tests check selector anchoring, container conversion, shadow-tree
-sheet install and removal, the address boundary, code ink, privacy, consent,
+sheet install and removal, address-boundary syntax, code ink, privacy, consent,
 readable ink, placeholder shape and the fit calculation. An offscreen
 Electron 44 harness rendered the bundled component inside the built app
 stylesheet. Mail text used 14px/1.5 system UI, and links stayed inline and

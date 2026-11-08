@@ -80,6 +80,23 @@ test("applyReadableInk marks low-contrast elements and skips protected classes",
   } finally { dom.window.close(); }
 });
 
+test("applyReadableInk re-inks text held directly by the message root and clears its stale mark", () => {
+  const dom = new JSDOM(`<!doctype html><div id="root">top-level text<p>child</p></div>`);
+  try {
+    const { document } = dom.window;
+    const root = document.getElementById("root")!;
+    const real = dom.window.getComputedStyle.bind(dom.window);
+    let color = "rgb(254, 254, 254)";
+    dom.window.getComputedStyle = ((element: Element) =>
+      element === root ? { color, backgroundColor: "rgb(255, 255, 255)" } as CSSStyleDeclaration : real(element)) as typeof dom.window.getComputedStyle;
+    applyReadableInk(root, WHITE);
+    assert.equal(root.getAttribute("data-ink"), "dark");
+    color = "rgb(34, 34, 34)";
+    applyReadableInk(root, WHITE);
+    assert.equal(root.getAttribute("data-ink"), null);
+  } finally { dom.window.close(); }
+});
+
 test("deep nesting reads each element's background at most once per pass", () => {
   const depth = 50;
   const dom = new JSDOM(`<!doctype html><body>${"<div>".repeat(depth)}leaf text${"</div>".repeat(depth)}</body>`);

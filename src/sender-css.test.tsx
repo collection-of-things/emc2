@@ -173,6 +173,41 @@ test("styled mail uses themed fallback when the engine silently discards scoped 
   }
 });
 
+test("styled mail recovers from the themed fallback when a later opening installs its sheets", async () => {
+  const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: 'https://app.example.test' });
+  const saved = new Map<string, PropertyDescriptor | undefined>();
+  for (const [key, value] of Object.entries({ window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true })) {
+    saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    Object.defineProperty(globalThis, key, { value, configurable: true });
+  }
+  const proto = dom.window.CSSStyleSheet.prototype;
+  const replaceSync = proto.replaceSync;
+  const root = createRoot(dom.window.document.getElementById('root')!);
+  const show = (html: string) => act(async () => root.render(<FormattedMail
+    html={html} showImages={false} privacy={false}
+    fallbackText="Themed fallback" renderText={(text) => text} redactText={(text) => text} />));
+  try {
+    const doc = dom.window.document;
+    proto.replaceSync = function () {};
+    await show("<style>p{color:red}</style><p>Sender content</p>");
+    assert.equal(doc.querySelector('.formatted-mail-fallback')?.textContent, 'Themed fallback');
+    proto.replaceSync = replaceSync;
+    await show("<style>p{color:blue}</style><p>Next content</p>");
+    const shadow = shadowOf(doc)!;
+    assert.equal(shadow.textContent?.includes('Next content'), true, 'the shadow tree shows the mail once its sheets install');
+    assert.equal(doc.querySelector('.formatted-mail-fallback'), null, 'the fallback leaves with the failure');
+    assert.equal(shadow.host.hasAttribute('hidden'), false);
+    assert.equal(shadow.adoptedStyleSheets.length, 2);
+  } finally {
+    proto.replaceSync = replaceSync;
+    await act(async () => root.unmount());
+    dom.window.close();
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+});
+
 test("code surfaces keep the veil-safe ink under sender colors", async () => {
   const dom = new JSDOM('<!doctype html><main><div id="root"></div></main>', { url: 'https://app.example.test' });
   const saved = new Map<string, PropertyDescriptor | undefined>();
