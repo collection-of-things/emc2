@@ -1971,7 +1971,12 @@ until it loads. Installer links, sizes and SHA-256 checksums come from the lates
 time through `website/src/lib/release.ts` and refreshed in the browser when a newer release exists. It
 adds no desktop telemetry. `npm test` includes `scripts/website-downloads.test.mjs` and
 `scripts/website-release.test.mjs`, which import those modules. The website build is separate: `cd
-website` followed by `npm run build`; any static host serves `dist/`. No host is wired up yet. The page
+website` followed by `npm run build`; any static host serves `dist/`. Cloudflare Workers Builds runs
+branch previews from `/website` using `npx wrangler preview`. `website/wrangler.jsonc` builds the
+Astro site before uploading `dist/` and declares the required empty `previews` block. This also works
+with an empty dashboard Build command. Wrangler is pinned in the website package and lockfile;
+`cd website` followed by `npx wrangler deploy --dry-run` checks the build and configuration without
+uploading. Production publishing remains a separate action. The page
 includes Vercel Web Analytics, which records cookieless page views only on a Vercel deployment with
 Analytics enabled. Browser and
 live deployment verification remain separate from these checks.
