@@ -33,7 +33,7 @@ const state: State = {
     reason: "", archived: false, snoozedUntil: null, html: null,
   })),
   labels: [], rules: [], googleConfigured: false, googleClientId: null,
-  jevConfigured: false, jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false,
+  jevConfigured: false, jevProvider: "typesafe", lastSync: null, syncing: false,
 };
 globalThis.fetch = async (input) => new Response(JSON.stringify(
   String(input) === "/api/workspace" ? { commitments: [], projects: [], decisions: [], coverage: [], proposals: [] } : String(input) === "/api/state" ? { ...structuredClone(state), csrf: "synthetic" } : { errors: [] },
