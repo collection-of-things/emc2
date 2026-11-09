@@ -20,7 +20,7 @@ test("Disconnect warns before permanently deleting drafts and honors cancellatio
   for (const [key, value] of Object.entries(globals)) Object.defineProperty(globalThis, key, { configurable: true, value });
   const state: State = { accounts: [{ id: "synthetic", email: "private@example.test", provider: "imap" }],
     messages: [], labels: [], rules: [], googleConfigured: false, googleClientId: null, jevConfigured: false,
-    jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false };
+    jevProvider: "typesafe", lastSync: null, syncing: false };
   const container = dom.window.document.getElementById("root")!;
   const root = createRoot(container);
   const render = (section: "accounts" | "about") => act(async () => root.render(

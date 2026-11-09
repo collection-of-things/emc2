@@ -4,7 +4,11 @@ import { randomUUID } from "node:crypto";
 import { get, put, transaction } from "./store.js";
 import { jevProviderOf } from "../shared/types.js";
 
-const names = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "OPENAI_API_KEY", "TYPESAFE_API_KEY", "TYPESAFE_PROVIDER"] as const;
+const names = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "TYPESAFE_API_KEY", "TYPESAFE_PROVIDER"] as const;
+// OpenAI sorting was removed. A key saved by an older version is erased on load
+// and never exported, so it cannot reach any provider.
+const retired = ["OPENAI_API_KEY"];
+const managed: readonly string[] = [...names, ...retired];
 type Settings = Partial<Record<(typeof names)[number], string>>;
 const inherited = new Set(Object.keys(process.env));
 const inheritedKeyProvider = jevProviderOf(process.env.TYPESAFE_PROVIDER);
@@ -34,10 +38,10 @@ function withoutManagedSettings(text: string, values: ReturnType<typeof parseEnv
       }
       if (!value.includes(quote)) throw new Error("Cannot safely migrate the connection settings file.");
     }
-    if (!names.includes(match[1] as (typeof names)[number])) retained.push(entry);
+    if (!managed.includes(match[1])) retained.push(entry);
   }
   const cleaned = retained.join("");
-  const expected = Object.fromEntries(Object.entries(values).filter(([name]) => !names.includes(name as (typeof names)[number])));
+  const expected = Object.fromEntries(Object.entries(values).filter(([name]) => !managed.includes(name)));
   if (!isDeepStrictEqual({ ...parseEnv(cleaned) }, expected)) throw new Error("Cannot safely migrate the connection settings file.");
   return cleaned;
 }
@@ -75,6 +79,7 @@ export function loadConfiguration() {
   const cleaned = withoutManagedSettings(legacy.text, legacy.values);
   const saved = get("config", "connection");
   const settings: Settings = { ...saved };
+  for (const name of retired) delete (settings as Record<string, string>)[name];
   for (const name of names) if (settings[name] === undefined && legacy.values[name] !== undefined) settings[name] = legacy.values[name];
   const savedProvider = settings.TYPESAFE_PROVIDER ?? legacy.values.TYPESAFE_PROVIDER;
   const effectiveProvider = inherited.has("TYPESAFE_PROVIDER") ? process.env.TYPESAFE_PROVIDER : savedProvider;
@@ -85,10 +90,10 @@ export function loadConfiguration() {
   if (!inherited.has("TYPESAFE_API_KEY") && settings.TYPESAFE_API_KEY &&
       jevProviderOf(savedProvider) !== jevProviderOf(effectiveProvider))
     throw new Error("The saved decision-model key belongs to another provider. Change the inherited provider and credential together.");
-  if (Object.keys(settings).length && !isDeepStrictEqual(saved, settings)) persist(settings);
+  if (!isDeepStrictEqual(saved ?? {}, settings)) persist(settings);
   cleanLegacy(legacy.text, cleaned);
   for (const [name, value] of Object.entries({ ...legacy.values, ...settings })) {
-    if (!inherited.has(name)) process.env[name] = value;
+    if (!inherited.has(name) && !retired.includes(name)) process.env[name] = value;
   }
 }
 

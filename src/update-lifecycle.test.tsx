@@ -25,7 +25,7 @@ test("mounted App drains its send promise and retains the real unload guard for 
     onAccountConnected: () => () => {}, onMailChanged: () => () => {}, onNavigation: () => () => {}, updates: bridge,
   };
   const state: State = { accounts: [{ id: "a", email: "sender@example.test", provider: "imap" }], messages: [], labels: [], rules: [],
-    googleConfigured: false, googleClientId: null, jevConfigured: false, jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false };
+    googleConfigured: false, googleClientId: null, jevConfigured: false, jevProvider: "typesafe", lastSync: null, syncing: false };
   let rejectSend!: (error: Error) => void;
   const send = new Promise<Response>((_resolve, reject) => { rejectSend = reject; });
   const oldFetch = globalThis.fetch;

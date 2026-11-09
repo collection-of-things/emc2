@@ -228,9 +228,7 @@ export function SettingsPage({
           <details className="settings-help"><summary>Sorting details</summary><p className="note">
             {state.jevConfigured
               ? `AI sorting is configured for Jev through ${jevProviders[state.jevProvider].name}. Sender, subject and preview text of new mail are sent to that provider.`
-              : state.aiConfigured
-                ? "AI sorting is configured for OpenAI. Cached message content and metadata, including sender, subject and preview text, are sent to OpenAI."
-                : "Local sorting is on. Optional AI sorting keys are under Google and connections."}{" "}
+              : "Local sorting is on. Optional AI sorting keys are under Google and connections."}{" "}
             Sender rules take priority. Use Teach on any email to correct it.
           </p></details>
           {state.rules.length ? (
@@ -274,8 +272,8 @@ export function SettingsPage({
                 : "Google sign-in needs an OAuth client from Google Cloud. Gmail with an app password connects under Accounts without this setup, if Google permits it."}
             </p>
             <p className="note">
-              Sorting keys are optional. Jev uses the selected decision model provider; OpenAI is used when no Jev key is saved.
-              AI sorting sends sender, subject and preview text to its provider. OpenAI also receives cached message content and metadata.
+              Sorting keys are optional. Jev uses the selected decision model provider.
+              AI sorting sends sender, subject and preview text to that provider.
               Without a key, sorting stays local.
             </p>
             {!state.googleConfigured && (
@@ -326,7 +324,6 @@ export function SettingsPage({
               busy={pending("connection") || mailWorkPending}
               googleConfigured={state.googleConfigured}
               googleClientId={state.googleClientId}
-              aiConfigured={state.aiConfigured}
               jevConfigured={state.jevConfigured}
               jevProvider={state.jevProvider}
             />

@@ -259,7 +259,6 @@ function stateStatus(includeArrivals = true): BootstrapResponse & Partial<Pick<S
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
     jevConfigured: !!process.env.TYPESAFE_API_KEY,
     jevProvider: jevProviderOf(process.env.TYPESAFE_PROVIDER),
-    aiConfigured: !!process.env.OPENAI_API_KEY,
     lastSync: all("meta")[0]?.lastSync || null,
     syncing,
   };
@@ -362,7 +361,6 @@ app.post("/api/config", (req, res) => {
     .object({
       googleClientId: value.optional(),
       googleClientSecret: value.optional(),
-      openaiApiKey: value.optional(),
       jevApiKey: value.optional(),
       jevProvider: z
         .enum(["typesafe", "vercel", "openrouter"])
@@ -372,7 +370,6 @@ app.post("/api/config", (req, res) => {
   const updates = {
     GOOGLE_CLIENT_ID: input.googleClientId,
     GOOGLE_CLIENT_SECRET: input.googleClientSecret,
-    OPENAI_API_KEY: input.openaiApiKey,
     TYPESAFE_API_KEY: input.jevApiKey,
     TYPESAFE_PROVIDER: input.jevProvider,
   };
@@ -837,7 +834,7 @@ async function syncAccount(
     syncFailure = safe.failure;
     errors.push(error);
   }
-  if (fresh.size && (process.env.TYPESAFE_API_KEY || process.env.OPENAI_API_KEY)) {
+  if (fresh.size && process.env.TYPESAFE_API_KEY) {
     const messages = [...fresh];
     let cursor = 0;
     let stopped = false;

@@ -245,7 +245,6 @@ export type State<T = Mail> = {
   googleClientId: string | null;
   jevConfigured: boolean;
   jevProvider: JevProvider;
-  aiConfigured: boolean;
   lastSync: number | null;
   syncing: boolean;
 };

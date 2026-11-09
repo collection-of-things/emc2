@@ -12,7 +12,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 const status: BootstrapResponse = { csrf: "synthetic-csrf", accounts: [{ id: "a", email: "reader@example.test", name: "Synthetic account", provider: "imap" }],
-  labels: [], rules: [], draftCount: 1, googleConfigured: false, googleClientId: null, jevConfigured: false, jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false };
+  labels: [], rules: [], draftCount: 1, googleConfigured: false, googleClientId: null, jevConfigured: false, jevProvider: "typesafe", lastSync: null, syncing: false };
 const full: StateResponse = { ...status, mailCursor: "synthetic:1", mailMode: "snapshot", removedMailIds: [], messages: [{ id: "a:1", accountId: "a", remoteId: "1", sender: "Sender", address: "sender@example.test", to: "reader@example.test", subject: "Cached subject", preview: "Preview", date: 1, unread: true, archived: false, category: "other", relevance: 1, reason: "", snoozedUntil: null, contentVersion: "synthetic-version", inboxTab: "primary" }] };
 const json = (value: unknown, code = 200) => new Response(JSON.stringify(value), { status: code, headers: { "Content-Type": "application/json" } });
 

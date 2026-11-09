@@ -32,7 +32,7 @@ to origin and CSRF checks.
 
 ### Managed connection settings
 
-Managed Google OAuth, OpenAI and Typesafe connection settings are encrypted in the
+Managed Google OAuth and Typesafe connection settings are encrypted in the
 mail database with the existing installation key. Startup migrates managed entries
 from `settings.env` after committed encrypted readback and preserves unrelated
 settings. Launch-environment values retain precedence.

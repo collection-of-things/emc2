@@ -88,7 +88,6 @@ const empty: State = {
   googleClientId: null,
   jevConfigured: false,
   jevProvider: "typesafe",
-  aiConfigured: false,
   lastSync: null,
   syncing: false,
 };

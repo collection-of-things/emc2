@@ -13,7 +13,7 @@ const state: State = {
   labels: [{ id: "shared", accountId: "a", name: "Team", type: "user" },
     { id: "shared", accountId: "b", name: "Other team", type: "user" }],
   rules: [], googleConfigured: false, googleClientId: null, jevConfigured: false,
-  jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false,
+  jevProvider: "typesafe", lastSync: null, syncing: false,
 };
 
 test("unchanged snapshots reuse state, including mail formatting, images and account-scoped labels", () => {

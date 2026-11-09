@@ -66,7 +66,7 @@ export type Records = {
   agentProvider: import("./agent-provider.js").StoredAgentProvider;
   agentAutomation: import("../shared/agent-provider.js").AgentAutomationSettings;
   maintenance: { lastInventoryAt: number };
-  config: Partial<Record<"GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "OPENAI_API_KEY" | "TYPESAFE_API_KEY" | "TYPESAFE_PROVIDER", string>>;
+  config: Partial<Record<"GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "TYPESAFE_API_KEY" | "TYPESAFE_PROVIDER", string>>;
   attachment: { accountId: string; content: string };
   upload: { accountId: string; filename: string; contentType: string; size: number; reservedBytes?: number; createdAt: number; complete: boolean };
   attachmentHold: { id: string; accountId: string; attachments: { id: string }[] };
