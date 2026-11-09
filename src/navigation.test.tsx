@@ -70,7 +70,7 @@ async function mount(native = false, setup?: (state: State, storage: Storage) =>
       // Gmail files this one under Promotions, so it sits in a second Inbox tab.
       { ...makeMail("a:3", "Other message", "a", "other"), labelIds: ["CATEGORY_PROMOTIONS"] }],
     labels: [], rules: [], googleConfigured: false, googleClientId: null, jevConfigured: false,
-    jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false,
+    jevProvider: "typesafe", lastSync: null, syncing: false,
   };
   setup?.(state, dom.window.localStorage);
   let changed: (() => void) | undefined;

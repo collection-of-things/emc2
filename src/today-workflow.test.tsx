@@ -32,7 +32,7 @@ async function mount(items: Commitment[] = [], fullReading = false) {
   // Custom account labels remain visible by design; keep the private alias in mail headers.
   const state: State = { accounts: [{ id: "a", email: "reader@example.test", provider: "imap" }, { id: "b", email: "other@example.test", provider: "imap" }],
     messages: [mail("mail-a"), mail("sent-a", "a", "sent"), mail("mail-b", "b")], labels: [], rules: [], googleConfigured: false,
-    googleClientId: null, jevConfigured: false, jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false };
+    googleClientId: null, jevConfigured: false, jevProvider: "typesafe", lastSync: null, syncing: false };
   const workspace: Workspace = { commitments: structuredClone(items), projects: [], decisions: [], coverage: [], proposals: [] };
   const requests: { url: string; method: string; body: Record<string, any> }[] = [];
   const events: CalendarEvent[] = [];

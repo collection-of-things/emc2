@@ -192,7 +192,7 @@ Do not introduce developer certificates or personal platform accounts as key
 custodians. No portable recovery currently exists or was exercised here.
 
 [Cloud sorting](../server/sorting.ts) currently sends sender, subject and preview
-to the configured Jev or OpenAI provider. A future E2E path must bypass both for
+to the configured Jev provider. A future E2E path must bypass it for
 protected mail, including decrypted previews and protected subjects. Encryption
 must precede SMTP/Gmail upload, provider drafts and Sent-copy creation; preserve
 existing uncertain-delivery and Sent-copy warning behavior. The sender must be

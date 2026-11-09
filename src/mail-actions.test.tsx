@@ -42,7 +42,7 @@ async function mount(preferences?: NotificationPreferences, revisionContract = f
       { id: "b", email: "second@example.com", provider: "imap" }],
     messages: [makeMail("a", 5), makeMail("a", 6), makeMail("b", 5)],
     labels: [], rules: [], googleConfigured: false, googleClientId: null, jevConfigured: false,
-    jevProvider: "typesafe", aiConfigured: false, lastSync: null, syncing: false,
+    jevProvider: "typesafe", lastSync: null, syncing: false,
   };
   const stateRequests: string[] = [];
   let generation = "synthetic-generation", revision = 0, truncated = false;

@@ -84,6 +84,27 @@ function isolatedConfig(directory: string, source: string, prototype?: "ordinary
   assert.equal(child.status, 0, child.stdout + child.stderr);
 }
 
+test("a retired OpenAI key from an older version is erased and never exported", () => {
+  const directory = mkdtempSync(path.join(tmpdir(), "emc2-config-retired-"));
+  try {
+    writeFileSync(path.join(directory, "settings.env"), "OPENAI_API_KEY=synthetic-legacy\nOTHER=kept\n");
+    isolatedConfig(directory, `
+      import assert from 'node:assert/strict';
+      import fs from 'node:fs';
+      const c = await import('./server/config.ts'); const s = await import('./server/store.ts');
+      s.put('config', 'connection', { OPENAI_API_KEY: 'synthetic-saved' });
+      c.loadConfiguration();
+      assert.deepEqual(s.get('config', 'connection'), {});
+      assert.equal(process.env.OPENAI_API_KEY, undefined);
+      assert.equal(fs.readFileSync(process.env.MAIL_CONFIG_PATH, 'utf8'), 'OTHER=kept\\n');
+      s.put('config', 'connection', { OPENAI_API_KEY: 'synthetic-saved' });
+      c.saveConfiguration({ GOOGLE_CLIENT_ID: 'synthetic-client' });
+      assert.deepEqual(s.get('config', 'connection'), { GOOGLE_CLIENT_ID: 'synthetic-client' });
+      s.closeStore();
+    `);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 test("a provider save drops a key stored for another vendor even under launch precedence", () => {
   const directory = mkdtempSync(path.join(tmpdir(), "emc2-config-provider-"));
   try {
@@ -230,7 +251,7 @@ for (const prototype of ["ordinary", "null"] as const) test(`encrypted settings 
       assert.ok(!cleaned.includes('synthetic-first'));
       assert.ok(cleaned.includes('# Keep this'));
       assert.ok(cleaned.includes('GOOGLE_CLIENT_ID=inside-unrelated-value'));
-      c.saveConfiguration({GOOGLE_CLIENT_SECRET:'synthetic-updated',OPENAI_API_KEY:'synthetic-openai'});
+      c.saveConfiguration({GOOGLE_CLIENT_SECRET:'synthetic-updated'});
       assert.equal(fs.readFileSync(process.env.MAIL_CONFIG_PATH,'utf8'),${JSON.stringify(retained)});
       assert.equal(Object.getPrototypeOf(process.env),initialEnvPrototype);
       assert.deepEqual(Object.getOwnPropertyDescriptors(Object.prototype),initialObjectPrototype);
@@ -252,7 +273,7 @@ for (const prototype of ["ordinary", "null"] as const) test(`encrypted settings 
       assert.deepEqual(Object.getOwnPropertyDescriptors(Object.prototype),initialObjectPrototype);
       assert.equal(process.env.GOOGLE_CLIENT_ID,'legacy-client');
       assert.equal(process.env.GOOGLE_CLIENT_SECRET,'synthetic-updated');
-      assert.equal(process.env.OPENAI_API_KEY,'synthetic-openai'); s.closeStore();
+      s.closeStore();
     `);
   } finally { rmSync(directory,{recursive:true,force:true}); }
 });

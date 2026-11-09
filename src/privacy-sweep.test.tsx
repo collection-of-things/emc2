@@ -142,7 +142,7 @@ async function mount(
     ],
     messages: fixtureMessages(),
     labels: [], rules: [], googleConfigured: false, googleClientId: null,
-    jevConfigured: false, jevProvider: "typesafe", aiConfigured: false,
+    jevConfigured: false, jevProvider: "typesafe",
     lastSync: null, syncing: false,
   };
   setup?.(state, dom.window.localStorage);

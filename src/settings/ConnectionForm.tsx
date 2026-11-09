@@ -21,7 +21,6 @@ export function ConfigurationForm({
   busy,
   googleConfigured,
   googleClientId,
-  aiConfigured,
   jevConfigured,
   jevProvider,
 }: {
@@ -30,7 +29,6 @@ export function ConfigurationForm({
   busy: boolean;
   googleConfigured: boolean;
   googleClientId: string | null;
-  aiConfigured: boolean;
   jevConfigured: boolean;
   jevProvider: JevProvider;
 }) {
@@ -47,7 +45,6 @@ export function ConfigurationForm({
           await api("/config", "POST", {
             googleClientId: data.get("googleClientId") || undefined,
             googleClientSecret: data.get("googleClientSecret") || undefined,
-            openaiApiKey: data.get("openaiApiKey") || undefined,
             jevApiKey: data.get("jevApiKey") || undefined,
             jevProvider: provider,
           });
@@ -103,22 +100,6 @@ export function ConfigurationForm({
       {jevConfigured && provider !== jevProvider
         ? <p className="stored">Changing providers clears the saved key.</p>
         : <StoredValue present={jevConfigured} />}
-      <label>
-        OpenAI API key (optional)
-        <input
-          name="openaiApiKey"
-          type="password"
-          autoComplete="new-password"
-          placeholder={
-            aiConfigured
-              ? "Leave blank to keep the saved key"
-              : jevConfigured
-                ? "Optional · Jev handles sorting"
-                : "Leave blank to keep local sorting"
-          }
-        />
-      </label>
-      <StoredValue present={aiConfigured} />
       <div className="form-actions">
         <span>Stored on this computer.</span>
         <button className="button" disabled={busy}>

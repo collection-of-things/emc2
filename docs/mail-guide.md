@@ -73,12 +73,11 @@ can be shared with another Emc² installation.
 
 ### Local and optional AI sorting
 
-Local sorting works without an AI service. Add a Jev or OpenAI key under Settings,
-Google and connections to classify new mail with Jev by TypeSafe AI (used when its
-key is set) or OpenAI. Sender, subject and up to 220 characters of preview text go
-to that provider, a few messages at a time so a first sync stays quick. A failed
-call names the provider, then falls back to local sorting for the rest of that
-account's sync.
+Local sorting works without an AI service. Add a Jev key under Settings,
+Google and connections to classify new mail with Jev by TypeSafe AI. Sender,
+subject and up to 220 characters of preview text go to that provider, a few
+messages at a time so a first sync stays quick. A failed call names the
+provider, then falls back to local sorting for the rest of that account's sync.
 
 ### Teach a sorting rule
 

@@ -14,6 +14,10 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Changed
+
+- Mail sorting no longer uses OpenAI. The OpenAI key field is gone from Settings, and a key saved by an older version is erased at startup. Local sorting and Jev sorting work as before. Agent providers you set up yourself are not affected. ([#246](https://github.com/collection-of-things/emc2/pull/246))
+
 ## 0.2.36 - 2026-11-08
 
 ### Changed

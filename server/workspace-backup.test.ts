@@ -18,7 +18,7 @@ test("encrypted workspace backup and non-destructive restore, synthetic only", {
   const password = "synthetic backup passphrase";
   const synthetic = { id: "a", email: "synthetic@example.test", provider: "imap" as const, credentials: { password: "EXCLUDED-CREDENTIAL" } };
   store.put("account", "a", synthetic);
-  store.put("config", "config", { OPENAI_API_KEY: "EXCLUDED-API-KEY" });
+  store.put("config", "config", { TYPESAFE_API_KEY: "EXCLUDED-API-KEY" });
   store.put("agent", "agent", { id: "agent", name: "Synthetic", token: "EXCLUDED-AGENT-TOKEN", createdAt: 1, accountIds: ["a"], tools: [] });
   store.put("mcp", "settings", { enabled: false, allowSending: false, token: "EXCLUDED-MCP-TOKEN" } as never);
   const mail = { id: "a:1", accountId: "a", remoteId: "1", sender: "Synthetic", address: "sender@example.test", to: "synthetic@example.test", subject: "EXCLUDED-MAIL-SUBJECT", preview: "EXCLUDED-PREVIEW", body: "EXCLUDED-CACHED-BODY", date: 1, unread: true, pinned: true, category: "important" as const, relevance: 1 as const, reason: "Synthetic", archived: false, snoozedUntil: 1234567 };

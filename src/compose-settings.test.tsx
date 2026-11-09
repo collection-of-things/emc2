@@ -16,7 +16,7 @@ const preferences: ComposePreferences = { templates: [], signatures: { first: "S
 const state: State = {
   accounts, messages: [], labels: [], rules: [], googleConfigured: false,
   googleClientId: null, jevConfigured: false, jevProvider: "typesafe",
-  aiConfigured: false, lastSync: null, syncing: false, composePreferences: preferences,
+  lastSync: null, syncing: false, composePreferences: preferences,
 };
 
 async function withDOM(run: (ui: { document: Document; render: (node: ReactNode) => Promise<void> }) => Promise<void>) {
@@ -212,18 +212,16 @@ test("connection and sorting copy distinguish Google setup, optional keys and pr
     assert.match(document.body.textContent!, /app password.*without this setup/);
     assert.match(document.body.textContent!, /Sorting keys are optional/);
     assert.match(document.body.textContent!, /sender, subject and preview text/);
-    assert.match(document.body.textContent!, /OpenAI also receives cached message content and metadata/);
+    assert.ok(!document.body.textContent!.includes("OpenAI"));
     await render(settings("connection", { state: { ...state, googleConfigured: true } }));
     assert.match(document.body.textContent!, /setup is saved/);
     assert.equal(document.querySelector(".setup"), null);
     for (const jevProvider of Object.keys(jevProviders) as (keyof typeof jevProviders)[]) {
-      await render(settings("sorting", { state: { ...state, jevConfigured: true, jevProvider, aiConfigured: true } }));
+      await render(settings("sorting", { state: { ...state, jevConfigured: true, jevProvider } }));
       assert.ok(document.body.textContent!.includes(`Jev through ${jevProviders[jevProvider].name}`));
       assert.match(document.body.textContent!, /Sender, subject and preview text/);
       assert.ok(!document.body.textContent!.includes("sent to OpenAI"));
     }
-    await render(settings("sorting", { state: { ...state, aiConfigured: true } }));
-    assert.match(document.body.textContent!, /Cached message content and metadata.*sent to OpenAI/);
     await render(settings("sorting"));
     assert.match(document.body.textContent!, /Local sorting is on/);
   });

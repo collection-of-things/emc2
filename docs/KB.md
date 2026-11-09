@@ -2531,8 +2531,10 @@ The bootstrap benchmark uses a per-run desktop token and clears inherited model 
 
 ## Encrypted connection settings and storage compaction
 
-`server/config.ts` stores managed Google OAuth, OpenAI and Typesafe settings in
-the encrypted `config` record using the existing installation key. Startup
+`server/config.ts` stores managed Google OAuth and Typesafe settings in
+the encrypted `config` record using the existing installation key. OpenAI sorting
+was removed: startup erases an `OPENAI_API_KEY` saved by an older version, from
+the record and the legacy file, and never exports it. Startup
 commits and reads back migrated values before replacing the legacy environment
 file with its unmanaged entries. Launch-environment values retain precedence.
 A failed cleanup retries later; no plaintext backup is created. Earlier copies

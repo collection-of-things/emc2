@@ -14,7 +14,7 @@ import type { Provider, State } from "../shared/types";
 const state: State = {
   accounts: [], messages: [], labels: [], rules: [], googleConfigured: false,
   googleClientId: null, jevConfigured: false, jevProvider: "typesafe",
-  aiConfigured: false, lastSync: null, syncing: false,
+  lastSync: null, syncing: false,
 };
 const settings = (googleConfigured: boolean, desktop?: unknown) => {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
