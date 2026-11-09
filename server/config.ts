@@ -102,6 +102,7 @@ export function saveConfiguration(updates: Settings) {
   const legacy = legacySettings();
   const cleaned = withoutManagedSettings(legacy.text, legacy.values);
   const settings: Settings = { ...get("config", "connection") };
+  for (const name of retired) delete (settings as Record<string, string>)[name];
   // A stored key belongs to the provider stored with it, not to a launch
   // override. Capture that pairing before the update can replace either part.
   const storedProvider = settings.TYPESAFE_PROVIDER ?? legacy.values.TYPESAFE_PROVIDER;

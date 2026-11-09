@@ -97,6 +97,9 @@ test("a retired OpenAI key from an older version is erased and never exported", 
       assert.deepEqual(s.get('config', 'connection'), {});
       assert.equal(process.env.OPENAI_API_KEY, undefined);
       assert.equal(fs.readFileSync(process.env.MAIL_CONFIG_PATH, 'utf8'), 'OTHER=kept\\n');
+      s.put('config', 'connection', { OPENAI_API_KEY: 'synthetic-saved' });
+      c.saveConfiguration({ GOOGLE_CLIENT_ID: 'synthetic-client' });
+      assert.deepEqual(s.get('config', 'connection'), { GOOGLE_CLIENT_ID: 'synthetic-client' });
       s.closeStore();
     `);
   } finally { rmSync(directory, { recursive: true, force: true }); }
