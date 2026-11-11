@@ -743,6 +743,7 @@ export function App() {
   };
   const scopeBusy = (scope: ActionScope) => backgroundActions.blocked(scope) ||
     (exclusiveScope(scope) && (mailWorkPending || pendingReads.current.size > 0)) ||
+    (scope.kind === "accounts" && state.accounts.some(account => accountBusy(account.id))) ||
     (scope.kind === "account" && accountBusy(scope.accountId));
   const perform = async (scope: ActionScope, task: () => Promise<unknown>, success?: string) => {
     if (scopeBusy(scope)) return;
@@ -1561,7 +1562,21 @@ export function App() {
               {(view === "sent" || view === "all") && <PaneHeader className="main-head mail-view-head" corner={null} maximized={maximized}>
                 {fullReader ? null : <div className="rail-select" ref={setRailSelect} />}
                 <span className="view-summary">{loaded ? `${filtered.length} cached ${filtered.length === 1 ? "message" : "messages"}${query.trim() && search.typos ? " · No exact match, showing close spellings" : ""}` : "Loading cached mail"}</span>
-                {(view === "sent" || view === "all") && <div className="head-note"><button type="button" title={accountFilter === "all" ? "Select one account to fetch up to 50 Sent messages" : "Fetch up to 50 Sent messages"} disabled={composeBusy || accountFilter === "all" || scopeBusy({ kind: "account", accountId: accountFilter })} onClick={() => void perform({ kind: "account", accountId: accountFilter }, async () => { const coverage = await api<SentCoverage>(`/accounts/${encodeURIComponent(accountFilter)}/sent/sync`, "POST", { bound: 50 }); if (coverage.error) throw new Error("Sent import failed. Existing cached mail remains available."); }, "Sent cache refreshed.")}>Fetch Sent</button></div>}
+                {(view === "sent" || view === "all") && <div className="head-note"><button type="button" title={accountFilter === "all" ? "Fetch up to 50 Sent messages per account" : "Fetch up to 50 Sent messages"} disabled={composeBusy || !state.accounts.length || scopeBusy(accountFilter === "all" ? { kind: "accounts" } : { kind: "account", accountId: accountFilter })} onClick={() => {
+                  const ids = accountFilter === "all" ? state.accounts.map(account => account.id) : [accountFilter];
+                  void perform(accountFilter === "all" ? { kind: "accounts" } : { kind: "account", accountId: accountFilter }, async () => {
+                    let failed = false;
+                    for (const id of ids) {
+                      try { const coverage = await api<SentCoverage>(`/accounts/${encodeURIComponent(id)}/sent/sync`, "POST", { bound: 50 }); if (coverage.error) failed = true; }
+                      catch { failed = true; }
+                    }
+                    if (failed) {
+                      try { await reload(); }
+                      catch { throw new Error("Some Sent imports failed, and the cached mail could not be refreshed."); }
+                      throw new Error("Some Sent imports failed. Existing cached mail remains available.");
+                    }
+                  }, "Sent cache refreshed.");
+                }}>Fetch Sent</button></div>}
               </PaneHeader>}
               {(!fullReader || showInboxCategories || combinedReaderToolbar) && <div className="mail-category-bar">
                 {fullReader || view === "sent" || view === "all" ? null : <div className="rail-select" ref={setRailSelect} />}

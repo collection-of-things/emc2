@@ -459,7 +459,9 @@ account identities or credentials. The general token reports no grants or
 accounts. This tool requires no new AgentTool grant and grants no authority.
 Explicit `list/search --view inbox|sent|all` requires the advertised view
 capability. Omitted view keeps all cached mail; Inbox excludes sent, archived
-and future-snoozed mail, and Sent selects cached sent direction. Filters apply
+and future-snoozed mail, and Sent selects cached sent direction. Fetch Sent in
+the combined view imports up to 50 messages per account sequentially; failures
+leave existing cached mail available and are reported. Filters apply
 within grants before paging. Summaries include received/sent direction.
 `reply <file> --confirm` requires the explicit version 1 proposal-to-draft
 capability before calling `reply_to_email`. Approval saves editable Drafts;
