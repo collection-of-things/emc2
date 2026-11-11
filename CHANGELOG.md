@@ -16,6 +16,7 @@ unversioned history without treating it as a release record.
 
 ### Fixed
 
+- Scheduled-send notices now clear after successful sending, while warnings and messages needing attention remain visible. Sent receipts stay available in Scheduled. ([#249](https://github.com/collection-of-things/emc2/issues/249))
 - Fetch Sent now refreshes each connected account from the combined Sent view, so recent messages can be imported without switching accounts. ([#247](https://github.com/collection-of-things/emc2/issues/247))
 
 ### Changed

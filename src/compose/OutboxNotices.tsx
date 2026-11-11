@@ -103,7 +103,8 @@ export function OutboxNotices({ api, enabled, blocked, refreshKey = 0, scheduled
   }, [missedKey, onMissed, scheduledOnly]);
   const missedAlert = missed.some(entry => !dismissedMissed.has(`${entry.id}@${entry.scheduledFor}`));
   const visible = entries.filter(entry => scheduledOnly === (entry.scheduledFor !== undefined));
-  const scheduled = entries.filter(entry => entry.scheduledFor !== undefined);
+  // Keep sent receipts in Scheduled, but only unresolved outcomes need a banner.
+  const scheduled = entries.filter(entry => entry.scheduledFor !== undefined && (entry.state !== "sent" || entry.warning));
   if (!visible.length && !(scheduled.length && !scheduledOnly && onScheduled)) return scheduledOnly ? <p role="status">No scheduled messages.</p> : null;
   return <section aria-label={scheduledOnly ? "Scheduled messages" : "Outbox"} className="outbox-notices">
     {!scheduledOnly && scheduled.length > 0 && onScheduled && <div className="toast"><div className="toast-body">
