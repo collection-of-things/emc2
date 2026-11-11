@@ -16,7 +16,7 @@ unversioned history without treating it as a release record.
 
 ### Fixed
 
-- Fetch Sent now refreshes each connected account from the combined Sent view, so recent messages can be imported without switching accounts.
+- Fetch Sent now refreshes each connected account from the combined Sent view, so recent messages can be imported without switching accounts. ([#247](https://github.com/collection-of-things/emc2/issues/247))
 
 ### Changed
 
