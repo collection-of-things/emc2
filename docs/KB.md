@@ -3074,6 +3074,10 @@ the same committed pending/submitting/sent/failed/unknown transitions as Undo
 send. Schedule replay is idempotent for the original payload, revision and time.
 
 Open Scheduled from Commands or the persistent scheduled-mail notice. It shows
+successful sent receipts even after they stop contributing to the notice. The
+notice clears when only sent receipts without warnings remain; pending,
+submitting, held, failed, unknown and sent-with-warning entries keep it visible.
+Receipts remain stored until explicitly dismissed. The Scheduled list shows
 times and delivery state without mail content. Edit cancels the pending attempt
 and restores the exact draft in compose; Cancel schedule saves that draft in
 Drafts. Reschedule changes only the pending entry's timestamps, preserving its

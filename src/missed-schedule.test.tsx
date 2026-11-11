@@ -131,3 +131,43 @@ test("Scheduled labels overdue held entries Missed with the original local time 
     assert.ok(ui.requests.every((request) => request === "GET /outbox"));
   } finally { await ui.close(); }
 });
+
+test("scheduled banner clears after acceptance without deleting the sent receipt", async () => {
+  const due = Date.now() + hour;
+  const entries = [entry("1", { scheduledFor: due, dueAt: due, review: false })];
+  const ui = await mount(entries, false);
+  try {
+    assert.ok(ui.button("Open Scheduled"));
+    entries[0] = { ...entries[0], state: "submitting" };
+    await ui.render(1);
+    assert.ok(ui.button("Open Scheduled"), "submission is not confirmed acceptance");
+    entries[0] = { ...entries[0], state: "sent" };
+    await ui.render(2);
+    assert.equal(ui.container.textContent, "", "a successful scheduled send clears the banner");
+    assert.ok(ui.requests.every(request => request === "GET /outbox"), "receipt is not automatically deleted");
+  } finally { await ui.close(); }
+  const scheduled = await mount(entries, true);
+  try {
+    assert.match(scheduled.container.textContent!, /Provider accepted this message/);
+    assert.ok(scheduled.button("Dismiss"), "receipt remains available in Scheduled");
+  } finally { await scheduled.close(); }
+});
+
+test("scheduled banner retains outstanding work and sent warnings alongside successful receipts", async () => {
+  const due = Date.now() + hour;
+  const entries = [entry("1", { scheduledFor: due, dueAt: due, state: "sent", review: false }),
+    entry("2", { scheduledFor: due, dueAt: due, review: false })];
+  const ui = await mount(entries, false);
+  try {
+    assert.match(ui.container.textContent!, /1 scheduled messages and outcomes/);
+    for (const state of ["failed", "unknown", "pending"] as const) {
+      entries[1] = { ...entries[1], state, review: true };
+      await ui.render(1);
+      assert.match(ui.container.textContent!, /Scheduled mail needs review/);
+    }
+    entries[1] = { ...entries[1], state: "sent", review: false, warning: "Sent copy could not be saved." };
+    await ui.render(2);
+    assert.ok(ui.button("Open Scheduled"), "sent-copy warning stays discoverable");
+    assert.match(ui.container.textContent!, /1 scheduled messages and outcomes/);
+  } finally { await ui.close(); }
+});
