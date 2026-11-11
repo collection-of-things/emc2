@@ -3634,6 +3634,57 @@ test("a slow single-message mutation keeps Drafts and other messages available",
   } finally { await app.finishRead(); await app.close(); }
 });
 
+test("Fetch Sent refreshes each account from the combined Sent view", async () => {
+  const app = await mount();
+  const original = globalThis.fetch;
+  const imports: string[] = [];
+  globalThis.fetch = async (input, options) => {
+    if (String(input).endsWith("/sent/sync")) { imports.push(String(input)); return Response.json({}); }
+    return original(input, options);
+  };
+  try {
+    await app.click(app.button("Sent"));
+    assert.equal(app.button("Fetch Sent").disabled, false);
+    await app.click(app.button("Fetch Sent"));
+    assert.deepEqual(imports, ["/api/accounts/a/sent/sync", "/api/accounts/b/sent/sync"]);
+  } finally { await app.close(); }
+});
+
+test("combined Sent refresh continues after an account fails and reports the failure", async () => {
+  const app = await mount();
+  const original = globalThis.fetch;
+  const imports: string[] = [];
+  globalThis.fetch = async (input, options) => {
+    if (String(input).endsWith("/sent/sync")) {
+      imports.push(String(input));
+      return Response.json(String(input).includes("/accounts/a/") ? { error: "failed" } : {});
+    }
+    return original(input, options);
+  };
+  try {
+    await app.click(app.button("Sent"));
+    await app.click(app.button("Fetch Sent"));
+    assert.equal(imports.length, 2);
+    assert.match(app.container.textContent || "", /Some Sent imports failed/);
+  } finally { await app.close(); }
+});
+
+test("combined Sent refresh reports both import and cache reload failures", async () => {
+  const app = await mount();
+  const original = globalThis.fetch;
+  let importing = false;
+  globalThis.fetch = async (input, options) => {
+    if (String(input).endsWith("/sent/sync")) { importing = true; return Response.json({ error: "failed" }); }
+    if (importing && String(input) === "/api/state") throw new Error("Synthetic reload failure");
+    return original(input, options);
+  };
+  try {
+    await app.click(app.button("Sent"));
+    await app.click(app.button("Fetch Sent"));
+    assert.match(app.container.textContent || "", /Some Sent imports failed, and the cached mail could not be refreshed/);
+  } finally { await app.close(); }
+});
+
 test("a held Sent import keeps Drafts available while its own fetch button stays locked", async () => {
   const app = await mount();
   const original = globalThis.fetch;
