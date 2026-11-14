@@ -66,8 +66,9 @@ enter its public HTTPS base URL and model ID. The base URL must omit
 Get the key from the selected provider's API dashboard. API usage is billed by
 that provider separately from chat subscriptions such as ChatGPT Plus or Claude
 Pro. Each assistant saves one provider and key; separate assistants can use
-different providers. Only the configured provider receives that assistant's
-selected email context.
+different providers. The app sends that assistant's selected email context to
+the configured API endpoint. Services such as OpenRouter may forward that
+context to other model providers.
 
 Save key encrypts the key on this device; it does not test the connection. Leave
 the key blank to keep it for the same endpoint. Changing the endpoint requires a
