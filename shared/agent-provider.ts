@@ -3,6 +3,10 @@ export const agentProviders = {
   deepseek: { name: "DeepSeek", baseURL: "https://api.deepseek.com/v1", model: "deepseek-chat" },
   // Claude API with the user's own Anthropic key (Messages API, not OpenAI-compatible).
   anthropic: { name: "Anthropic (Claude API)", baseURL: "https://api.anthropic.com", model: "claude-opus-5-5" },
+  openrouter: { name: "OpenRouter", baseURL: "https://openrouter.ai/api/v1", model: "openai/gpt-4.1-mini" },
+  groq: { name: "Groq", baseURL: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
+  mistral: { name: "Mistral", baseURL: "https://api.mistral.ai/v1", model: "mistral-small-latest" },
+  xai: { name: "xAI", baseURL: "https://api.x.ai/v1", model: "grok-4.7" },
   custom: { name: "Other OpenAI-compatible", baseURL: "", model: "" },
 } as const;
 export type AgentProvider = keyof typeof agentProviders;

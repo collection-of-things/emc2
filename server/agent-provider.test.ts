@@ -6,7 +6,15 @@ import path from "node:path";
 import express from "express";
 import type { Mail } from "../shared/types.js";
 import type { AgentGrant, AgentProposal } from "../shared/workspace.js";
-import type { AgentAutomationSettings, AgentProviderSettings } from "../shared/agent-provider.js";
+import { agentProviders, type AgentAutomationSettings, type AgentProvider, type AgentProviderSettings } from "../shared/agent-provider.js";
+
+const addedPresets = {
+  openrouter: { baseURL: "https://openrouter.ai/api/v1", model: "openai/gpt-4.1-mini" },
+  groq: { baseURL: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
+  mistral: { baseURL: "https://api.mistral.ai/v1", model: "mistral-small-latest" },
+  xai: { baseURL: "https://api.x.ai/v1", model: "grok-4.7" },
+} as const;
+const addedProviders = Object.keys(addedPresets) as (keyof typeof addedPresets)[];
 
 // Synthetic local HTTP and stubbed provider fetch only. Never use saved accounts.
 test("BYOK settings and reviewed drafts preserve provider, account and evidence boundaries", async (t) => {
@@ -59,8 +67,8 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
     assert.equal(created.status, 201); agent = created.body;
     return `/agent/grants/${agent.id}/provider`;
   }
-  async function save(route: string, provider = "openai", extras: Record<string, unknown> = {}) {
-    const result = await request<AgentProviderSettings>(route, "PUT", { provider, model: provider === "deepseek" ? "deepseek-chat" : "gpt-4.1-mini", apiKey: secret, revision: null, ...extras });
+  async function save(route: string, provider: AgentProvider = "openai", extras: Record<string, unknown> = {}) {
+    const result = await request<AgentProviderSettings>(route, "PUT", { provider, model: agentProviders[provider].model, apiKey: secret, revision: null, ...extras });
     assert.equal(result.status, 200); return result.body;
   }
   const prepare = (route: string, config: AgentProviderSettings, extras: Record<string, unknown> = {}) => request<AgentProposal>(`${route}/prepare`, "POST", { sourceMailId: mail.id, revision: config.revision, instruction: "Keep it short.", ...extras });
@@ -102,15 +110,58 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
       const custom = await save(route, "custom", { baseURL: "https://provider.example.test/v1/", model: "custom-model" });
       assert.equal(custom.baseURL, "https://provider.example.test/v1"); assert.equal(calls.length, 0);
     });
-    for (const provider of ["openai", "deepseek"] as const) await t.test(`${provider} compatible contract sends one selected email and creates only a pending proposal`, async () => {
+    for (const provider of addedProviders) await t.test(`${provider} preset preserves encrypted single-key settings and revision lifecycle without network on save`, async () => {
+      const route = await fixture();
+      let resolutions = 0;
+      resolveAddresses = async () => { resolutions++; return [{ address: "8.8.8.8", family: 4 }]; };
+      const config = await save(route, provider);
+      assert.deepEqual(config, { provider, ...addedPresets[provider], hasKey: true, revision: config.revision });
+      assert.deepEqual((await request(route)).body, config);
+      assert.equal(store.all("agentProvider").length, 1);
+      assert.equal(store.get("agentProvider", agent.id)?.apiKey, secret);
+      for (const suffix of ["", "-wal"]) {
+        const file = path.join(directory, `mail.sqlite${suffix}`);
+        if (existsSync(file)) assert.equal(readFileSync(file).includes(Buffer.from(secret)), false);
+      }
+      assert.equal((await request(route, "PUT", { provider, baseURL: "https://other.example.test/v1", model: config.model, apiKey: secret, revision: config.revision })).status, 400);
+      assert.deepEqual((await request(route)).body, config, "preset endpoints are fixed");
+      const edited = await request<AgentProviderSettings>(route, "PUT", { provider, model: "user-selected-model", apiKey: "", revision: config.revision });
+      assert.equal(edited.status, 200); assert.equal(edited.body.model, "user-selected-model");
+      assert.notEqual(edited.body.revision, config.revision);
+      assert.equal(store.get("agentProvider", agent.id)?.apiKey, secret);
+      const changedEndpoint = { provider: "custom", baseURL: "https://provider.example.test/v1", model: "custom-model", apiKey: "", revision: edited.body.revision };
+      assert.equal((await request(route, "PUT", changedEndpoint)).status, 400);
+      assert.deepEqual((await request(route)).body, edited.body, "failed replacement preserves the saved record");
+      const replacementKey = "SYNTHETIC-REPLACEMENT-KEY-NEVER-REAL";
+      const changed = await request<AgentProviderSettings>(route, "PUT", { ...changedEndpoint, apiKey: replacementKey });
+      assert.equal(changed.status, 200); assert.equal("apiKey" in changed.body, false);
+      assert.equal(JSON.stringify((await request(route)).body).includes(replacementKey), false);
+      assert.equal(store.get("agentProvider", agent.id)?.apiKey, replacementKey);
+      assert.equal(store.all("agentProvider").length, 1, "changing endpoints replaces the one saved key");
+      assert.equal((await request(route, "PUT", { provider, model: config.model, apiKey: "", revision: changed.body.revision })).status, 400);
+      const restored = await save(route, provider, { revision: changed.body.revision });
+      assert.equal((await request(route, "DELETE", { revision: config.revision })).status, 409);
+      assert.equal(resolutions, 0); assert.equal(calls.length, 0, "settings lifecycle never contacts a provider");
+      assert.equal((await prepare(route, config)).status, 409);
+      assert.equal(calls.length, 0, "stale settings cannot prepare a draft");
+      assert.equal((await request(route, "DELETE", { revision: restored.revision })).status, 200);
+      assert.equal((await request(route)).body, null); assert.equal(store.get("agentProvider", agent.id), undefined);
+      await save(route, provider);
+      assert.equal((await request(`/agent/grants/${agent.id}`, "DELETE")).status, 200);
+      assert.equal(store.get("agentProvider", agent.id), undefined);
+      assert.equal((await request(route)).status, 403);
+      assert.equal(resolutions, 0); assert.equal(calls.length, 0);
+    });
+    for (const provider of ["openai", "deepseek", ...addedProviders] as const) await t.test(`${provider} compatible contract sends one selected email and creates only a pending proposal`, async () => {
       const route = await fixture(); const config = await save(route, provider);
       const result = await prepare(route, config); assert.equal(result.status, 201);
       assert.equal(calls.length, 1); const call = calls[0];
       assert.equal(call.url, `${config.baseURL}/chat/completions`);
       assert.equal(call.options.redirect, "error"); assert.ok(call.options.signal);
+      assert.ok((call.options as { dispatcher?: unknown }).dispatcher, "DNS-pinned dispatcher");
       assert.equal((call.options.headers as Record<string, string>).Authorization, `Bearer ${secret}`);
       const outgoing = JSON.parse(String(call.options.body));
-      assert.equal(outgoing.model, config.model); assert.equal(outgoing.stream, false); assert.equal(outgoing.tools, undefined);
+      assert.equal(outgoing.model, config.model); assert.equal(outgoing.stream, false); assert.equal(outgoing.max_tokens, 2000); assert.equal(outgoing.tools, undefined);
       const context = JSON.parse(outgoing.messages[1].content);
       assert.deepEqual(context, { instruction: "Keep it short.", email: { subject: mail.subject, from: mail.address, to: mail.to, body: mail.body } });
       for (const forbidden of [secret, "UNRELATED-SECRET", "NEIGHBOR-SECRET", "DO-NOT-INCLUDE"]) assert.equal(String(call.options.body).includes(forbidden), false);
@@ -118,7 +169,7 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
       assert.equal(result.body.action, "draft"); assert.equal(result.body.status, "pending");
       assert.deepEqual(result.body.payload, { accountId: "a", to: ["reply@example.test"], subject: "Re: Review request", body: "A synthetic reply.", inReplyTo: mail.messageId, references: [mail.messageId] });
       assert.equal(store.all("draft").length, 0); assert.equal(store.get("mail", mail.id)?.unread, true);
-      store.put("mcp", "settings", { enabled: true, allowSending: false, token: "synthetic-mcp" });
+      store.put("mcp", "settings", { enabled: false, allowSending: false, token: null });
       const approved = await request<AgentProposal>(`/agent/proposals/${result.body.id}/approve`, "POST", { digest: result.body.digest });
       assert.equal(approved.status, 200); assert.equal(approved.body.status, "succeeded");
       assert.equal(store.all("draft").length, 1); assert.equal(calls.length, 1, "approval creates a local draft only");
