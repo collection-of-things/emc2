@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import type { Api } from "./api";
 import type { Mail, State } from "../shared/types";
 import type { AgentGrant } from "../shared/workspace";
-import type { AgentProviderSettings } from "../shared/agent-provider";
+import { agentProviders, type AgentProvider, type AgentProviderSettings } from "../shared/agent-provider";
 
 async function mount(initial: AgentProviderSettings | null = null) {
   const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost/" });
@@ -37,7 +37,7 @@ async function mount(initial: AgentProviderSettings | null = null) {
     }
     if (method === "PUT") {
       const input = body as any;
-      settings = { provider: input.provider, baseURL: input.provider === "deepseek" ? "https://api.deepseek.com/v1" : input.provider === "custom" ? input.baseURL : "https://api.openai.com/v1", model: input.model, hasKey: true, revision: "e5fd4f14-c3b5-4cb6-9f1e-116833392d8e" };
+      settings = { provider: input.provider, baseURL: input.provider === "custom" ? input.baseURL : agentProviders[input.provider as AgentProvider].baseURL, model: input.model, hasKey: true, revision: "e5fd4f14-c3b5-4cb6-9f1e-116833392d8e" };
       return structuredClone(settings) as T;
     }
     if (method === "DELETE") { settings = null; return { ok: true } as T; }
@@ -59,8 +59,7 @@ async function mount(initial: AgentProviderSettings | null = null) {
   const click = async (item: HTMLElement) => act(async () => item.click());
   const fill = async (text: string, value: string) => {
     if (text === "Provider") {
-      const names: Record<string, string> = { openai: "OpenAI", deepseek: "DeepSeek", custom: "Other OpenAI-compatible" };
-      await click(button(names[value])); return;
+      await click(button(agentProviders[value as AgentProvider].name)); return;
     }
     const input = field(text);
     await act(async () => {
@@ -92,7 +91,7 @@ async function configured() {
   const ui = await mount(); await ui.open(); await ui.fill("API key", "SYNTHETIC-UI-KEY"); await ui.submit(); return ui;
 }
 
-test("BYOK disclosure loads sanitized settings, saves both presets, keeps blank key and removes", async () => {
+test("BYOK disclosure loads sanitized settings, saves presets, keeps blank key and removes", async () => {
   const ui = await mount(); try {
     assert.equal(ui.calls.length, 0); await ui.open();
     assert.equal((ui.field("API key") as HTMLInputElement).type, "password");
@@ -115,6 +114,55 @@ test("BYOK disclosure loads sanitized settings, saves both presets, keeps blank 
     assert.equal(ui.calls.some((call) => call.url === "/mcp"), false);
   } finally { await ui.close(); }
 });
+
+for (const provider of ["openrouter", "groq", "mistral", "xai"] as const) {
+  test(`BYOK ${provider} setup requires its own key, saves an editable model and prepares only on request`, async () => {
+    const ui = await mount({ provider: "openai", baseURL: "https://api.openai.com/v1", model: "gpt-4.1-mini", hasKey: true, revision: "e5fd4f14-c3b5-4cb6-9f1e-116833392d8e" });
+    try {
+      await ui.open();
+      assert.match(ui.container.textContent || "", /API usage is billed by that provider separately from chat subscriptions/);
+      await ui.fill("API key", "SYNTHETIC-UNSAVED-OLD-KEY");
+      await ui.fill("Provider", provider);
+      assert.equal(ui.field("API key").value, "", "switching clears an unsaved key for another provider");
+      assert.equal(ui.button("Save key").disabled, true, "a saved key cannot move to another endpoint");
+      assert.equal(ui.field("Model").value, agentProviders[provider].model);
+      await ui.fill("Model", "account-specific-model");
+      await ui.fill("API key", "SYNTHETIC-NEW-PROVIDER-KEY");
+      await ui.submit();
+      const saved = ui.calls.find((call) => call.method === "PUT" && call.url.endsWith("/provider"))!;
+      assert.equal(saved.body.provider, provider);
+      assert.equal(saved.body.model, "account-specific-model");
+      assert.equal(saved.body.apiKey, "SYNTHETIC-NEW-PROVIDER-KEY");
+      assert.equal(saved.body.baseURL, undefined, "the server owns preset endpoints");
+      assert.equal(ui.field("API key").value, "");
+      assert.equal(ui.container.innerHTML.includes("SYNTHETIC-NEW-PROVIDER-KEY"), false);
+      assert.ok(ui.container.textContent?.includes(agentProviders[provider].baseURL));
+      assert.equal(ui.calls.some((call) => call.url.endsWith("/prepare")), false);
+      await ui.fill("Model", "another-account-model");
+      await ui.submit();
+      assert.equal(ui.calls.at(-1)?.body.apiKey, undefined, "same endpoint keeps its key with a blank input");
+      await ui.click(ui.container.querySelector<HTMLInputElement>('input[type="radio"]')!);
+      await ui.click(ui.button("Prepare draft"));
+      assert.equal(ui.calls.filter((call) => call.url.endsWith("/prepare")).length, 1);
+      assert.equal(ui.calls.some((call) => call.url === "/mcp"), false);
+    } finally { await ui.close(); }
+  });
+
+  test(`BYOK ${provider} reload never prefills a saved key`, async () => {
+    const ui = await mount({ provider, baseURL: agentProviders[provider].baseURL, model: "saved-account-model", hasKey: true, revision: "e5fd4f14-c3b5-4cb6-9f1e-116833392d8e" });
+    try {
+      await ui.open();
+      assert.equal(ui.button(agentProviders[provider].name).getAttribute("aria-checked"), "true");
+      assert.equal(ui.field("Model").value, "saved-account-model");
+      assert.equal(ui.field("API key").value, "");
+      assert.equal(ui.button("Save key").disabled, false);
+      await ui.fill("Model", "updated-account-model");
+      await ui.submit();
+      assert.equal(ui.calls.at(-1)?.body.provider, provider);
+      assert.equal(ui.calls.at(-1)?.body.apiKey, undefined);
+    } finally { await ui.close(); }
+  });
+}
 
 test("BYOK source picker is bounded, searches permitted received mail, and preparation needs explicit acknowledgment", async () => {
   const ui = await configured(); try {

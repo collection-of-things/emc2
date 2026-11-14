@@ -55,9 +55,19 @@ composer delivers it.
 
 ### Configure a reply provider
 
-Each grant also offers **Bring your own key** for OpenAI-compatible providers.
-Choose OpenAI (default model `gpt-4.1-mini`), DeepSeek (`deepseek-chat`), or Other
-OpenAI-compatible with a custom public HTTPS base URL. Models stay editable.
+Each assistant offers **Bring your own key** in Settings, AI and agents.
+Choose OpenAI, Anthropic (Claude API), OpenRouter, DeepSeek, Groq, Mistral or
+xAI. Each preset fills its API endpoint and a default model. Open
+**Advanced: model** to choose another model available to your API account.
+For another OpenAI-compatible provider, choose **Other OpenAI-compatible** and
+enter its public HTTPS base URL and model ID. The base URL must omit
+`/chat/completions`; the app adds that path when preparing a reply.
+
+Get the key from the selected provider's API dashboard. API usage is billed by
+that provider separately from chat subscriptions such as ChatGPT Plus or Claude
+Pro. Each assistant saves one provider and key; separate assistants can use
+different providers. Only the configured provider receives that assistant's
+selected email context.
 
 Save key encrypts the key on this device; it does not test the connection. Leave
 the key blank to keep it for the same endpoint. Changing the endpoint requires a

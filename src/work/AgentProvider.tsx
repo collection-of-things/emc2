@@ -121,7 +121,8 @@ export function AgentProvider({ grant, state, api, mcpEnabled, disabled, onPrepa
   };
   return <details className="work-form" onToggle={(event) => setOpen(event.currentTarget.open)}>
     <summary>Bring your own key</summary>
-    <p className="work-meta">Choose a provider and save your API key, then choose one email to prepare a reply for review. The key stays encrypted on this device and is never shown after saving.</p>
+    <p className="work-meta">Choose a provider and save your API key for this assistant, then choose one email to prepare a reply for review. The key stays encrypted on this device and is never shown after saving.</p>
+    <p className="work-meta">Use a key from your provider's API dashboard. API usage is billed by that provider separately from chat subscriptions such as ChatGPT Plus or Claude Pro. For another provider, choose Other OpenAI-compatible and enter its public HTTPS base URL and model ID.</p>
     {error && <Notice text={error} />}
     {status && <Notice text={status} kind="success" />}
     {unresolved && <div><p>Preparation is unresolved. Refresh action history and inspect Proposals before preparing another draft.</p><button type="button" disabled={pending || disabled} onClick={() => void refreshUnresolved()}>Refresh action history</button></div>}

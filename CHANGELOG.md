@@ -14,6 +14,10 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Added
+
+- Choose OpenRouter, Groq, Mistral or xAI when adding an assistant API key, alongside OpenAI, Anthropic and DeepSeek. Other OpenAI-compatible providers still accept a custom HTTPS endpoint and model. Setup explains that API billing is separate from chat subscriptions. ([#253](https://github.com/collection-of-things/emc2/issues/253))
+
 ### Fixed
 
 - Fetch Sent can import recent mail from IMAP Sent folders recognized by the mail library when the server omits its Sent flag. Imports open the folder read-only and retain cached mail on failure. ([#252](https://github.com/collection-of-things/emc2/issues/252))
