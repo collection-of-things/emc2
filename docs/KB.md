@@ -743,11 +743,16 @@ plus selected evidence. Missing sources stay explicit. The chosen source seeds a
 new commitment's evidence; editing can add other same-account messages.
 
 Sent imports fetch at most 100 messages per request (the interface requests 50).
-Gmail conversation expansion allows at most 100 messages. IMAP Sent uses one
-server-declared Sent mailbox and mailbox-qualified IDs; mutations and content
+Gmail conversation expansion allows at most 100 messages. IMAP Sent prefers one
+server-declared Sent mailbox. If none is declared, it accepts one ImapFlow-recognized
+Sent folder, including recognized localized names. The pinned library's name
+classifier checks all other entries because LIST labels only its winning match.
+Ambiguous declarations or recognized names, empty
+paths, Inbox and non-selectable or nonexistent folders are rejected. The mailbox
+opens read-only and retains mailbox-qualified IDs; mutations and content
 recovery for those Sent records are unavailable. Re-import Sent to recover its
 evidence. Neither a successful import nor an empty action list proves complete
-mailbox coverage.
+mailbox coverage. See [ADR 0134](adr/0134-recognized-imap-sent-folder.md).
 
 New Teach rules are account scoped. Editing a rule discards pending preview
 responses as well as the displayed preview. Previews show deterministic matches and

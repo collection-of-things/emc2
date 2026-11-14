@@ -9,6 +9,7 @@ import { google } from "./google-api.js";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { ImapFlow, type SearchObject, type FetchMessageObject, type MessageStructureObject } from "imapflow";
+import { specialUse as imapSpecialUse } from "imapflow/lib/special-use.js";
 import type { gmail_v1 } from "./google-api.js";
 import { simpleParser } from "mailparser";
 import { workLimit } from "./resource-limits.js";
@@ -643,10 +644,14 @@ function imapProvider() {
       try {
         await imapOperation(client, () => client.connect());
         const folders = await imapOperation(client, () => client.list());
-        const sent = folders.filter((folder) => [...folder.flags].some((flag) => flag.toLowerCase() === "\\sent"));
-        if (sent.length !== 1 || !sent[0].path || sent[0].path.toUpperCase() === "INBOX") throw new Error("A unique server-declared Sent folder is unavailable.");
+        const declared = folders.filter((folder) => [...folder.flags].some((flag) => flag.toLowerCase() === "\\sent"));
+        // Some servers omit SPECIAL-USE flags; ImapFlow also recognizes localized Sent names.
+        const sent = declared.length ? declared : folders.filter((folder) => folder.specialUse?.toLowerCase() === "\\sent");
+        // LIST labels only one winner. Recheck other names with its classifier so ties cannot disappear.
+        const ambiguous = !declared.length && sent.length === 1 && folders.some((folder) => folder !== sent[0] && imapSpecialUse(false, folder).flag === "\\Sent");
+        if (sent.length !== 1 || ambiguous || !sent[0].path || sent[0].path.toUpperCase() === "INBOX" || [...sent[0].flags].some((flag) => ["\\noselect", "\\nonexistent"].includes(flag.toLowerCase()))) throw new Error("A unique selectable Sent folder is unavailable.");
         const mailbox = sent[0].path;
-        const lock = await imapOperation(client, () => client.getMailboxLock(mailbox));
+        const lock = await imapOperation(client, () => client.getMailboxLock(mailbox, { readOnly: true }));
         try {
           if (!client.mailbox || client.mailbox.path !== mailbox) throw new Error("Sent mailbox identity is unavailable.");
           const { exists, uidValidity, uidNext } = client.mailbox;
