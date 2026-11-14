@@ -108,7 +108,7 @@ test("provider evidence: bounded Sent, exact threads and encrypted attachment ro
       ]);
       folders = [{ path: "Sent Messages", specialUse: "", flags: new Set(["\\Sent"]) }, { path: "Other Sent", specialUse: "\\Sent", flags: new Set() }];
       assert.equal((await providers.imap.sent(imapAccount, 2)).messages.length, 2, "server declaration takes priority over name recognition");
-      for (folders of [
+      const invalidFolderSets: (typeof folders)[] = [
         [],
         [{ path: "Sent", specialUse: "", flags: new Set() }],
         [{ path: "", specialUse: "\\Sent", flags: new Set() }],
@@ -117,7 +117,11 @@ test("provider evidence: bounded Sent, exact threads and encrypted attachment ro
         [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set(["\\NonExistent"]) }],
         [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set() }, { path: "Other Sent", specialUse: "\\Sent", flags: new Set() }],
         [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set(["\\Sent"]) }, { path: "Other Sent", specialUse: "", flags: new Set(["\\sent"]) }],
-      ]) await assert.rejects(providers.imap.sent(imapAccount, 2), /Sent folder/);
+      ];
+      for (const candidates of invalidFolderSets) {
+        folders = candidates;
+        await assert.rejects(providers.imap.sent(imapAccount, 2), /Sent folder/);
+      }
       assert.equal(opened, 2, "unsafe or ambiguous folder discovery must not open any mailbox");
     });
     await t.test("attachment bytes stay encrypted and account scoped", async () => {
