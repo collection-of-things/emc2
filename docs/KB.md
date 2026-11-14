@@ -745,7 +745,9 @@ new commitment's evidence; editing can add other same-account messages.
 Sent imports fetch at most 100 messages per request (the interface requests 50).
 Gmail conversation expansion allows at most 100 messages. IMAP Sent prefers one
 server-declared Sent mailbox. If none is declared, it accepts one ImapFlow-recognized
-Sent folder, including recognized localized names. Ambiguous declarations, empty
+Sent folder, including recognized localized names. The pinned library's name
+classifier checks all other entries because LIST labels only its winning match.
+Ambiguous declarations or recognized names, empty
 paths, Inbox and non-selectable or nonexistent folders are rejected. The mailbox
 opens read-only and retains mailbox-qualified IDs; mutations and content
 recovery for those Sent records are unavailable. Re-import Sent to recover its

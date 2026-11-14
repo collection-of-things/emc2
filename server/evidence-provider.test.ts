@@ -2,10 +2,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { google } from "./google-api.js";
-import { ImapFlow } from "imapflow";
+import { ImapFlow, type ListResponse } from "imapflow";
 import nodemailer from "nodemailer";
 import MailComposer from "nodemailer/lib/mail-composer/index.js";
 import { simpleParser } from "mailparser";
@@ -123,6 +124,42 @@ test("provider evidence: bounded Sent, exact threads and encrypted attachment ro
         await assert.rejects(providers.imap.sent(imapAccount, 2), /Sent folder/);
       }
       assert.equal(opened, 2, "unsafe or ambiguous folder discovery must not open any mailbox");
+    });
+    await t.test("IMAP Sent rejects ambiguity hidden by real LIST winner selection", async (t) => {
+      const list = createRequire(import.meta.url)("imapflow/lib/commands/list.js") as (connection: unknown, reference: string, mailbox: string, options: { listOnly: boolean }) => Promise<ListResponse[]>;
+      let entries = [{ path: "Sent", flags: [] as string[] }, { path: "Sent Messages", flags: [] as string[] }];
+      const connection = {
+        capabilities: new Set<string>(), enabled: new Set<string>(), skipLsub: true, log: { warn() {} },
+        async exec(command: string, _args: unknown, options: { untagged: Record<string, (response: unknown) => Promise<void>> }) {
+          assert.equal(command, "LIST");
+          for (const entry of entries) await options.untagged.LIST({ attributes: [entry.flags.map(value => ({ type: "ATOM", value })), { type: "STRING", value: "/" }, { type: "STRING", value: entry.path }] });
+          return { next() {} };
+        },
+      };
+      let folders = await list(connection, "", "*", { listOnly: false });
+      assert.equal(folders.filter(folder => folder.specialUse === "\\Sent").length, 1, "the library hides the losing candidate");
+      assert.ok(folders.every(folder => !folder.flags.has("\\Sent")));
+      const imapAccount = { ...a, provider: "imap" as const, credentials: { imapHost: "imap.example.com" } };
+      t.mock.method(ImapFlow.prototype, "connect", async function (this: ImapFlow) { this.usable = true; });
+      t.mock.method(ImapFlow.prototype, "logout", async () => {});
+      t.mock.method(ImapFlow.prototype, "list", async () => folders);
+      let opened = 0;
+      t.mock.method(ImapFlow.prototype, "getMailboxLock", async function (this: ImapFlow, mailbox: string, options: { readOnly?: boolean }) {
+        opened++;
+        assert.equal(options.readOnly, true);
+        this.mailbox = { path: mailbox, exists: 0, uidValidity: 1n, uidNext: 1, delimiter: "/", flags: new Set() };
+        return { release() {} };
+      });
+      await assert.rejects(providers.imap.sent(imapAccount, 2), /unique.*Sent folder/);
+      assert.equal(opened, 0, "reject before opening the library's chosen winner");
+      entries = [{ path: "Sent Messages", flags: [] }];
+      folders = await list(connection, "", "*", { listOnly: false });
+      assert.deepEqual(await providers.imap.sent(imapAccount, 2), { messages: [], truncated: false });
+      entries = [{ path: "Sent", flags: [] }, { path: "Sent Messages", flags: [] }, { path: "Saved", flags: ["\\Sent"] }];
+      connection.capabilities.add("SPECIAL-USE");
+      folders = await list(connection, "", "*", { listOnly: false });
+      assert.deepEqual(await providers.imap.sent(imapAccount, 2), { messages: [], truncated: false }, "raw declaration still wins over multiple name matches");
+      assert.equal(opened, 2);
     });
     await t.test("attachment bytes stay encrypted and account scoped", async () => {
       const first = await parse(a, "message", raw, false);
