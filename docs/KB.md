@@ -570,7 +570,12 @@ external write is involved.
 ## Agent review provider keys
 
 `shared/agent-provider.ts` contains the sanitized provider settings shape and
-OpenAI/DeepSeek/Anthropic presets. Anthropic uses the official `@anthropic-ai/sdk` Messages API through the same DNS-pinned dispatcher (no retries, no redirects, 120-second deadline, server-side refusal fallback on Opus 5.5, Sonnet 5.5 and Fable 5.1). `server/agent-provider.ts` mounts authenticated settings
+OpenAI, DeepSeek, Anthropic, OpenRouter, Groq, Mistral and xAI presets, plus a
+custom public HTTPS OpenAI-compatible endpoint. All models remain editable.
+OpenRouter, Groq, Mistral and xAI use the existing `/chat/completions` contract.
+Provider validation derives its accepted identifiers from the shared registry.
+Each assistant retains one encrypted provider key; setup explains that provider
+API billing is separate from chat subscriptions. Anthropic uses the official `@anthropic-ai/sdk` Messages API through the same DNS-pinned dispatcher (no retries, no redirects, 120-second deadline, server-side refusal fallback on Opus 5.5, Sonnet 5.5 and Fable 5.1). `server/agent-provider.ts` mounts authenticated settings
 routes at `/api/agent/grants/:id/provider`: GET returns settings or null, PUT
 saves bounded fields with an optional new key and the current revision (null
 for a first save), and DELETE requires the saved revision. Keys remain in the

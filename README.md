@@ -26,6 +26,7 @@ a browser, terminal or separate Node installation.
 - Write replies with templates and signatures, use Undo send, or schedule a send.
 - Import contacts, review unsubscribe destinations and keep local calendar events.
 - Add AI sorting or connect an AI client through scoped MCP permissions when you choose.
+- Bring an OpenAI, Anthropic, OpenRouter, DeepSeek, Groq, Mistral or xAI API key to [prepare replies for review](docs/ai-and-agents.md#configure-a-reply-provider).
 
 ## Get started
 

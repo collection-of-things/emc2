@@ -6,7 +6,7 @@ import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import { z } from "zod";
-import { agentProviders, type AgentAutomationSettings, type AgentProviderSettings } from "../shared/agent-provider.js";
+import { agentProviders, type AgentAutomationSettings, type AgentProvider, type AgentProviderSettings } from "../shared/agent-provider.js";
 import { all, get, put, remove } from "./store.js";
 import { assertAgent, fingerprint, propose } from "./workspace.js";
 import { contentSchema } from "./drafts.js";
@@ -37,7 +37,7 @@ function endpoint(value: string) {
   return url.href.replace(/\/+$/, "");
 }
 const saveSchema = z.object({
-  provider: z.enum(["openai", "deepseek", "anthropic", "custom"]), baseURL: z.string().min(1).max(2000).optional(),
+  provider: z.enum(Object.keys(agentProviders) as [AgentProvider, ...AgentProvider[]]), baseURL: z.string().min(1).max(2000).optional(),
   model: z.string().trim().min(1).max(200).regex(/^[^\x00-\x1f\x7f]+$/),
   apiKey: z.string().max(4096).optional(), revision: z.uuid().nullable(),
 }).strict();
