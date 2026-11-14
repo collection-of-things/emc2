@@ -14,6 +14,10 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Fixed
+
+- Fetch Sent can import recent mail from IMAP Sent folders recognized by the mail library when the server omits its Sent flag. Imports open the folder read-only and retain cached mail on failure. ([#252](https://github.com/collection-of-things/emc2/issues/252))
+
 ## 0.2.38 - 2026-11-11
 
 ### Fixed

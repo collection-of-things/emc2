@@ -79,6 +79,47 @@ test("provider evidence: bounded Sent, exact threads and encrypted attachment ro
       folders = [{ path: "Sent", flags: new Set() }];
       await assert.rejects(providers.imap.sent(imapAccount, 1), /unique|Sent/i);
     });
+    await t.test("IMAP Sent imports a recognized folder without a raw Sent flag, read-only and bounded", async (t) => {
+      const imapAccount = { ...a, provider: "imap" as const, credentials: { imapHost: "imap.example.com" } };
+      let folders = [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set<string>() }];
+      let opened = 0;
+      t.mock.method(ImapFlow.prototype, "connect", async function (this: ImapFlow) { this.usable = true; });
+      t.mock.method(ImapFlow.prototype, "logout", async () => {});
+      t.mock.method(ImapFlow.prototype, "list", async () => folders);
+      t.mock.method(ImapFlow.prototype, "getMailboxLock", async function (this: ImapFlow, mailbox: string, options: { readOnly?: boolean }) {
+        opened++;
+        assert.equal(mailbox, "Sent Messages");
+        assert.equal(options.readOnly, true);
+        this.mailbox = { path: mailbox, exists: 3, uidValidity: 7n, uidNext: 9, delimiter: "/", flags: new Set() };
+        return { release() {} };
+      });
+      t.mock.method(ImapFlow.prototype, "fetch", async function* (range: string, query: { source: unknown; flags?: boolean }) {
+        assert.equal(range, "2:*");
+        assert.ok(query.source);
+        assert.equal(query.flags, true);
+        yield { uid: 6, source: raw, flags: new Set(["\\Seen"]) };
+        yield { uid: 8, source: raw, flags: new Set(["\\Seen"]) };
+      });
+      const result = await providers.imap.sent(imapAccount, 2);
+      assert.equal(result.truncated, true);
+      assert.deepEqual(result.messages.map(mail => [mail.direction, mail.mailbox]), [
+        ["sent", { path: "Sent Messages", uidValidity: "7", uid: 6 }],
+        ["sent", { path: "Sent Messages", uidValidity: "7", uid: 8 }],
+      ]);
+      folders = [{ path: "Sent Messages", specialUse: "", flags: new Set(["\\Sent"]) }, { path: "Other Sent", specialUse: "\\Sent", flags: new Set() }];
+      assert.equal((await providers.imap.sent(imapAccount, 2)).messages.length, 2, "server declaration takes priority over name recognition");
+      for (folders of [
+        [],
+        [{ path: "Sent", specialUse: "", flags: new Set() }],
+        [{ path: "", specialUse: "\\Sent", flags: new Set() }],
+        [{ path: "INBOX", specialUse: "\\Sent", flags: new Set() }],
+        [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set(["\\Noselect"]) }],
+        [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set(["\\NonExistent"]) }],
+        [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set() }, { path: "Other Sent", specialUse: "\\Sent", flags: new Set() }],
+        [{ path: "Sent Messages", specialUse: "\\Sent", flags: new Set(["\\Sent"]) }, { path: "Other Sent", specialUse: "", flags: new Set(["\\sent"]) }],
+      ]) await assert.rejects(providers.imap.sent(imapAccount, 2), /Sent folder/);
+      assert.equal(opened, 2, "unsafe or ambiguous folder discovery must not open any mailbox");
+    });
     await t.test("attachment bytes stay encrypted and account scoped", async () => {
       const first = await parse(a, "message", raw, false);
       const second = await parse({ ...a, id: "b" }, "message", raw, false);
