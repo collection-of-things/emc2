@@ -14,6 +14,8 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+## 0.2.39 - 2026-11-14
+
 ### Added
 
 - Choose OpenRouter, Groq, Mistral or xAI when adding an assistant API key, alongside OpenAI, Anthropic and DeepSeek. Other OpenAI-compatible providers still accept a custom HTTPS endpoint and model. Setup explains that API billing is separate from chat subscriptions. ([#253](https://github.com/collection-of-things/emc2/issues/253))
