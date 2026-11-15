@@ -34,15 +34,36 @@ async function windowsIcon(icon, sizes) {
   return Buffer.concat([header, ...images]);
 }
 
-// ICNS uses big-endian chunk lengths and PNG representations through 1024px.
+// Small system badges need legacy RGB/mask pairs. PNG icp4/icp5 payloads
+// decode as pixel noise in macOS iconutil. Retina and larger sizes use PNG.
 async function macIcon(icon) {
   const chunks = [];
-  for (const [type, size] of [["icp4", 16], ["icp5", 32], ["icp6", 64], ["ic07", 128], ["ic08", 256], ["ic09", 512], ["ic10", 1024]]) {
-    const png = await raster(icon, size);
+  function add(type, payload) {
     const header = Buffer.alloc(8);
     header.write(type);
-    header.writeUInt32BE(8 + png.length, 4);
-    chunks.push(header, png);
+    header.writeUInt32BE(8 + payload.length, 4);
+    chunks.push(header, payload);
+  }
+  for (const [type, mask, size] of [["is32", "s8mk", 16], ["il32", "l8mk", 32]]) {
+    const rgba = await sharp(await raster(icon, size)).ensureAlpha().raw().toBuffer();
+    const count = size * size;
+    const rgb = Buffer.alloc(3 * (count + count / 128));
+    const alpha = Buffer.alloc(count);
+    let offset = 0;
+    // Literal-only planar RLE avoids ambiguity between legacy raw layouts.
+    // Each packet holds 128 samples, with no run-length optimisation needed.
+    for (let channel = 0; channel < 3; channel++) {
+      for (let pixel = 0; pixel < count; pixel += 128) {
+        rgb[offset++] = 127;
+        for (let i = 0; i < 128; i++) rgb[offset++] = rgba[(pixel + i) * 4 + channel];
+      }
+    }
+    for (let pixel = 0; pixel < count; pixel++) alpha[pixel] = rgba[pixel * 4 + 3];
+    add(type, rgb);
+    add(mask, alpha);
+  }
+  for (const [type, size] of [["ic11", 32], ["ic12", 64], ["ic07", 128], ["ic13", 256], ["ic08", 256], ["ic14", 512], ["ic09", 512], ["ic10", 1024]]) {
+    add(type, await raster(icon, size));
   }
   const header = Buffer.alloc(8);
   header.write("icns");
@@ -60,14 +81,14 @@ export function energyMark(mark) {
 }
 
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-// Generated containers hold only PNG frames; another payload, such as TIFF,
-// would still decode here but Windows and macOS would not use it.
+// PNG entries must not accept another payload, such as TIFF, just because
+// Sharp can decode it. Legacy ICNS RGB/mask entries are parsed separately.
 function pngFrame(png) {
   if (!png.subarray(0, 8).equals(pngSignature)) throw new Error("Icon frame is not a PNG");
   return png;
 }
 
-// Split an icon container into its PNG frames; other rasters are one frame.
+// Split generated containers into PNG or decoded legacy RGBA frames.
 function frames(relative, bytes) {
   if (relative.endsWith(".ico")) {
     if (bytes.readUInt16LE(0) !== 0 || bytes.readUInt16LE(2) !== 1) throw new Error("Not an ICO");
@@ -85,16 +106,41 @@ function frames(relative, bytes) {
     for (let offset = 8; offset < bytes.length;) {
       const length = bytes.readUInt32BE(offset + 4);
       if (length < 8 || offset + length > bytes.length) throw new Error("Truncated ICNS");
-      list.push({ key: bytes.toString("latin1", offset, offset + 4), png: pngFrame(bytes.subarray(offset + 8, offset + length)) });
+      const key = bytes.toString("latin1", offset, offset + 4);
+      const payload = bytes.subarray(offset + 8, offset + length);
       offset += length;
+      if (key === "is32" || key === "il32") {
+        const size = key === "is32" ? 16 : 32;
+        const count = size * size;
+        const mask = key === "is32" ? "s8mk" : "l8mk";
+        // Accept the canonical literal-only packets emitted by macIcon.
+        if (payload.length !== 3 * (count + count / 128) ||
+            bytes.toString("latin1", offset, offset + 4) !== mask ||
+            bytes.readUInt32BE(offset + 4) !== 8 + count || offset + 8 + count > bytes.length)
+          throw new Error("Invalid legacy ICNS RGB/mask pair");
+        const data = Buffer.alloc(count * 4);
+        let source = 0;
+        for (let channel = 0; channel < 3; channel++) {
+          for (let pixel = 0; pixel < count; pixel += 128) {
+            if (payload[source++] !== 127) throw new Error("Invalid legacy ICNS literal packet");
+            for (let i = 0; i < 128; i++) data[(pixel + i) * 4 + channel] = payload[source++];
+          }
+        }
+        for (let pixel = 0; pixel < count; pixel++) data[pixel * 4 + 3] = bytes[offset + 8 + pixel];
+        offset += 8 + count;
+        list.push({ key: `${key}/${mask}`, data, width: size, height: size });
+      } else {
+        list.push({ key, png: pngFrame(payload) });
+      }
     }
     return list;
   }
   return [{ key: "", png: pngFrame(bytes) }];
 }
 
-async function pixels(png) {
-  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+async function pixels(frame) {
+  if (frame.data) return frame;
+  const { data, info } = await sharp(frame.png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return { data, width: info.width, height: info.height };
 }
 
@@ -110,7 +156,7 @@ export async function assetMatches(relative, existing, expected) {
     if (actual.length !== wanted.length) return false;
     for (let i = 0; i < wanted.length; i++) {
       if (actual[i].key !== wanted[i].key) return false;
-      const [a, b] = await Promise.all([pixels(actual[i].png), pixels(wanted[i].png)]);
+      const [a, b] = await Promise.all([pixels(actual[i]), pixels(wanted[i])]);
       if (a.width !== b.width || a.height !== b.height) return false;
       // Compare colour weighted by alpha: on a nearly transparent edge pixel a
       // one-level alpha rounding can swing the stored colour by up to 255, yet
