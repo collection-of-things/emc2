@@ -35,6 +35,87 @@ test("Windows ICO embeds full-resolution PNGs for small and large displays", asy
   for (const size of [16, 24, 32, 48, 64, 128, 256]) assert.ok(sizes.has(size), `Missing ${size}px icon`);
 });
 
+function icnsChunks(bytes) {
+  const chunks = [];
+  for (let offset = 8; offset < bytes.length;) {
+    const length = bytes.readUInt32BE(offset + 4);
+    chunks.push({ type: bytes.toString("ascii", offset, offset + 4), payload: bytes.subarray(offset + 8, offset + length) });
+    offset += length;
+  }
+  return chunks;
+}
+
+function icnsContainer(chunks) {
+  const body = chunks.map(({ type, payload }) => {
+    const header = Buffer.alloc(8);
+    header.write(type);
+    header.writeUInt32BE(8 + payload.length, 4);
+    return Buffer.concat([header, payload]);
+  });
+  const header = Buffer.alloc(8);
+  header.write("icns");
+  header.writeUInt32BE(8 + body.reduce((sum, chunk) => sum + chunk.length, 0), 4);
+  return Buffer.concat([header, ...body]);
+}
+
+test("macOS icon uses legacy RGB and masks for small badges and explicit Retina PNGs", async () => {
+  const icns = await readFile("build/icon.icns");
+  assert.equal(icns.toString("ascii", 0, 4), "icns");
+  assert.equal(icns.readUInt32BE(4), icns.length);
+  const chunks = icnsChunks(icns);
+  assert.deepEqual(chunks.map(chunk => chunk.type), ["is32", "s8mk", "il32", "l8mk", "ic11", "ic12", "ic07", "ic13", "ic08", "ic14", "ic09", "ic10"]);
+  const svg = await readFile("build/icon.svg");
+  for (const [index, size] of [[0, 16], [2, 32]]) {
+    const { data } = await sharp(svg, { density: 72 * size * 4 / 100 }).resize(size, size, { kernel: "lanczos3" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const rgb = chunks[index].payload;
+    const alpha = chunks[index + 1].payload;
+    const count = size * size;
+    assert.equal(rgb.length, 3 * (count + count / 128));
+    assert.equal(alpha.length, count);
+    for (let pixel = 0; pixel < count; pixel++) {
+      assert.ok(Math.abs(alpha[pixel] - data[pixel * 4 + 3]) <= 8);
+      for (let channel = 0; channel < 3; channel++) {
+        const packet = channel * (count + count / 128) + Math.floor(pixel / 128) * 129;
+        assert.equal(rgb[packet], 127, "128 literal samples per packet, planar R/G/B order");
+        const actual = rgb[packet + 1 + pixel % 128] * alpha[pixel];
+        const expected = data[pixel * 4 + channel] * data[pixel * 4 + 3];
+        assert.ok(Math.abs(actual - expected) / 255 <= 8);
+      }
+    }
+  }
+  for (const [type, size] of [["ic11", 32], ["ic12", 64], ["ic07", 128], ["ic13", 256], ["ic08", 256], ["ic14", 512], ["ic09", 512], ["ic10", 1024]]) {
+    const payload = chunks.find(chunk => chunk.type === type).payload;
+    assert.equal(payload.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+    const image = await sharp(payload).metadata();
+    assert.equal(image.width, size);
+    assert.equal(image.height, size);
+  }
+});
+
+test("ICNS check compares legacy pixels and rejects malformed RGB/mask pairs", async () => {
+  const icns = await readFile("build/icon.icns");
+  const chunks = icnsChunks(icns);
+  assert.equal(chunks[0].type, "is32");
+  const altered = (index, payload) => icnsContainer(chunks.map((chunk, i) => i === index ? { ...chunk, payload } : chunk));
+  const rounded = Buffer.from(chunks[0].payload);
+  rounded[1]++;
+  assert.equal(await assetMatches("build/icon.icns", altered(0, rounded), icns), true);
+  const changed = Buffer.from(chunks[0].payload);
+  // Change an opaque background pixel's red sample visibly.
+  assert.equal(chunks[1].payload[130], 255);
+  changed[1 + 129 + 2] = 255;
+  assert.equal(await assetMatches("build/icon.icns", altered(0, changed), icns), false);
+  assert.equal(await assetMatches("build/icon.icns", altered(0, rounded.subarray(1)), icns), false);
+  assert.equal(await assetMatches("build/icon.icns", altered(0, Buffer.concat([rounded, Buffer.from([0])])), icns), false);
+  const badControl = Buffer.from(rounded);
+  badControl[0] = 255;
+  assert.equal(await assetMatches("build/icon.icns", altered(0, badControl), icns), false);
+  assert.equal(await assetMatches("build/icon.icns", altered(1, chunks[1].payload.subarray(1)), icns), false);
+  assert.equal(await assetMatches("build/icon.icns", icnsContainer(chunks.filter((_, i) => i !== 1)), icns), false);
+  const tiff = await sharp(chunks[4].payload).tiff().toBuffer();
+  assert.equal(await assetMatches("build/icon.icns", altered(4, tiff), icns), false);
+});
+
 // Platform encoders can produce different bytes for the same pixels; the check
 // must accept those and still reject stale artwork or a changed icon layout.
 test("icon check accepts re-encoded pixels and rejects changed artwork", async () => {

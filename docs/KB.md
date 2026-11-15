@@ -3758,9 +3758,10 @@ proportions intact. The repository avatar uses the same mark in Energy
 `#FFF3F2` fill it recolours.
 
 `node --test scripts/brand-icons.test.mjs` checks antialiased source edges,
-transparent corners, the dimensions of the PNG frames inside the Windows ICO,
-that the asset check accepts re-encoded pixels and rejects changed artwork or
-layout, and that the logo recolour fails loudly. These checks do not establish how Explorer renders an installed icon or
+transparent corners, Windows PNG frame dimensions, legacy macOS RGB/mask
+pixels, Retina PNG dimensions, malformed ICNS pairs, that the asset check
+accepts re-encoded pixels and rejects changed artwork or layout, and that the
+logo recolour fails loudly. These checks do not establish how Explorer renders an installed icon or
 whether a previously cached icon has refreshed. Existing downloaded installers
 keep their embedded artwork; rebuild the installer to include regenerated icons.
 
@@ -3771,7 +3772,17 @@ symbol, with the resolved app scheme and scales them to fit window controls;
 public browser-access pages select the lockup using system color scheme.
 `build/icon.png` is the 1024px default dark app icon. `build/icon.ico` contains
 16, 20, 24, 32, 40, 48, 64, 96, 128 and 256px PNG representations;
-`build/icon.icns` contains 16px through 1024px representations. The tray uses
+`build/icon.icns` uses `is32`/`s8mk` and `il32`/`l8mk` for 16px and 32px
+RGB/alpha pairs. RGB uses planar R/G/B literal-only RLE packets of 128 samples;
+alpha masks are uncompressed. The checker accepts this canonical encoding and
+compares decoded RGBA with the same tolerance as PNGs. PNG entries `ic11`
+through `ic14` supply Retina sizes alongside `ic07` through `ic10` for larger
+icons. macOS `iconutil -c iconset build/icon.icns -o /tmp/emc2.iconset`
+can verify native decoding without launching the app or accessing Keychain.
+The previous PNG `icp4`/`icp5` entries decoded to corrupted small images with
+macOS iconutil; the replacement's ten extracted images match the SVG rasters.
+This verifies native asset decoding; installed system-dialog appearance and
+icon-cache refresh still need separate acceptance. The tray uses
 the standalone mark with a transparent background. No app identifier,
 profile, keychain, signing or release behavior changes with these assets.
 
