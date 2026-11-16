@@ -14,6 +14,8 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+## 0.2.40 - 2026-11-15
+
 ### Fixed
 
 - Correct the corrupted small macOS app icon used in system dialogs and add Retina icon representations. Existing installations need a rebuilt app to receive the corrected artwork. ([#219](https://github.com/collection-of-things/emc2/issues/219))
