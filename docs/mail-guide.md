@@ -119,12 +119,14 @@ Gmail reuses cached bodies and checks labels.
 
 Bodies preserve a bounded, safe subset of the sender's formatted layout, with
 readable plain text when formatting is unavailable or rejected. Sender scripts,
-forms, stylesheets and resource-loading CSS are excluded. Show images sits above
-the body; images stay blocked until activated for that opening.
+forms, stylesheets and resource-loading CSS are excluded. Images load by
+default. The image button beside the eye (Privacy) in the toolbar hides them in
+every email until you turn them back on; the choice is remembered.
 
-Show images also works while personal text is hidden; image descriptions and
-captions stay masked. Image URLs containing detected private information remain
-blocked in that mode. Image pixels may contain personal information.
+While personal text is hidden, images start hidden too. The same button shows
+them until you turn hiding on again; image descriptions and captions stay
+masked and image URLs containing detected private information stay blocked.
+Image pixels may contain personal information.
 
 Loading remote images can tell the sender you opened the email. HTTP and HTTPS
 links open in your default browser on desktop. Personal-information hiding

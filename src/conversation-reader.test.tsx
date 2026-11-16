@@ -51,13 +51,13 @@ for (const gmail of [true, false]) test(`${gmail ? "Gmail" : "IMAP"} inline stac
     assert.ok(hint?.classList.contains("visually-hidden"), "toggle instructions stay visually hidden");
     assert.match(hint!.textContent!, /Enter or click expands a message/);
     toggles().forEach(node => assert.equal(node.getAttribute("aria-describedby"), describedBy[0]));
-    assert.equal(container.querySelectorAll('img').length, 0);
+    assert.equal(container.querySelectorAll('img').length, 1, "the open message loads its image by default");
+    assert.equal(cards()[1].querySelectorAll('img').length, 1);
     await click(toggles()[0]);
-    await click([...cards()[0].querySelectorAll('button')].find(node => node.textContent === 'Show images')!);
-    assert.equal(cards()[0].querySelectorAll('img').length, 1);
-    assert.equal(cards()[1].querySelectorAll('img').length, 0);
-    await click(toggles()[0]); await click(toggles()[0]);
-    assert.equal(cards()[0].querySelectorAll('img').length, 0);
+    assert.equal(cards()[0].querySelectorAll('img').length, 1, "expanding a message loads its images");
+    await click(toggles()[0]);
+    assert.equal(cards()[0].querySelectorAll('img').length, 0, "a collapsed message renders no images");
+    await click(toggles()[0]);
     await act(async () => toggles()[0].dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
     assert.equal(dom.window.document.activeElement, toggles()[1]);
     await act(async () => toggles()[1].dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })));
@@ -68,7 +68,6 @@ for (const gmail of [true, false]) test(`${gmail ? "Gmail" : "IMAP"} inline stac
     assert.equal(menuTarget, older.id);
     await render(true);
     assert.doesNotMatch(container.innerHTML, /sender@example.test|reader@example.test/);
-    assert.equal(container.querySelectorAll('img').length, 0);
     if (gmail) {
       await click([...container.querySelectorAll('button')].find(node => node.textContent?.startsWith('Load full conversation'))!);
       assert.ok(calls.includes('/messages/a%3A2/conversation/expand')); assert.equal(changed, 1);

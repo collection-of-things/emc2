@@ -37,11 +37,11 @@
   .app-search-toolbar .search { min-height: 40px; }
   .commands-button { min-height: 40px; }
   .mail-category-bar { padding-inline: 12px; column-gap: 8px; }
-  .workspace .list { padding-inline: 8px; }
-  .mail-window-row .row.card { padding-right: 10px; }
+  .list { --row-inset: 12px; }
+  .mail-window-row .row.card { padding-right: 12px; }
   .row.card.unread .row-text > :last-child:not(.row-subject-slot),
   .row.card.unread .row-text > .row-subject-slot:last-child > .row-subject { padding-right: 12px; }
-  .list .row.card .avatar { width: 24px; height: 24px; margin: 0 8px 0 0; }
+  .list .mail-row:has(> .row.card) { --avatar-size: 24px; --avatar-gap: 8px; }
   .theme-editor .settings-row { flex-wrap: wrap; gap: 8px; }
   .theme-editor input:not([type="checkbox"]), .theme-actions button { min-height: 44px; }
   .theme-color input[type="color"] { width: 44px; height: 44px; }
@@ -53,7 +53,7 @@
    card's fixed gutter, avatar block and timestamp would otherwise squeeze the
    sender line. */
 @container (max-width: 400px) {
-  .list .row.card .avatar { width: 24px; height: 24px; margin: 0 8px 0 0; }
+  .list .mail-row:has(> .row.card) { --avatar-size: 24px; --avatar-gap: 8px; }
 }
 
 /* Keep phone overrides after desktop application styles. */

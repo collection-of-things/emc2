@@ -33,7 +33,7 @@
 .compose-mark { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; border-radius: 3px; background: var(--primary-ink); color: var(--primary-fill); }
 .sidebar-group + .sidebar-group { margin-top: 22px; }
 .sidebar-heading button { padding-bottom: 9px; text-transform: none; letter-spacing: 0; color: var(--text-3); }
-.sidebar-group button > svg { color: var(--text-2); }
+.sidebar-group button > svg { color: var(--text-3); }
 .sidebar-group button[aria-current="page"],
 .sidebar-group button[aria-pressed="true"] { color: var(--accent-soft-ink); font-weight: 500; }
 .sidebar-primary > button[aria-current="page"] { background: var(--accent-soft); }
@@ -280,7 +280,8 @@
 .mail-category-bar { display: flex; align-items: center; column-gap: 4px; height: 42px; flex-shrink: 0; border-bottom: 1px solid var(--line); padding: 0 12px 0 var(--select-gutter); overflow-x: auto; }
 .mail-category-bar:not(:has(.inbox-tabs)) { height: 36px; }
 .mail-category-bar .inbox-tabs { height: 100%; gap: 22px; margin: 0; }
-.rail-select { flex-shrink: 0; width: 16px; display: grid; place-items: center; }
+/* Select-all centers over the avatar column, where row checkboxes appear. */
+.rail-select { flex-shrink: 0; width: calc(30px * var(--text-scale, 1)); display: grid; place-items: center; }
 .rail-actions { display: flex; align-items: center; min-width: 0; margin-left: auto; }
 .rail-actions:has(> [data-selection="true"]) { flex: 1; margin-left: 0; }
 .mail-category-bar:has(.rail-actions [data-selection="true"]) { height: auto; min-height: 44px; padding-block: 6px; overflow: visible; }
@@ -316,9 +317,6 @@
 .message-body p { margin-bottom: 18px; }
 .group { font-size: calc(10px * var(--text-scale, 1)); padding-inline: 18px; }
 :root:not([data-glass]) .split .list { background: var(--chrome); }
-.row.card { padding-inline: 18px; }
-.row.card > .avatar { display: none; }
-.row.card::after { left: 18px; }
 .row.card .row-line strong { font-size: calc(12px * var(--text-scale, 1)); font-weight: 500; }
 .row.card .row-subject { font-size: calc(12px * var(--text-scale, 1)); }
 .row.card .row-preview { font-size: calc(11px * var(--text-scale, 1)); }

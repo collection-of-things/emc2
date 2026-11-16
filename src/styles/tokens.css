@@ -10,9 +10,9 @@
   --radius-pane: 14px;
   --sidebar: 208px;
   --list-width: clamp(320px, calc(31vw * var(--text-scale, 1)), min(560px, calc(448px * var(--text-scale, 1))));
-  /* The select-all checkbox and the row checkboxes share this left gutter so
-     every list header lines up (list padding + the row select offset). */
-  --select-gutter: 17px;
+  /* Toolbar, category rail and list rows share this left inset, so the view
+     name, the select-all checkbox and every row's avatar start on one x. */
+  --select-gutter: 16px;
   --mail-row-medium: 34px;
   --mail-row-compact: 24px;
   --mail-row-card-medium: 100px;
@@ -36,7 +36,7 @@
   --avatar-2-ink: #f2a9ba;
   --avatar-3: #352430;
   --avatar-3-ink: #d7c2cb;
-  --selected-card: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  --selected-card: color-mix(in oklab, var(--accent) 22%, var(--surface));
   --mail-group-height: 30px;
   --subhead-height: 48px;
   --chrome: color-mix(in srgb, var(--surface) 60%, var(--bg));
@@ -133,6 +133,13 @@
   --list-width: clamp(320px, calc(31vw * var(--text-scale, 1)), min(560px, calc(448px * var(--text-scale, 1))));
 }
 :root[data-scheme="dark"][data-theme="graphite"] {
+  /* Graphite is neutral end to end: its text ramp drops the brand mauve so
+     muted dates and counts read cleanly on the gray panes. */
+  --text: #f4f4f5;
+  --text-body: #e6e6e9;
+  --text-2: #b8b8c0;
+  --text-3: #9a9aa3;
+  --text-4: #8e8e99;
   --bg: #141416;
   --surface: #1a1a1d;
   --raised: #29292d;
@@ -220,6 +227,11 @@
   --shadow-dialog: 0 24px 64px rgba(21, 5, 16, 0.18);
 }
 :root[data-scheme="light"][data-theme="graphite"] {
+  --text: #111113;
+  --text-body: #26262b;
+  --text-2: #4a4a52;
+  --text-3: #5c5c64;
+  --text-4: #696972;
   --bg: #e4e4e8;
   --surface: #fbfbfc;
   --control-edge: color-mix(in srgb, var(--text-4) 85%, var(--surface));

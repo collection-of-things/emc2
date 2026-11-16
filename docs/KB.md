@@ -1479,7 +1479,7 @@ query values and reads only the local encrypted record. Missing or wrong-account
 mail returns 404; a changed version returns 409. The renderer holds content for
 its current opening or reply source, drops it on identity/version changes, and
 rejects stale responses. Closing and reopening does not retain a body cache.
-Image consent and privacy rendering remain tied to each opening.
+Images follow the toolbar image preference and privacy rendering stays tied to each opening.
 
 `GET /api/messages/search?query=...` uses the shared search compiler and a
 read-only SQLite snapshot. It decrypts one mail at a time, yields every 32
@@ -1803,7 +1803,7 @@ selecting or traversing mail does not add a visit or clear Forward. Consecutive
 search edits share one visit. Back from an open reader returns to the list; immediate Forward reopens the latest reader only while its account and message still exist. Otherwise Back and Forward restore the menu or list. A new menu visit after Back removes the forward branch.
 Missing account filters return to All. Drafts and dialogs block traversal.
 Escape retains the existing close-email, close-dialog and draft-confirmation
-behavior. Closing or changing the reader clears remote-image consent.
+behavior. Remote images follow the toolbar image preference (ADR 0127).
 
 Phone browsers below 760px use `src/ui/useSwipe.ts` for Back/Forward in the
 main content pane. The `touchNavigation` interaction preference defaults on
@@ -1846,11 +1846,17 @@ address masking. This changes display only; cached body strings are unchanged.
 The body uses 15px text at 1.45 line height within a 65ch column. Sender details
 and the date wrap within the header.
 
-Show images is a native button. Before activation the reader creates no body
-image elements and makes no image-metadata request. Activation shows loading,
-then responsive images, a failure message or a no-supported-images message.
-Hide images removes them. Message changes and reader closure clear consent;
-late responses cannot reveal images in a different message.
+Images load by default ([ADR 0127](adr/0127-default-images-and-flush-mail-list.md)).
+The toolbar button beside Privacy (`Hide images` / `Show images`) toggles them
+for every reader, conversation card and reply context and saves the choice in
+local storage as `remote-images`. There is no in-message consent strip. While
+images are off, the reader creates no body image elements and makes no
+image-metadata request. Formatted mail never requests metadata it lacks; only
+plain-text and image-only views do. A failed load shows a notice with Try
+images again. While privacy is on, images start hidden and the toggle shows
+them only for that privacy session without saving; enabling privacy hides
+them again. Late responses cannot reveal images in a different message, and
+turning images off cancels a pending load.
 
 New MIME parsing records at most 50 unique image URLs and 500 characters of alt
 text per image. Only explicit HTTPS sources with public-looking DNS names, no
@@ -1866,8 +1872,9 @@ while retaining the existing script, connection and sandbox restrictions.
 
 Loading remote images can expose the reader's IP address and send cookies to
 the image host. URL filtering does not verify DNS resolution or redirect
-chains. Consent therefore applies only to the current reader opening and is
-never saved as a preference. Show images works while personal text is hidden. Enabling privacy clears earlier consent; a new click can show supported images while known private text, alt descriptions and captions stay masked. Formatted image descriptions are redacted before the 500 UTF-16-unit display limit. Gallery metadata may already be truncated by the provider; descriptions of 500 or more units use a generic Image N label while privacy is enabled, in both alt text and loaded captions. Short descriptions keep their existing masking and explicit caption reveal. Sources containing detected private information remain blocked in privacy mode. Image pixels may contain personal information and are not redacted. See [ADR 0020](adr/0020-explicit-images-with-hidden-text.md). Embedded CID raster images now use the consent-controlled attachment path described in [ADR 0088](adr/0088-embedded-mail-images.md); they do not use remote image URL validation.
+chains. The toolbar tooltip states that loading can tell senders the email
+was opened. In privacy mode images start hidden; after the toggle shows them,
+known private text, alt descriptions and captions stay masked. Formatted image descriptions are redacted before the 500 UTF-16-unit display limit. Gallery metadata may already be truncated by the provider; descriptions of 500 or more units use a generic Image N label while privacy is enabled, in both alt text and loaded captions. Short descriptions keep their existing masking and explicit caption reveal. Sources containing detected private information remain blocked in privacy mode. Image pixels may contain personal information and are not redacted. See [ADR 0020](adr/0020-explicit-images-with-hidden-text.md). Embedded CID raster images now use the consent-controlled attachment path described in [ADR 0088](adr/0088-embedded-mail-images.md); they do not use remote image URL validation.
 
 Older cached mail lacks image metadata. The authenticated, CSRF-protected
 `POST /api/messages/:id/images` retrieves only the requested message, writes
@@ -1905,9 +1912,9 @@ Sources: [reader](../src/mail/Reader.tsx), [styles](../src/styles/reader.css),
 
 [The content parser](../shared/mail-content.ts) allows a bounded element, attribute and inline-style subset. It rejects scripts, forms, frames, SVG, sender stylesheets, fonts, event handlers, srcset, resource CSS, positioning and transforms. Lengths accept px, pt, em, rem, ex and ch (ex and ch count as 8px); margins also accept `auto`; border shorthands are read in any word order and normalized to `width style color`. The renderer applies HTML `align` the way browsers do (auto margins for centered tables, left/right floats for aligned tables and images, `-webkit-` text alignment elsewhere), renders `<center>` as a centered block, and drops sender margin, padding and border on `blockquote` so the app's quote style applies. Node, depth and dimension limits bound work and layout. Bounded sender min-width is supported. Formatted content uses break-word wrapping to preserve whole-word table widths; oversized tables scroll inside the content boundary. [FormattedMail](../src/mail/FormattedMail.tsx) constructs React elements; it never injects sender HTML. Table layout, heading hierarchy, emphasis and safe HTTP(S) links remain supported. The renderer maps sender text, backgrounds and borders to app colors, and links use the app's blue. This includes legacy color attributes and validated border shorthand. Image pixels and privacy bars remain unchanged. See [ADR 0014](adr/0014-themed-formatted-mail.md). Missing or rejected content uses cached plain text. Embedded raster CID attachments resolve only against a unique attachment on the opened message after Show images. The renderer fetches the authenticated attachment bytes, enforces the existing 512 KiB file limit and revokes its blob URL when hidden or closed. SVG, arbitrary data URLs and unmatched CID references remain unsupported. Older embedded-image imports recover missing Content-ID metadata through the existing content route. See [ADR 0088](adr/0088-embedded-mail-images.md).
 
-[The reader](../src/mail/MessageContent.tsx) loads missing formatting on open, shows cached text during loading or failure and offers one manual retry. Show images sits above the body. No body image element exists until activation; consent resets on closure, message change or privacy activation. Delayed content and image responses cannot reveal another message. Formatted images stay inline without a duplicate gallery. Privacy ranges use the full text and map back to the original text leaves with UTF-16 offsets. This keeps supported sender formatting and image/caption order while masking tokens split across tags or images. Split segments share the whole source token as their reveal key; revealing a full name does not reveal a separate surname. Privacy mode suppresses private link and image destinations while allowing explicit display of other supported images. Scrollbar indicators are hidden by CSS without changing scrollable overflow or input handling.
+[The reader](../src/mail/MessageContent.tsx) loads missing formatting on open, shows cached text during loading or failure and offers one manual retry. Body images follow the saved toolbar preference; hidden-image placeholders keep the sender's display, float, vertical alignment and margins, and images 2px or smaller on a side keep their size but draw nothing. Delayed content and image responses cannot reveal another message. Formatted images stay inline without a duplicate gallery. Privacy ranges use the full text and map back to the original text leaves with UTF-16 offsets. This keeps supported sender formatting and image/caption order while masking tokens split across tags or images. Split segments share the whole source token as their reveal key; revealing a full name does not reveal a separate surname. Privacy mode suppresses private link and image destinations while allowing explicit display of other supported images. Scrollbar indicators are hidden by CSS without changing scrollable overflow or input handling.
 
-Replies use the safe formatted reader for the original message. Reopened drafts require exactly one cached source matching the draft account and `inReplyTo` message ID; a missing or ambiguous match shows no original. Authenticated single-message recovery can load missing HTML, while remote images require explicit per-opening consent. Rejected or unavailable HTML retains the cached body or preview. Privacy uses the source recipients and clears image consent. The outgoing draft and source mail are unchanged. See [ADR 0074](adr/0074-formatted-reply-context.md).
+Replies use the safe formatted reader for the original message. Reopened drafts require exactly one cached source matching the draft account and `inReplyTo` message ID; a missing or ambiguous match shows no original. Authenticated single-message recovery can load missing HTML, while remote images follow the toolbar preference. Rejected or unavailable HTML retains the cached body or preview. Privacy uses the source recipients. The outgoing draft and source mail are unchanged. See [ADR 0074](adr/0074-formatted-reply-context.md).
 
 [Privacy matching](../shared/privacy.ts) learns names from optional account display names and the current To/Cc display names tied to connected account addresses. Per-message surfaces use `messagePrivateNames`, which adds the sender and every To/Cc display name of that message as full names only — third-party first names and surnames are never inferred. Owner names still cover full names, first names and surnames, including one-letter Unicode components, with Unicode-aware boundaries, case/whitespace variation and URL encoding. The opened message's dictionary also protects Gmail label filter options and the label editor. A sender avatar shows a neutral dot and loads no provider logo, whose URL would expose the sender domain. Sender-markup splits cannot expose a known name. Hidden bars have no private children, title or accessibility text. Explicit reveal applies to the clicked token; re-enabling privacy clears it. Unknown names that appear only in a body cannot be identified. A name that is also an ordinary word can hide that word while privacy is on. Editable compose fields retain their focus-to-reveal behavior.
 
@@ -2010,9 +2017,9 @@ Ctrl/Cmd+Plus, Equals and numpad Plus increase text size; Ctrl/Cmd+Minus and num
 
 `server/gmail.test.ts` uses mocked Gmail API methods with a temporary encrypted store to cover catalog refresh, message label sync, account isolation, custom label edits, provider failures, sync/read ordering, idempotent reads and disconnect cleanup. `server/imap-read.test.ts` covers inbox UID validation and exact archive Message-ID verification without a connection, including substring false positives and preservation of cached unread state on failure. The store holds SQLite open until process exit, so these tests leave synthetic files in the system temporary directory for the host or CI runner to clean up. `src/mail-ui.test.tsx` covers key recognition, account-scoped filters, label rendering/privacy and duplicate/retry read requests. `src/reader-keyboard.test.tsx` executes the App keyboard and open handlers with synthetic state to cover reader navigation, account changes, coalescing, retry and input guards. These tests do not mount the interface, authenticate real accounts or drive a browser.
 
-Snooze retains its message-specific privacy context. Rejected formatted trees and wrappers without readable text or supported images use the same readable text and consent-controlled gallery. Supported image-only mail keeps its inline image presentation. Image status styles do not override body paragraph sizing.
+Snooze retains its message-specific privacy context. Rejected formatted trees and wrappers without readable text or supported images use the same readable text and preference-controlled gallery. Supported image-only mail keeps its inline image presentation. Image status styles do not override body paragraph sizing.
 
-Filters stay outside scrolling mail content. Compact reader up/down buttons reuse the filtered order and Unread anchor; traversal restores reader focus and resets image consent. See [ADR 0032](adr/0032-mail-control-placement.md). Synthetic mounted tests cover these paths and the selected sidebar folding/collapse behavior. Native layout and physical input remain separate checks.
+Filters stay outside scrolling mail content. Compact reader up/down buttons reuse the filtered order and Unread anchor; traversal restores reader focus and keeps the toolbar image preference. See [ADR 0032](adr/0032-mail-control-placement.md). Synthetic mounted tests cover these paths and the selected sidebar folding/collapse behavior. Native layout and physical input remain separate checks.
 
 ## Encryption research
 
@@ -2127,7 +2134,7 @@ Cleared, expired, sent and archived snoozes are excluded.
 
 Ctrl/Cmd +, - and 0 resize or reset text. D still changes density. Page Up/Down
 moves through the complete filtered email list outside editors and dialogs.
-Reply context uses the safe formatted reader with cached text fallback and explicit image consent. File drops and file selection share validation.
+Reply context uses the safe formatted reader with cached text fallback and the toolbar image preference. File drops and file selection share validation.
 
 Notification Preview obeys delivery toggles and shows enabled options. It uses
 synthetic sample text, honors privacy and cannot open a real message.
@@ -2904,10 +2911,10 @@ The composer template picker is a combobox inside the draft. Typing filters temp
 ## Formatted original messages in replies
 
 New replies and reopened saved drafts use the same `ReaderContent` allowlist,
-content recovery and opening-specific image consent as the reading pane.
+content recovery and toolbar image preference as the reading pane.
 Cached HTML keeps link labels instead of displaying plaintext tracking URLs.
 Rejected or unavailable HTML uses the original plain text without dropping it.
-Privacy clears image consent; changing source identity/content remounts the
+Enabling privacy hides images until the toggle shows them; changing source identity/content remounts the
 original-message view. Draft content and existing settings are unchanged.
 See [ADR 0074](adr/0074-formatted-reply-context.md).
 
@@ -3203,7 +3210,7 @@ the last valid cache and makes no automatic retry.
 entry. Only the selected message receives callbacks bound to the App target.
 Other entries expose their own context menus and Select for actions, which uses
 the existing opening and mark-read operation. Collapse unmounts content and
-resets image consent; privacy applies independently to every entry. App forwards
+renders no images; privacy applies independently to every entry. App forwards
 conversation menus without changing the selected reader, so its navigation
 cleanup does not close them. Closed-list menus, bulk selection, custom shortcuts
 and provider contracts are unchanged.
@@ -3629,7 +3636,7 @@ Whatever still overflows scrolls sideways inside `.formatted-mail`. Blocked
 images keep their placeholder at `min(width, 100%)` with the declared aspect
 ratio, so hiding images does not widen table layouts.
 
-Cross-leaf text redaction, link checks and remote/CID image consent stay in the
+Cross-leaf text redaction, link checks and remote/CID image preference stay in the
 existing formatter. Embedded blob results are bound to exact message and
 attachment metadata. Synthetic checks are in `src/sender-css.test.tsx` and
 `src/FormattedMail.test.tsx`; they query styled mail through the frame's

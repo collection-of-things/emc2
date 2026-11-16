@@ -213,7 +213,7 @@ test("supported image-only mail keeps its formatted image without replacing it w
   const blocked = documentOf(render(html, true));
   assert.equal(blocked.querySelector(".formatted-mail-fallback"), null);
   assert.equal(blocked.querySelector("img"), null);
-  assert.match(blocked.querySelector(".formatted-mail-image-placeholder")?.getAttribute("aria-label") ?? "", /Use Show images/);
+  assert.match(blocked.querySelector(".formatted-mail-image-placeholder")?.getAttribute("aria-label") ?? "", /Use Show images in the toolbar/);
   const shown = documentOf(render(html, true, true));
   assert.equal(shown.querySelectorAll("img").length, 1);
   assert.ok(!shown.body.textContent?.includes("Plain fallback"));
@@ -404,13 +404,27 @@ test("blocked images keep their size as an empty box and carry the reason as a l
   assert.equal(tall.style.width, "24px", "an unsized width keeps the 24px box");
   assert.equal(tall.style.height, "40px");
   assert.equal(box.textContent, "");
-  assert.equal(box.getAttribute("aria-label"), "Image blocked. Use Show images to load it.");
+  assert.equal(box.getAttribute("aria-label"), "Image hidden. Use Show images in the toolbar to load it.");
+});
+
+test("hidden images keep the sender's line layout and tracking pixels draw nothing", () => {
+  const document = documentOf(render('<p><img src="https://images.example.com/logo.png" width="32" height="32" style="display:block;margin:0 0 8px">' +
+    'Comment text</p><p>Because you were mentioned.<img src="https://images.example.com/beacon.gif" width="1" height="1">Message ID</p>'));
+  const [logo, beacon] = document.querySelectorAll<HTMLElement>(".formatted-mail-image-placeholder");
+  assert.equal(logo.style.display, "block", "a block-level image keeps its own line");
+  assert.equal(logo.style.margin, "0px 0px 8px");
+  assert.equal(logo.hasAttribute("data-spacer"), false);
+  assert.equal(beacon.hasAttribute("data-spacer"), true, "a 1px pixel keeps its size but no visible box");
+  assert.equal(beacon.style.width, "min(1px, 100%)");
+  const inline = documentOf(render('<p>Icon <img src="https://images.example.com/i.png" width="16" height="16" style="display:inline"> text</p>'))
+    .querySelector<HTMLElement>(".formatted-mail-image-placeholder")!;
+  assert.equal(inline.style.display, "inline-block", "an inline image keeps a sized box");
 });
 
 test("image max-height caps survive blocked, unsupported and private placeholders", () => {
   const image = (src: string) => `<img src="${src}" width="120" height="800" style="max-height:24px">`;
   const cases = [
-    [render(image("https://images.example.com/photo.png")), "Image blocked. Use Show images to load it."],
+    [render(image("https://images.example.com/photo.png")), "Image hidden. Use Show images in the toolbar to load it."],
     [render(`<p>Context</p>${image("http://images.example.com/photo.png")}`, false, true), "Unsupported image."],
     [render(image("https://images.example.com/?name=Morgan%20Example"), true, true), "Image unavailable while personal information is hidden."],
   ] as const;

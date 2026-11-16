@@ -413,19 +413,18 @@ test("due counts share account scope across views and exclude cleared, completed
   } finally { await ui.close(); }
 });
 
-test("Today privacy masks private source text and attributes, and image consent resets for each inline opening", async () => {
+test("Today privacy masks private source text and attributes, and each inline opening loads its own images", async () => {
   const ui = await mount([commitment("brief")]); try {
     ui.state.messages[0].images = [{ src: "https://images.example.test/photo.png", alt: "Private Reader portrait" }];
     ui.state.messages[1].images = [{ src: "https://images.example.test/sent.png", alt: "Private Reader" }]; await ui.mailChanged();
     await ui.click(ui.container.querySelector<HTMLButtonElement>(".work-select")!);
-    assert.equal(ui.container.querySelector('.message img[src="https://images.example.test/photo.png"]'), null);
-    await ui.click(ui.button("Show images")); assert.ok(ui.container.querySelector('.message img[src="https://images.example.test/photo.png"]'));
+    assert.ok(ui.container.querySelector('.message img[src="https://images.example.test/photo.png"]'), "images load by default");
     await ui.click(ui.button("Select for actions", ui.container.querySelector('[data-message-id="sent-a"]')!));
-    assert.equal(ui.container.querySelector('.message img[src="https://images.example.test/sent.png"]'), null);
     assert.ok(ui.container.innerHTML.includes("Private Reader"), "the synthetic private alias is present before masking");
     await ui.click(ui.button("Hide personal information"));
     assert.equal(ui.sidebar("Account 1 · Custom IMAP").title, "Account 1 · Custom IMAP");
     assert.ok(!ui.container.innerHTML.includes("reader@example.test")); assert.ok(!ui.container.innerHTML.includes("Private Reader"));
+    assert.equal(ui.container.querySelector('.message img[src="https://images.example.test/sent.png"]'), null, "turning privacy on hides images");
     await ui.click(ui.button("Show images")); assert.ok(ui.container.querySelector('.message img[src="https://images.example.test/sent.png"]'));
     assert.ok(!ui.container.innerHTML.includes("Private Reader"));
     await ui.click(ui.button("Track work"));

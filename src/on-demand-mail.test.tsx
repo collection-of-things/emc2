@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import type { Mail, MailBodyResponse, MailSearchResult, MailSummary } from "../shared/types";
+import { RemoteImagesContext } from "./ui/RemoteImages";
 import type { Api } from "./api";
 import { replySource, useMailBody } from "./mail-body";
 import { Reader } from "./mail/Reader";
@@ -24,7 +25,7 @@ test("recovered replies resolve exactly one source in the sending account", () =
   assert.equal(replySource([summary()], { accountId: "a", inReplyTo: "missing" }), undefined);
 });
 
-test("summary hydration preserves legacy content recovery and retry without image activation", async () => {
+test("summary hydration preserves legacy content recovery and retry while images follow the preference", async () => {
   const dom = new JSDOM("<!doctype html><div id='root'></div>");
   const globals = { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true };
   const previous = new Map(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
@@ -48,7 +49,8 @@ test("summary hydration preserves legacy content recovery and retry without imag
     return found;
   };
   try {
-    await act(async () => root.render(<Reader mail={summary()} labels={[]} busy={false} api={api} onLabels={() => {}} onMenu={() => {}} onMenuKey={() => {}} />));
+    const view = (on: boolean) => <RemoteImagesContext.Provider value={on}><Reader mail={summary()} labels={[]} busy={false} api={api} onLabels={() => {}} onMenu={() => {}} onMenuKey={() => {}} /></RemoteImagesContext.Provider>;
+    await act(async () => root.render(view(false)));
     assert.equal(contentAttempts, 1, "missing legacy metadata must request content recovery after body hydration");
     assert.match(container.textContent || "", /Formatted email is unavailable/);
     assert.match(container.textContent || "", /Locally cached private body/);
@@ -60,10 +62,10 @@ test("summary hydration preserves legacy content recovery and retry without imag
     assert.doesNotMatch(container.textContent || "", /Formatted email is unavailable/);
     assert.match(container.textContent || "", /synthetic.txt/);
     assert.ok(container.querySelector('button[aria-label="Download attachment 1"]'));
-    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0, "recovery must not activate remote images");
-    await act(async () => button("Show images").click());
+    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0, "hidden images stay hidden after recovery");
+    await act(async () => root.render(view(true)));
     assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 1);
-    await act(async () => button("Hide images").click());
+    await act(async () => root.render(view(false)));
     assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0);
     assert.equal(requests.length, 3, "only local body and content recovery requests are made");
   } finally {
@@ -72,7 +74,7 @@ test("summary hydration preserves legacy content recovery and retry without imag
   }
 });
 
-test("body hydration rejects late, cross-account and changed-version completions; reader resets image consent", async () => {
+test("body hydration rejects late, cross-account and changed-version completions; reader reloads images per source", async () => {
   const dom = new JSDOM("<!doctype html><div id='root'></div>");
   const globals = { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true };
   const previous = new Map(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
@@ -105,13 +107,11 @@ test("body hydration rejects late, cross-account and changed-version completions
     assert.doesNotMatch(container.textContent || "", /private body/);
     await act(async () => pending.at(-1)!.resolve({ mail: full, contentVersion: "v1" }));
     assert.match(container.textContent || "", /Locally cached private body/);
-    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0);
-    const show = [...container.querySelectorAll("button")].find(button => button.textContent === "Show images")!;
-    await act(async () => show.click()); assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 1);
+    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 1, "images load by default");
     await act(async () => root.render(reader(summary("a", "v3"))));
-    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0);
+    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0, "a changed source drops the old images");
     await act(async () => pending.at(-1)!.resolve({ mail: full, contentVersion: "v3" }));
-    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0, "a changed source cannot reuse image consent");
+    assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 1, "the new source loads its own images");
     const searches: { resolve: (value: MailSearchResult) => void; signal?: AbortSignal }[] = [];
     const searchApi: Api = (_url, _method, _body, signal) => new Promise(resolve => searches.push({ signal, resolve: value => resolve(value as never) }));
     function SearchProbe({ query, mail }: { query: string; mail: MailSummary }) {

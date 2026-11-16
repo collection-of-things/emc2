@@ -5,8 +5,9 @@ import { imageSource, type Mail, type MailImage, type MailAttachment } from "../
 import { privateMailLink, needsEmbeddedContentRecovery, parsePlainTextQuotes, type PlainTextBlock } from "../../shared/mail-content";
 import { redactPrivateText } from "../privacy";
 import { PrivacyContext, Redact } from "../ui/Privacy";
+import { RemoteImagesContext } from "../ui/RemoteImages";
 import { Attachments } from "./Attachments";
-import { FormattedMail } from "./FormattedMail";
+import { FormattedMail, rendersFormatted } from "./FormattedMail";
 import { useRemoteImage } from "./remote-image";
 
 export function MessageBody({ text }: { text: string }) {
@@ -105,10 +106,13 @@ export function MessageImages(props: ImageProps) {
 export function ReaderContent(props: ImageProps) {
   return <ImageConsent key={JSON.stringify([props.mail.accountId, props.mail.id, props.mail.contentVersion])} {...props} body />;
 }
+// Loads message images while the toolbar preference allows them. A new
+// opening (a new key) starts fresh; turning the preference off blocks images
+// again and cancels a pending load.
 function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) {
   const { on: privacy, names } = useContext(PrivacyContext);
+  const imagesOn = useContext(RemoteImagesContext);
   const [status, setStatus] = useState("blocked");
-  const [consentInPrivacy, setConsentInPrivacy] = useState(false);
   const [images, setImages] = useState<MailImage[]>([]);
   const [content, setContent] = useState<ContentResult>({ html: mail.html ?? null, images: mail.images, attachments: mail.attachments });
   const [contentStatus, setContentStatus] = useState((mail.html === undefined || mail.attachments === undefined || needsEmbeddedContentRecovery(mail)) && loadContent ? "loading" : "ready");
@@ -120,10 +124,6 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
     active.current = true;
     return () => { active.current = false; imageRequest.current++; contentRequest.current++; };
   }, []);
-  useEffect(() => {
-    setConsentInPrivacy(false);
-    if (privacy) { imageRequest.current++; setStatus("blocked"); setImages([]); }
-  }, [privacy]);
   const recoverContent = async () => {
     if (!loadContent) return;
     const request = ++contentRequest.current;
@@ -140,7 +140,6 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
   }, []);
   const show = async () => {
     const request = ++imageRequest.current;
-    setConsentInPrivacy(privacy);
     setStatus("loading");
     try {
       const result = content.images ?? mail.images ?? (await loadImages(mail.id)).images;
@@ -156,28 +155,28 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
   };
   const htmlKnown = mail.html !== undefined || Boolean(loadContent && contentStatus === "ready");
   // Empty extracted metadata cannot rule out images still present in formatted HTML.
-  const noImages = contentStatus === "ready" && status !== "error" && htmlKnown &&
+  const noImages = contentStatus === "ready" && htmlKnown &&
     (content.images ?? mail.images)?.length === 0 && !/<img\b/i.test(content.html || "");
-  const shown = status === "shown" && (!privacy || consentInPrivacy);
-  const gallery = shown && (images.length ? images.map((image, index) =>
-    <ReaderImage key={image.src} mailId={mail.id} image={image} index={index} />) :
-    <p role="status">No supported remote images in this email. Embedded images require a matching supported attachment.</p>);
+  const knownImages = content.images ?? mail.images;
+  // Formatted mail renders its own images. The separate gallery serves plain
+  // text, the image-only view and HTML the formatter rejects (which falls back
+  // to plain text), so only those may ask the provider for image metadata;
+  // formatted mail uses metadata it already has.
+  const formattedHtml = useMemo(() => !!content.html && rendersFormatted(content.html, content.attachments),
+    [content.html, content.attachments]);
+  const needsGallery = !body || !formattedHtml;
+  useEffect(() => {
+    if (!imagesOn) { imageRequest.current++; setStatus("blocked"); setImages([]); return; }
+    // Failed formatting recovery still shows the cached text, so known gallery
+    // metadata may load beside it.
+    const settled = contentStatus === "ready" || (contentStatus === "error" && !!knownImages);
+    if (!settled || noImages || (!needsGallery && !knownImages)) return;
+    void show();
+  }, [imagesOn, contentStatus, noImages, needsGallery, knownImages]);
+  const gallery = imagesOn && status === "shown" && images.length > 0 && images.map((image, index) =>
+    <ReaderImage key={image.src} mailId={mail.id} image={image} index={index} />);
   const textBody = <MessageText text={mail.body || "This email has no plain-text body."} />;
   return <section className="message-images" aria-label="Email content">
-    {!noImages && <div className="image-controls">
-      <button className="button" type="button"
-        aria-expanded={shown} aria-controls={region}
-        disabled={status === "loading"}
-        onClick={() => {
-          if (shown) { imageRequest.current++; setStatus("blocked"); }
-          else void show();
-        }}>
-        {status === "loading" ? "Loading images…" : shown ? "Hide images" :
-          status === "error" ? "Try images again" : "Show images"}
-      </button>
-      <span>Remote images can tell the sender you opened this email.
-        {privacy && " Image pixels may contain personal information."}</span>
-    </div>}
     {body && mail.bodyUnavailable && <Notice text="Message body could not be parsed within the import limit. Downloadable attachment metadata is shown separately." />}
     {body && contentStatus === "loading" && <p role="status">Loading formatted email…</p>}
     {body && contentStatus === "error" && <><Notice text="Formatted email is unavailable. The text is shown instead." /><button type="button" className="link" onClick={() => void recoverContent()}>Retry formatted email</button></>}
@@ -185,9 +184,13 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
       ? <Attachments api={api} mailId={mail.id} files={content.attachments!} />
       : <section className="reader-attachments" aria-label="Attachments"><h2>Attachments</h2><p>{contentStatus === "ready" ? "No cached attachment metadata." : "Attachment metadata is not yet available."}</p></section>)}
     <div id={region}>
-      {status === "error" && <Notice text="Images could not be loaded. The email may be unavailable or archived." />}
+      {/* Images load on their own, so a failure is a quiet status, not an alert. */}
+      {imagesOn && status === "error" && <p className="image-retry" role="status">
+        Images could not be loaded. The email may be unavailable or archived.
+        <button type="button" className="link" onClick={() => void show()}>Try images again</button>
+      </p>}
       {body && <div className="message-body">
-        {content.html ? <FormattedMail mailId={mail.id} attachments={content.attachments} html={content.html} showImages={shown} privacy={privacy} privateNames={names}
+        {content.html ? <FormattedMail mailId={mail.id} attachments={content.attachments} html={content.html} showImages={imagesOn} privacy={privacy} privateNames={names}
           renderText={(text, segments) => <Redact text={text} segments={segments} />} redactText={(text) => redactPrivateText(text, names)}
           fallback={<>{textBody}{gallery}</>} /> : textBody}
       </div>}

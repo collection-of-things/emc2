@@ -27,14 +27,16 @@ test("reply context uses safe sender formatting instead of raw plaintext trackin
     assert.equal(Boolean(context.querySelector('.formatted-mail table strong')), true);
     assert.equal(context.textContent!.includes("long-tracking-token"), false);
     assert.equal(context.querySelector('a')?.textContent, "Read the update");
-    assert.equal(context.querySelector('script, img[src]'), null);
-    assert.match(context.textContent!, /Show images/);
+    assert.equal(context.querySelector('script'), null);
+    assert.equal(context.querySelector('img')?.getAttribute('referrerpolicy'), 'no-referrer', "images load by default without a referrer");
+    assert.doesNotMatch(context.textContent!, /Show images|Remote images can tell/);
   } finally { dom.window.close(); }
 });
 
-test("reply context recovers formatted content and resets image consent on privacy and source changes", async () => {
+test("reply context recovers formatted content and follows the image preference across sources", async () => {
   const { act } = await import("react");
   const { PrivacyContext } = await import("./ui/Privacy");
+  const { RemoteImagesContext } = await import("./ui/RemoteImages");
   const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost" });
   const globals = { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true };
   const previous = new Map(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
@@ -47,28 +49,25 @@ test("reply context recovers formatted content and resets image consent on priva
     return { html: source.html, images: source.images, attachments: [] } as T;
   };
   const recovered = { ...source, html: undefined, attachments: undefined };
-  const render = (mail: Mail, privacy = false) => act(async () => root.render(
+  const render = (mail: Mail, privacy = false, on = true) => act(async () => root.render(<RemoteImagesContext.Provider value={on}>
     <PrivacyContext.Provider value={{ on: privacy, revealed: new Set(), toggle() {}, accounts: [{ id: "a", email: "reader@example.test", provider: "imap" }] }}>
       <ComposePanel source={mail} api={api} draft={{ accountId: "a", to: [source.address], subject: "Reply", body: "Unchanged reply" }}
         accounts={[{ id: "a", email: "reader@example.test", provider: "imap" }]} setDraft={() => {}} busy={false}
         onClose={() => {}} onDiscard={() => {}} onRetry={() => {}} onSaveCopy={() => {}} onSend={() => {}}
         progress={{ phase: "saved", message: "Draft saved." }} />
-    </PrivacyContext.Provider>));
+    </PrivacyContext.Provider></RemoteImagesContext.Provider>));
   const context = () => document.querySelector('[aria-label="Original email"]')!;
-  const show = () => [...context().querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === 'Show images')!;
   try {
     await render(recovered);
     assert.deepEqual(calls, ['/messages/source/content']);
     assert.equal(Boolean(context().querySelector('.formatted-mail table strong')), true);
-    assert.equal(context().querySelector('img[src]'), null);
-    await act(async () => show().click());
     assert.equal(context().querySelector('img')?.getAttribute('src'), 'https://images.example.test/banner.png');
+    await render(recovered, true, false);
+    assert.equal(context().querySelector('img[src]'), null, 'the toolbar preference hides images');
     await render(recovered, true);
-    assert.equal(context().querySelector('img[src]'), null);
-    await act(async () => show().click());
     assert.ok(context().querySelector('img[src]'));
     await render({ ...source, id: 'replacement', accountId: 'b' }, true);
-    assert.equal(context().querySelector('img[src]'), null, 'another source requires new consent');
+    assert.ok(context().querySelector('img[src]'), 'another source loads its own images');
     const body = document.querySelector<HTMLElement>('[aria-label="Message body"]')!;
     assert.equal(body.textContent, 'Hidden. Focus to edit.', 'the draft body stays veiled');
     await act(async () => body.focus());

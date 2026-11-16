@@ -186,6 +186,10 @@ export function Image(props: IconProps) {
   return <Outline {...props}><rect x="3" y="4" width="18" height="16" rx="2.5" /><circle cx="9" cy="10" r="1.5" /><path d="m21 16-5-5-9 9" /></Outline>;
 }
 
+export function ImageOff(props: IconProps) {
+  return <Outline {...props}><path d="m3 3 18 18M8.5 4H18.5A2.5 2.5 0 0 1 21 6.5V16.5M19.3 19.7a2.5 2.5 0 0 1-0.8.3H5.5A2.5 2.5 0 0 1 3 17.5V6.5a2.5 2.5 0 0 1 1-2M7 20l6-6" /></Outline>;
+}
+
 export function Cpu(props: IconProps) {
   return <Outline {...props}><rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9.5 9.5h5v5h-5zM9 2.5V6m6-3.5V6M9 18v3.5m6-3.5v3.5M2.5 9H6m-3.5 6H6m12-6h3.5M18 15h3.5" /></Outline>;
 }
