@@ -170,7 +170,9 @@ function placeholderShape(style: CSSProperties): CSSProperties {
   const width = pxLength(style.width), height = pxLength(style.height);
   const { display, float, verticalAlign, margin, marginTop, marginRight, marginBottom, marginLeft } = style;
   return {
-    display, float, verticalAlign, margin, marginTop, marginRight, marginBottom, marginLeft,
+    // An empty inline box ignores width and height, so inline becomes inline-block.
+    display: display === "inline" ? "inline-block" : display,
+    float, verticalAlign, margin, marginTop, marginRight, marginBottom, marginLeft,
     width: width ? `min(${width}px, 100%)` : style.width ?? 24,
     ...(width && height ? { height: "auto", aspectRatio: `${width} / ${height}` } : { height: style.height ?? 24 }),
     maxHeight: style.maxHeight,

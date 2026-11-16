@@ -195,6 +195,33 @@ test("formatted reader recovery keeps text on failure, ignores late content and 
   }
 });
 
+test("cached images show after formatting recovery fails, and empty HTML may fetch gallery metadata", async () => {
+  const dom = new JSDOM("<!doctype html><div id='root'></div>");
+  const descriptors = new Map(["window", "document", "IS_REACT_ACT_ENVIRONMENT"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  Object.defineProperty(globalThis, "window", { configurable: true, value: dom.window });
+  Object.defineProperty(globalThis, "document", { configurable: true, value: dom.window.document });
+  Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
+  const container = dom.window.document.getElementById("root")!;
+  const root = createRoot(container);
+  let metadataCalls = 0;
+  try {
+    await act(async () => root.render(<ReaderContent mail={{ id: "failed", images: [image], body: "Cached text" }}
+      loadContent={async () => { throw new Error("offline"); }} loadImages={async () => { metadataCalls++; return { images: [] }; }} />));
+    assert.ok(container.textContent?.includes("Formatted email is unavailable"));
+    assert.equal(container.querySelectorAll(".message-images figure img").length, 1, "cached gallery shows beside the text");
+    assert.equal(metadataCalls, 0);
+    await act(async () => root.render(<ReaderContent mail={{ id: "empty", html: "<p>&nbsp;</p>", attachments: [], body: "Cached text" }}
+      loadImages={async () => { metadataCalls++; return { images: [image] }; }} />));
+    assert.equal(metadataCalls, 1, "HTML without text or images uses the gallery path");
+    assert.equal(container.querySelectorAll(".message-images figure img").length, 1);
+  } finally {
+    await act(async () => root.unmount()); dom.window.close();
+    for (const [key, descriptor] of descriptors) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+});
+
 test("fallback image metadata keeps truncated private tokens out of alt and loaded captions", async (t) => {
   const dom = new JSDOM("<!doctype html><div id='root'></div>");
   const descriptors = new Map(["window", "document", "IS_REACT_ACT_ENVIRONMENT"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));

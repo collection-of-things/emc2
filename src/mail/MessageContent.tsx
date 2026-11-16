@@ -159,12 +159,17 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
     (content.images ?? mail.images)?.length === 0 && !/<img\b/i.test(content.html || "");
   const knownImages = content.images ?? mail.images;
   // Formatted mail renders its own images. The separate gallery serves plain
-  // text and the image-only view, so only those may ask the provider for
-  // image metadata; formatted mail uses metadata it already has.
-  const needsGallery = !body || !content.html;
+  // text, the image-only view and HTML without text or images (which falls
+  // back to plain text), so only those may ask the provider for image
+  // metadata; formatted mail uses metadata it already has.
+  const emptyHtml = !!content.html && !/<img\b/i.test(content.html) && !content.html.replace(/<[^>]*>|&nbsp;|\s/gi, "");
+  const needsGallery = !body || !content.html || emptyHtml;
   useEffect(() => {
     if (!imagesOn) { imageRequest.current++; setStatus("blocked"); setImages([]); return; }
-    if (contentStatus !== "ready" || noImages || (!needsGallery && !knownImages)) return;
+    // Failed formatting recovery still shows the cached text, so known gallery
+    // metadata may load beside it.
+    const settled = contentStatus === "ready" || (contentStatus === "error" && !!knownImages);
+    if (!settled || noImages || (!needsGallery && !knownImages)) return;
     void show();
   }, [imagesOn, contentStatus, noImages, needsGallery, knownImages]);
   const gallery = imagesOn && status === "shown" && images.length > 0 && images.map((image, index) =>

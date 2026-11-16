@@ -416,6 +416,9 @@ test("hidden images keep the sender's line layout and tracking pixels draw nothi
   assert.equal(logo.hasAttribute("data-spacer"), false);
   assert.equal(beacon.hasAttribute("data-spacer"), true, "a 1px pixel keeps its size but no visible box");
   assert.equal(beacon.style.width, "min(1px, 100%)");
+  const inline = documentOf(render('<p>Icon <img src="https://images.example.com/i.png" width="16" height="16" style="display:inline"> text</p>'))
+    .querySelector<HTMLElement>(".formatted-mail-image-placeholder")!;
+  assert.equal(inline.style.display, "inline-block", "an inline image keeps a sized box");
 });
 
 test("image max-height caps survive blocked, unsupported and private placeholders", () => {
