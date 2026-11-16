@@ -1479,7 +1479,7 @@ query values and reads only the local encrypted record. Missing or wrong-account
 mail returns 404; a changed version returns 409. The renderer holds content for
 its current opening or reply source, drops it on identity/version changes, and
 rejects stale responses. Closing and reopening does not retain a body cache.
-Image consent and privacy rendering remain tied to each opening.
+Images follow the toolbar image preference and privacy rendering stays tied to each opening.
 
 `GET /api/messages/search?query=...` uses the shared search compiler and a
 read-only SQLite snapshot. It decrypts one mail at a time, yields every 32
@@ -1803,7 +1803,7 @@ selecting or traversing mail does not add a visit or clear Forward. Consecutive
 search edits share one visit. Back from an open reader returns to the list; immediate Forward reopens the latest reader only while its account and message still exist. Otherwise Back and Forward restore the menu or list. A new menu visit after Back removes the forward branch.
 Missing account filters return to All. Drafts and dialogs block traversal.
 Escape retains the existing close-email, close-dialog and draft-confirmation
-behavior. Closing or changing the reader clears remote-image consent.
+behavior. Remote images follow the toolbar image preference (ADR 0127).
 
 Phone browsers below 760px use `src/ui/useSwipe.ts` for Back/Forward in the
 main content pane. The `touchNavigation` interaction preference defaults on
@@ -2017,9 +2017,9 @@ Ctrl/Cmd+Plus, Equals and numpad Plus increase text size; Ctrl/Cmd+Minus and num
 
 `server/gmail.test.ts` uses mocked Gmail API methods with a temporary encrypted store to cover catalog refresh, message label sync, account isolation, custom label edits, provider failures, sync/read ordering, idempotent reads and disconnect cleanup. `server/imap-read.test.ts` covers inbox UID validation and exact archive Message-ID verification without a connection, including substring false positives and preservation of cached unread state on failure. The store holds SQLite open until process exit, so these tests leave synthetic files in the system temporary directory for the host or CI runner to clean up. `src/mail-ui.test.tsx` covers key recognition, account-scoped filters, label rendering/privacy and duplicate/retry read requests. `src/reader-keyboard.test.tsx` executes the App keyboard and open handlers with synthetic state to cover reader navigation, account changes, coalescing, retry and input guards. These tests do not mount the interface, authenticate real accounts or drive a browser.
 
-Snooze retains its message-specific privacy context. Rejected formatted trees and wrappers without readable text or supported images use the same readable text and consent-controlled gallery. Supported image-only mail keeps its inline image presentation. Image status styles do not override body paragraph sizing.
+Snooze retains its message-specific privacy context. Rejected formatted trees and wrappers without readable text or supported images use the same readable text and preference-controlled gallery. Supported image-only mail keeps its inline image presentation. Image status styles do not override body paragraph sizing.
 
-Filters stay outside scrolling mail content. Compact reader up/down buttons reuse the filtered order and Unread anchor; traversal restores reader focus and resets image consent. See [ADR 0032](adr/0032-mail-control-placement.md). Synthetic mounted tests cover these paths and the selected sidebar folding/collapse behavior. Native layout and physical input remain separate checks.
+Filters stay outside scrolling mail content. Compact reader up/down buttons reuse the filtered order and Unread anchor; traversal restores reader focus and keeps the toolbar image preference. See [ADR 0032](adr/0032-mail-control-placement.md). Synthetic mounted tests cover these paths and the selected sidebar folding/collapse behavior. Native layout and physical input remain separate checks.
 
 ## Encryption research
 
@@ -2134,7 +2134,7 @@ Cleared, expired, sent and archived snoozes are excluded.
 
 Ctrl/Cmd +, - and 0 resize or reset text. D still changes density. Page Up/Down
 moves through the complete filtered email list outside editors and dialogs.
-Reply context uses the safe formatted reader with cached text fallback and explicit image consent. File drops and file selection share validation.
+Reply context uses the safe formatted reader with cached text fallback and the toolbar image preference. File drops and file selection share validation.
 
 Notification Preview obeys delivery toggles and shows enabled options. It uses
 synthetic sample text, honors privacy and cannot open a real message.
@@ -2911,10 +2911,10 @@ The composer template picker is a combobox inside the draft. Typing filters temp
 ## Formatted original messages in replies
 
 New replies and reopened saved drafts use the same `ReaderContent` allowlist,
-content recovery and opening-specific image consent as the reading pane.
+content recovery and toolbar image preference as the reading pane.
 Cached HTML keeps link labels instead of displaying plaintext tracking URLs.
 Rejected or unavailable HTML uses the original plain text without dropping it.
-Privacy clears image consent; changing source identity/content remounts the
+Enabling privacy hides images until the toggle shows them; changing source identity/content remounts the
 original-message view. Draft content and existing settings are unchanged.
 See [ADR 0074](adr/0074-formatted-reply-context.md).
 
@@ -3210,7 +3210,7 @@ the last valid cache and makes no automatic retry.
 entry. Only the selected message receives callbacks bound to the App target.
 Other entries expose their own context menus and Select for actions, which uses
 the existing opening and mark-read operation. Collapse unmounts content and
-resets image consent; privacy applies independently to every entry. App forwards
+renders no images; privacy applies independently to every entry. App forwards
 conversation menus without changing the selected reader, so its navigation
 cleanup does not close them. Closed-list menus, bulk selection, custom shortcuts
 and provider contracts are unchanged.
@@ -3636,7 +3636,7 @@ Whatever still overflows scrolls sideways inside `.formatted-mail`. Blocked
 images keep their placeholder at `min(width, 100%)` with the declared aspect
 ratio, so hiding images does not widen table layouts.
 
-Cross-leaf text redaction, link checks and remote/CID image consent stay in the
+Cross-leaf text redaction, link checks and remote/CID image preference stay in the
 existing formatter. Embedded blob results are bound to exact message and
 attachment metadata. Synthetic checks are in `src/sender-css.test.tsx` and
 `src/FormattedMail.test.tsx`; they query styled mail through the frame's

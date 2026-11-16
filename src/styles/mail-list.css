@@ -137,12 +137,12 @@
   background: var(--line);
   pointer-events: none;
 }
+/* Each message sits alone in its .mail-window-row wrapper, so neighbours are
+   matched across wrappers: a row's line hides when it or the row below is
+   hovered, selected or bulk-selected, so fills never carry a stray rule. */
 .row.selected::after,
-.mail-row:hover .row::after,
-.mail-row:has(+ .mail-row .row.selected) .row::after,
-.mail-row:has(+ .mail-row:hover) .row::after,
-.mail-row:has(+ .group) .row::after,
-.mail-row:last-child .row::after {
+.mail-row:is(:hover, .bulk-selected) .row::after,
+.mail-window-row:has(+ .mail-window-row :is(.row.selected, .mail-row:hover, .mail-row.bulk-selected)) .row::after {
   opacity: 0;
 }
 .row:focus-visible {
