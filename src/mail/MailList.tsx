@@ -161,8 +161,9 @@ export function MailList<T extends Mail>({
               <>
                 <span className="row-text">
                   <span className="row-line">
-                    <strong><Redact text={m.sender} /></strong>
-                    {relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}
+                    {/* The marker sits inside the fixed sender column so
+                        subjects stay aligned on important rows. */}
+                    <strong>{relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}<Redact text={m.sender} /></strong>
                     <span className="row-subject"><Redact text={m.subject} /></span>
                     <span className="row-preview"><Redact text={previewText(m.preview)} /></span>
                   </span>

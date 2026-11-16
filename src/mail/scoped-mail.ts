@@ -14,7 +14,7 @@ const controls = `
 :scope pre code{background:none!important;padding:0;color:inherit!important}
 :scope :is(code,pre) :not(img,.address,.formatted-mail-image-placeholder){color:inherit!important;background:transparent!important}
 :scope :is(code,pre) a{text-decoration-color:color-mix(in srgb,currentColor 60%,transparent)}
-:scope .formatted-mail-image-placeholder{display:inline-block;max-width:100%;vertical-align:middle;border-radius:4px;background:rgb(128 128 128 / 0.14);box-shadow:inset 0 0 0 1px rgb(128 128 128 / 0.26)}
+:scope .formatted-mail-image-placeholder{display:inline-block;max-width:100%;vertical-align:middle;border-radius:4px;background:rgb(128 128 128 / 0.14);box-shadow:inset 0 0 0 1px rgb(128 128 128 / 0.26)}:scope .formatted-mail-image-placeholder[data-spacer]{background:none;box-shadow:none}
 :scope :is(p,ul,ol,blockquote,h1,h2,h3,h4,h5,h6,pre){max-width:70ch}:scope table :is(p,ul,ol,blockquote,h1,h2,h3,h4,h5,h6,pre){max-width:none}
 :scope[data-ink=dark],:scope [data-ink=dark]{color:#1f1f1f!important}:scope[data-ink=light],:scope [data-ink=light]{color:#f5f5f5!important}
 `;

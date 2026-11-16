@@ -37,8 +37,11 @@ Formatted mail renders its own images, so it never asks the provider for image
 metadata it does not already have. Only plain-text and image-only views fetch
 missing metadata, and only while images are on.
 
-Hidden-image placeholders keep the sender's display, float, vertical alignment
-and margins. Images 2px or smaller on a side keep their size and draw nothing.
+Hidden-image placeholders keep the sender's inline display, float, vertical
+alignment and margins. Images 2px or smaller on a side keep their size and draw
+nothing. Layout that a sender stylesheet applies through an `img` selector does
+not reach the placeholder, which is a `span`; that case can still wrap text
+beside the box.
 
 List rows run edge to edge with square corners: hover and selection fills meet
 both pane edges, and only text keeps a 16px inset. With a mouse, the selection

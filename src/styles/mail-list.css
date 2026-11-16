@@ -232,6 +232,10 @@
   align-self: center;
   color: var(--accent);
 }
+.row:not(.card) .row-important {
+  margin-right: 4px;
+  vertical-align: -1px;
+}
 /* The list's small glyphs follow the text scale like the nav icons. */
 :is(.row-important, .row-pin) > svg {
   width: calc(12px * var(--text-scale, 1));
