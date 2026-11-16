@@ -491,8 +491,8 @@
 .mail-row.bulk-selected > .row:not(:focus-visible) { background: var(--selected); }
 @media (hover: hover) and (pointer: fine) {
   .mail-select { opacity: 0; }
-  .mail-row:hover .mail-select, .mail-row:has(.mail-select:focus-visible) .mail-select, .bulk-selected .mail-select { opacity: 1; }
-  .mail-row:has(> .mail-select):is(:hover, .bulk-selected, :has(.mail-select:focus-visible)) .avatar > :not(.unread-dot) { opacity: 0; }
+  .mail-row:is(:hover, :has(.mail-select:focus-visible, > .row:focus-visible)) .mail-select, .bulk-selected .mail-select { opacity: 1; }
+  .mail-row:has(> .mail-select):is(:hover, .bulk-selected, :has(.mail-select:focus-visible, > .row:focus-visible)) .avatar > :not(.unread-dot) { opacity: 0; }
 }
 @media not ((hover: hover) and (pointer: fine)) {
   .list { --row-gutter: calc(var(--row-inset) + 16px * var(--text-scale, 1) + 10px); }

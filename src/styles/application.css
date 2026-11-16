@@ -317,9 +317,6 @@
 .message-body p { margin-bottom: 18px; }
 .group { font-size: calc(10px * var(--text-scale, 1)); padding-inline: 18px; }
 :root:not([data-glass]) .split .list { background: var(--chrome); }
-.row.card { padding-inline: 18px; }
-.row.card > .avatar { display: none; }
-.row.card::after { left: 18px; }
 .row.card .row-line strong { font-size: calc(12px * var(--text-scale, 1)); font-weight: 500; }
 .row.card .row-subject { font-size: calc(12px * var(--text-scale, 1)); }
 .row.card .row-preview { font-size: calc(11px * var(--text-scale, 1)); }

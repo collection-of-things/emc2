@@ -112,6 +112,9 @@ test("unread dots badge the avatar corner in every layout and the account dot st
       const dots = [...row.querySelectorAll(".unread-dot")];
       assert.equal(dots.length, 1, context);
       assert.ok(dots[0].parentElement?.classList.contains("avatar"), `${context}: every layout badges the avatar`);
+      // No earlier layer may hide the avatar that carries the unread badge.
+      assert.notEqual(dom.window.getComputedStyle(row.querySelector(".avatar")!).display, "none", `${context}: avatar visible`);
+      assert.doesNotMatch(rules, /\.row\.card::after\s*\{\s*left:\s*18px/, `${context}: no layer pins the hairline into the avatar slot`);
       assert.equal(dots[0].getAttribute("aria-hidden"), "true", context);
       const accountDot = row.querySelector(".row-account .account-dot");
       assert.ok(accountDot, context);
