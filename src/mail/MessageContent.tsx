@@ -7,7 +7,7 @@ import { redactPrivateText } from "../privacy";
 import { PrivacyContext, Redact } from "../ui/Privacy";
 import { RemoteImagesContext } from "../ui/RemoteImages";
 import { Attachments } from "./Attachments";
-import { FormattedMail } from "./FormattedMail";
+import { FormattedMail, rendersFormatted } from "./FormattedMail";
 import { useRemoteImage } from "./remote-image";
 
 export function MessageBody({ text }: { text: string }) {
@@ -159,11 +159,12 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
     (content.images ?? mail.images)?.length === 0 && !/<img\b/i.test(content.html || "");
   const knownImages = content.images ?? mail.images;
   // Formatted mail renders its own images. The separate gallery serves plain
-  // text, the image-only view and HTML without text or images (which falls
-  // back to plain text), so only those may ask the provider for image
-  // metadata; formatted mail uses metadata it already has.
-  const emptyHtml = !!content.html && !/<img\b/i.test(content.html) && !content.html.replace(/<[^>]*>|&nbsp;|\s/gi, "");
-  const needsGallery = !body || !content.html || emptyHtml;
+  // text, the image-only view and HTML the formatter rejects (which falls back
+  // to plain text), so only those may ask the provider for image metadata;
+  // formatted mail uses metadata it already has.
+  const formattedHtml = useMemo(() => !!content.html && rendersFormatted(content.html, content.attachments),
+    [content.html, content.attachments]);
+  const needsGallery = !body || !formattedHtml;
   useEffect(() => {
     if (!imagesOn) { imageRequest.current++; setStatus("blocked"); setImages([]); return; }
     // Failed formatting recovery still shows the cached text, so known gallery

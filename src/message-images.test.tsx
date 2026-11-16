@@ -214,6 +214,10 @@ test("cached images show after formatting recovery fails, and empty HTML may fet
       loadImages={async () => { metadataCalls++; return { images: [image] }; }} />));
     assert.equal(metadataCalls, 1, "HTML without text or images uses the gallery path");
     assert.equal(container.querySelectorAll(".message-images figure img").length, 1);
+    await act(async () => root.render(<ReaderContent mail={{ id: "rejected", html: "<script>discard</script>", attachments: [], body: "Cached text" }}
+      loadImages={async () => { metadataCalls++; return { images: [image] }; }} />));
+    assert.equal(metadataCalls, 2, "HTML the formatter rejects uses the gallery path");
+    assert.equal(container.querySelectorAll(".message-images figure img").length, 1);
   } finally {
     await act(async () => root.unmount()); dom.window.close();
     for (const [key, descriptor] of descriptors) {

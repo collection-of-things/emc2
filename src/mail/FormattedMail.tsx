@@ -132,7 +132,7 @@ export function FormattedMail({ mailId, attachments = [], html, showImages, rend
     if (["br", "hr", "col"].includes(tag)) return createElement(element, props);
     return createElement(element, props, content);
   };
-  const formatted = !!nodes && !!(textParts.join("").trim() || hasImage(nodes, attachments));
+  const formatted = !!nodes && isFormatted(nodes, attachments);
   const scoped = styled && formatted;
   const scope = useId();
   // A callback ref: styled mail mounts its root later, inside the shadow tree.
@@ -260,6 +260,19 @@ const blockTags = new Set("div p br hr h1 h2 h3 h4 h5 h6 blockquote pre ul ol li
 function contentParts(nodes: MailContentNode[]): string[] {
   return nodes.flatMap((node) => typeof node === "string" ? [node] :
     [...contentParts(node.children), ...(blockTags.has(node.tag) ? ["\n"] : [])]);
+}
+
+// Whether parsed mail has readable text or a supported image; otherwise the
+// reader falls back to plain text and its image gallery.
+function isFormatted(nodes: MailContentNode[], attachments: readonly MailAttachment[]): boolean {
+  return !!contentParts(nodes).join("").trim() || hasImage(nodes, attachments);
+}
+
+// The reader uses this to decide whether HTML renders as formatted mail or
+// falls back to plain text, using the same parse and test as FormattedMail.
+export function rendersFormatted(html: string, attachments: readonly MailAttachment[] = []): boolean {
+  const nodes = parseMailContent(html, !!mailStylesheet(html).css);
+  return !!nodes && isFormatted(nodes, attachments);
 }
 
 function hasText(nodes: readonly MailContentNode[]): boolean {
