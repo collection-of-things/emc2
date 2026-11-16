@@ -251,7 +251,6 @@ input[type="checkbox"][role="switch"]:disabled {
   display: flex;
   flex-direction: column;
   align-self: stretch;
-  margin-inline: 1px;
 }
 .empty-skeleton-group {
   width: 64px;
