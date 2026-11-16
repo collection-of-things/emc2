@@ -691,8 +691,8 @@ test("privacy removes connected recipient names and addresses from list, headers
     assertHidden();
     await app.key("b"); assert.ok(app.container.querySelector('[role="menu"]'));
     assertHidden(); await app.key("Escape");
-    assert.equal(app.container.querySelector(".message-body img"), null);
-    assert.equal(app.button("Show images").disabled, false);
+    assert.equal(app.container.querySelector(".message-body img"), null, "privacy mode starts with images hidden");
+    assert.equal(app.container.querySelector(".image-controls"), null, "no consent strip above the body");
     await app.click(app.button("Show images"));
     assert.equal(app.container.querySelectorAll(".message-body img").length, 1);
     assertHidden();
@@ -700,22 +700,19 @@ test("privacy removes connected recipient names and addresses from list, headers
     await app.click(app.button("Hide images"));
     assert.equal(app.container.querySelector(".message-body img"), null);
     assert.ok(app.container.querySelector(".formatted-mail table"));
-    const control = app.container.querySelector(".image-controls")!;
-    const body = app.container.querySelector(".message-body")!;
-    assert.ok(control.compareDocumentPosition(body) & 4, "Show images precedes body");
+    assert.equal(app.storage.getItem("remote-images"), null, "a privacy-session choice is not saved");
     await app.click(app.button("Show personal information"));
     assert.ok(app.container.textContent?.includes("Nora"));
-    await app.click(app.button("Show images"));
-    assert.equal(app.container.querySelectorAll(".message-body img").length, 2);
+    assert.equal(app.container.querySelectorAll(".message-body img").length, 2, "outside privacy, images load by default");
     assert.equal(app.container.querySelectorAll(".message-images figure").length, 0, "formatted images are not duplicated");
     await app.key("p");
-    assertHidden(); assert.equal(app.container.querySelector(".message-body img"), null);
+    assertHidden(); assert.equal(app.container.querySelector(".message-body img"), null, "turning privacy on hides images again");
     await app.click(app.button("Show images"));
     assert.equal(app.container.querySelectorAll(".message-body img").length, 1);
     assertHidden();
     await app.click(app.back()); await app.click(app.forward());
-    assert.equal(app.container.querySelector(".message-body img"), null, "history return requires new consent in privacy mode");
-    assert.equal(app.button("Show images").disabled, false);
+    assert.equal(app.container.querySelectorAll(".message-body img").length, 1, "history return keeps the privacy-session choice");
+    assertHidden();
   } finally { await app.close(); }
 });
 
@@ -738,7 +735,7 @@ test("formatted privacy keeps image order and keyboard reveal across image bound
       }
     };
     assertHidden();
-    assert.equal(body.querySelector("img"), null);
+    assert.equal(body.querySelector("img"), null, "privacy mode starts with images hidden");
     await app.click(app.button("Show images"));
     assertHidden();
     assert.equal(body.querySelectorAll("img").length, 2);
@@ -768,9 +765,9 @@ test("formatted privacy keeps image order and keyboard reveal across image bound
     await app.click(app.button("Show images"));
     assert.equal(body.querySelectorAll("img").length, 2);
     await app.key("Escape");
-    assert.equal(app.container.querySelectorAll(".message").length, 0, "Escape closes the reader before reopening resets image consent");
+    assert.equal(app.container.querySelectorAll(".message").length, 0, "Escape closes the reader");
     await app.open("a:1");
-    assert.equal(app.container.querySelector(".message-body img"), null);
+    assert.equal(app.container.querySelectorAll(".message-body img").length, 2, "reopening keeps the privacy-session choice");
   } finally { await app.close(); }
 });
 
@@ -862,15 +859,14 @@ test("empty and rejected formatting retain readable text and consent-controlled 
     try {
       await app.open("a:1");
       assert.equal(app.container.querySelector(".message-body p")?.textContent, "First paragraph");
-      assert.equal(app.container.querySelector(".message-images img"), null);
+      assert.equal(app.container.querySelector(".message-images img"), null, "privacy mode starts with images hidden");
       await app.click(app.button("Show images"));
       assert.equal(app.container.querySelectorAll(".message-images figure img").length, 1);
       assert.equal(app.container.querySelectorAll(".message-body p").length, 2);
       await app.click(app.button("Hide images"));
       assert.equal(app.container.querySelector(".message-images img"), null);
-      await app.click(app.button("Show images"));
       await app.key("Escape"); await app.open("a:1");
-      assert.equal(app.container.querySelector(".message-images img"), null, "reopening requires fresh consent");
+      assert.equal(app.container.querySelector(".message-images img"), null, "reopening keeps images hidden");
     } finally { await app.close(); }
   }
 });
@@ -1476,13 +1472,13 @@ test("initial reader Back and Forward restore the latest reader without traversa
     await app.key("j");
     await app.click(app.button("Next email"));
     assert.equal(app.title(), "Gamma");
-    await app.click(app.button("Show images"));
+    await app.click(app.button("Hide images"));
     await app.click(app.back());
     assert.equal(app.title(), undefined);
     assert.equal(app.back().disabled, false, "Actions remains the only earlier menu visit");
     await app.click(app.forward());
     assert.equal(app.title(), "Gamma");
-    assert.ok(app.button("Show images"), "restoring a reader requires fresh image consent");
+    assert.ok(app.button("Show images"), "a restored reader keeps the image preference");
     await app.click(app.back());
     await app.open("a:2");
     await app.key("Escape");
@@ -1575,10 +1571,10 @@ test("reader buttons reuse unread anchors, edge guards and image resets without 
     await app.click(app.button("Settings")); await app.click(app.back());
     await app.open("a:1");
     assert.equal(app.button("Previous email").disabled, true);
-    await app.click(app.button("Show images"));
+    await app.click(app.button("Hide images"));
     await app.click(app.button("Next email"));
     assert.equal(app.title(), "Beta");
-    assert.ok(app.button("Show images"));
+    assert.ok(app.button("Show images"), "the next email keeps the image preference");
     assert.ok(!app.forward().disabled, "reader buttons preserve menu Forward");
     await app.click(app.button("Next email"));
     assert.equal(app.title(), "Gamma");
@@ -2108,11 +2104,15 @@ test("compose keeps toolbar search and privacy usable without losing the draft o
     const privacy = app.button("Hide personal information");
     await act(async () => privacy.focus());
     await app.key("Tab");
+    assert.equal(app.window.document.activeElement?.getAttribute("aria-label"), "Hide images", "the image toggle sits beside Privacy");
+    await app.key("Tab");
     assert.equal(app.window.document.activeElement?.getAttribute("aria-label"), "Back");
     await app.key("Tab");
     assert.equal(app.window.document.activeElement?.getAttribute("aria-label"), "Close dialog");
     await app.key("Tab", { shiftKey: true });
     assert.equal(app.window.document.activeElement?.getAttribute("aria-label"), "Back");
+    await app.key("Tab", { shiftKey: true });
+    assert.equal(app.window.document.activeElement?.getAttribute("aria-label"), "Hide images");
     await app.key("Tab", { shiftKey: true });
     assert.equal(app.window.document.activeElement?.getAttribute("aria-label"), "Hide personal information");
     await app.click(app.button("Hide personal information"));

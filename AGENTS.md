@@ -83,10 +83,11 @@ encrypted SQLite. The installed app needs no separate browser, terminal or Node.
 - Render sender formatting only through the allowlist in `shared/mail-content.ts`
   and `src/mail/FormattedMail.tsx`. Never inject sender HTML or load scripts,
   stylesheets, fonts or active elements.
-- Remote images need per-opening user activation, also while personal text is
-  hidden. Keep text and image-description redaction, suppress known-private image
-  URLs in privacy mode, and clear image consent when privacy is enabled
-  ([ADR 0020](docs/adr/0020-explicit-images-with-hidden-text.md)).
+- Remote images load by default and the toolbar toggle beside Privacy hides
+  them; the choice is saved locally. While privacy is on, images start hidden
+  and the toggle shows them only for that privacy session. Keep text and
+  image-description redaction and suppress known-private image URLs in privacy mode
+  ([ADR 0127](docs/adr/0127-default-images-and-flush-mail-list.md)).
 - Keep the loopback listener, desktop-session auth, origin and CSRF checks,
   sandboxed renderer and navigation restrictions.
 - Treat `MAIL_DATA_KEY` and `MAIL_DESKTOP_TOKEN` as secrets. `settings.env` in

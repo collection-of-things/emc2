@@ -137,13 +137,12 @@ export function MailList<T extends Mail>({
             aria-current={current ? "true" : undefined}
             onFocus={(event) => { focused.current = { id: m.id, element: event.target }; }}
           >
-            {!cardLayout && m.unread && <i className="unread-dot" aria-hidden="true" />}
-            <Avatar mail={m} unread={cardLayout && m.unread} />
+            <Avatar mail={m} unread={m.unread} />
             {layout === "card" ? (
               <span className="row-text">
                 <span className="row-line">
-                  {relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}
                   <strong><Redact text={m.sender} /></strong>
+                  {relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}
                   {m.pinned && <span className="row-pin" aria-hidden="true"><Pin size={12} /></span>}
                   {time}
                 </span>
@@ -162,8 +161,8 @@ export function MailList<T extends Mail>({
               <>
                 <span className="row-text">
                   <span className="row-line">
-                    {relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}
                     <strong><Redact text={m.sender} /></strong>
+                    {relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}
                     <span className="row-subject"><Redact text={m.subject} /></span>
                     <span className="row-preview"><Redact text={previewText(m.preview)} /></span>
                   </span>

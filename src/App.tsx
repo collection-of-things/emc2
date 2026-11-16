@@ -69,12 +69,13 @@ import { BrowserUpdateNotice, type BrowserWrites } from "./shell/BrowserUpdateNo
 import { ContextMenu, mailMenuRequest, type MenuAction } from "./ui/ContextMenu";
 import { Dialog } from "./ui/Dialog";
 import { MailPrivacy, PrivacyContext, Redact } from "./ui/Privacy";
+import { RemoteImagesContext, saveRemoteImages, savedRemoteImages } from "./ui/RemoteImages";
 import { drawsWindowControls, systemCaption } from "./ui/TrafficLights";
 import { useMedia } from "./ui/useMedia";
 import { useSwipe } from "./ui/useSwipe";
 import { CredentialFallbackNotice } from "./shell/CredentialFallbackNotice";
 import { Notice, NotificationProvider, ToastStack, useToasts } from "./ui/Toasts";
-import { ArrowLeft, ArrowRight, ChevronRight, Eye, EyeOff, Mail as MailIcon, Settings as SettingsIcon, SidebarIcon } from "./ui/icons";
+import { ArrowLeft, ArrowRight, ChevronRight, Eye, EyeOff, Image as ImageIcon, ImageOff, Mail as MailIcon, Settings as SettingsIcon, SidebarIcon } from "./ui/icons";
 
 // Direction the list pane enters from: tabs slide sideways, mail opens upward.
 type Motion = "forward" | "back" | "open" | "close";
@@ -269,8 +270,20 @@ export function App() {
     // Revoke native detail notices before enabling masking in the renderer.
     void window.desktop?.notifications?.configure(notifications, !privacy).catch(() => setNotice("Desktop notification privacy could not be confirmed."));
     localStorage.setItem("privacy", privacy ? "off" : "on");
-    if (!privacy) setRevealed(new Set());
+    if (!privacy) { setRevealed(new Set()); setPrivacyImages(false); }
     setPrivacy(!privacy);
+  };
+  // Mail images load by default; the toolbar toggle beside Privacy hides them
+  // and the choice is saved. While personal information is hidden, images
+  // start hidden (their URLs and pixels cannot be redacted) and the same
+  // toggle shows them only until privacy is turned on again.
+  const [savedImages, setSavedImages] = useState(savedRemoteImages);
+  const [privacyImages, setPrivacyImages] = useState(false);
+  const remoteImages = privacy ? privacyImages : savedImages;
+  const toggleRemoteImages = () => {
+    if (privacy) { setPrivacyImages(!privacyImages); return; }
+    saveRemoteImages(!savedImages);
+    setSavedImages(!savedImages);
   };
   const [maximized, setMaximized] = useState(false);
   useEffect(() => window.desktop?.onWindowState(setMaximized), []);
@@ -1271,6 +1284,19 @@ export function App() {
       {privacy ? <EyeOff color="currentColor" size={15} /> : <Eye color="currentColor" size={15} />}
     </button>
   );
+  const imagesButton = (
+    <button
+      type="button"
+      className={remoteImages ? "icon" : "icon on"}
+      aria-label={remoteImages ? "Hide images" : "Show images"}
+      aria-pressed={!remoteImages}
+      data-compose-access
+      title={remoteImages ? "Hide images in mail. Loading remote images can tell senders you opened their email." : privacy ? "Images hidden while personal information is hidden. Show images until privacy is turned on again" : "Images hidden. Show images in mail"}
+      onClick={toggleRemoteImages}
+    >
+      {remoteImages ? <ImageIcon color="currentColor" size={15} /> : <ImageOff color="currentColor" size={15} />}
+    </button>
+  );
   const fullReader = opened && !split;
   const showInboxCategories = view === "inbox" && !query && !(fullReader && appearance.readerToolbar === "actions");
   const combinedReaderToolbar = fullReader && appearance.readerToolbar !== "separate";
@@ -1432,7 +1458,7 @@ export function App() {
     ...(!settings ? mailCommands : []),
   ];
   return (
-    <NotificationProvider push={pushToast}><MailSearchApiContext.Provider value={api}><PrivacyContext.Provider
+    <NotificationProvider push={pushToast}><MailSearchApiContext.Provider value={api}><RemoteImagesContext.Provider value={remoteImages}><PrivacyContext.Provider
       value={privacyContext}
     >
       <div
@@ -1527,6 +1553,7 @@ export function App() {
                   onReset={resetListControls}
                 />}
                 {privacyButton}
+                {imagesButton}
               </div>
               {!settings && historyControls}
               <div className="update-spacer" aria-hidden="true" />
@@ -1947,6 +1974,6 @@ export function App() {
         )}
         {shortcuts && <ShortcutsDialog shortcut={shortcut} onClose={() => setShortcuts(false)} />}
       </div>
-    </PrivacyContext.Provider></MailSearchApiContext.Provider></NotificationProvider>
+    </PrivacyContext.Provider></RemoteImagesContext.Provider></MailSearchApiContext.Provider></NotificationProvider>
   );
 }

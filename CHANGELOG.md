@@ -14,6 +14,16 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Changed
+
+- Images in email now load by default. A new image button beside the Privacy eye in the toolbar hides them in every email and remembers your choice, replacing the "Show images" strip above each message. While personal information is hidden, images start hidden and the same button shows them until you hide personal information again.
+- The mail list runs edge to edge: the selected and hovered email fill the whole row with no gaps at the pane edges, the selection checkbox appears over the avatar when you point at a row, sender names line up with their subjects, and unread dots sit on the avatar in every layout.
+- Date groups, sidebar headings and counts use plain sentence-case text instead of spaced-out capitals, dividers are single lines, and sidebar icons stay quiet until selected, so the window reads calmer.
+
+### Fixed
+
+- With images hidden, emails keep their layout: a hidden logo keeps its own line instead of pulling the next text beside an empty box, and tracking pixels no longer leave grey specks.
+
 ## 0.2.40 - 2026-11-15
 
 ### Fixed

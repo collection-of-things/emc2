@@ -14,7 +14,7 @@
   grid-template-columns: var(--account-column) var(--status-column);
   justify-content: end;
   gap: 12px;
-  padding: 8px 64px 6px 18px;
+  padding: 8px 64px 6px 16px;
   color: var(--text-3);
   font-size: calc(10px * var(--text-scale, 1));
 }
@@ -70,7 +70,7 @@
   height: calc(var(--mail-row-medium) * var(--text-scale, 1));
   display: flex;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 16px;
   font-size: calc(14px * var(--text-scale, 1));
   transition: background-color 140ms var(--ease-out);
 }
@@ -116,32 +116,26 @@
 .list:focus-within .row.selected {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
-/* Unread mail carries a small accent dot: cards badge the sender avatar's
-   lower-right corner, wide rows keep the dot in the left gutter on the
-   sender line, beside the pin; both leave one avatar and text x. */
+/* Unread mail carries a small accent dot badging the sender avatar's
+   lower-right corner in every layout, so the left edge stays clean. */
 .unread-dot {
   position: absolute;
-  top: 50%;
-  left: 5px;
   width: calc(6px * var(--text-scale, 1));
   height: calc(6px * var(--text-scale, 1));
-  margin-top: -3px;
   border-radius: 50%;
   background: var(--accent);
 }
-/* Hairlines between rows, inset to the text; they give way around the selection and hover. */
+/* Hairlines between rows start at the text and run to the pane edge; they
+   give way around the selection and hover. */
 .row::after {
   content: "";
   position: absolute;
-  left: 46px;
-  right: 12px;
+  left: calc(var(--row-gutter, 16px) + var(--avatar-size) + var(--avatar-gap));
+  right: 0;
   bottom: 0;
   height: 1px;
   background: var(--line);
   pointer-events: none;
-}
-.row.card::after {
-  left: 52px;
 }
 .row.selected::after,
 .mail-row:hover .row::after,
@@ -162,6 +156,21 @@
   height: 22px;
   margin-right: 10px;
 }
+/* One avatar size per layout, declared on the row wrapper so the overlaid
+   checkbox and the row hairline can center and start on it. */
+.mail-row {
+  --avatar-size: calc(22px * var(--text-scale, 1));
+  --avatar-gap: 10px;
+}
+.compact .mail-row { --avatar-size: calc(18px * var(--text-scale, 1)); }
+.mail-row:has(> .row.card) { --avatar-size: calc(30px * var(--text-scale, 1)); --avatar-gap: 12px; }
+.compact .mail-row:has(> .row.card) { --avatar-size: calc(22px * var(--text-scale, 1)); --avatar-gap: 10px; }
+.row .avatar {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  margin: 0 var(--avatar-gap) 0 0;
+}
+.avatar > :not(.unread-dot) { transition: opacity 120ms var(--ease-out); }
 .avatar-logo {
   width: 100%;
   height: 100%;
@@ -215,18 +224,13 @@
   overflow: hidden;
   white-space: nowrap;
 }
-/* High-importance mail carries a small marker inside the sender column, so the
-   150px sender width and subject alignment hold across rows. */
+/* High-importance mail carries a small marker right after the sender name, in
+   flow, so every sender starts at the same x as the subject below it. */
 .row-important {
-  position: absolute;
-  left: 0;
-  align-self: center;
   display: inline-flex;
   flex-shrink: 0;
-  color: var(--text-3);
-}
-.row.important .row-line strong {
-  padding-left: calc(18px * var(--text-scale, 1));
+  align-self: center;
+  color: var(--accent);
 }
 /* The list's small glyphs follow the text scale like the nav icons. */
 :is(.row-important, .row-pin) > svg {
@@ -321,11 +325,6 @@
   height: calc(var(--mail-row-compact) * var(--text-scale, 1));
   font-size: calc(13px * var(--text-scale, 1));
 }
-.compact .row .avatar {
-  width: 18px;
-  height: 18px;
-  margin: 0 10px 0 4px;
-}
 .compact .row .avatar-letter {
   font-size: calc(9px * var(--text-scale, 1));
 }
@@ -342,13 +341,8 @@
 .row.card {
   height: calc(var(--mail-row-card-medium) * var(--text-scale, 1));
   align-items: flex-start;
-  padding: 9px 18px 10px;
+  padding: 9px 16px 10px;
   font-size: calc(13px * var(--text-scale, 1));
-}
-.card .avatar {
-  width: 28px;
-  height: 28px;
-  margin: 1px 12px 0 0;
 }
 .card .avatar-letter {
   font-size: calc(12px * var(--text-scale, 1));
@@ -356,14 +350,14 @@
 .card .row-text {
   gap: 1px;
 }
-/* Every card reserves the importance marker's slot, so sender names share one
-   start x whether or not the marker draws. */
+/* The sender sizes to its name; the importance marker and pin follow it and
+   the time takes the far end, so names and subjects share one start x. */
 .card .row-line strong {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   width: auto;
   max-width: none;
-  padding-left: calc(18px * var(--text-scale, 1));
 }
+.card .row-line time { margin-left: auto; }
 .card .row-label,
 .card time {
   margin-left: 0;
@@ -379,12 +373,7 @@
 }
 .compact .row.card {
   height: calc(var(--mail-row-card-compact) * var(--text-scale, 1));
-  padding: 6px 18px;
-}
-.compact .row.card .avatar {
-  width: calc(22px * var(--text-scale, 1));
-  height: calc(22px * var(--text-scale, 1));
-  margin: 0 10px 0 0;
+  padding: 6px 16px;
 }
 .filter-menu {
   position: relative;
@@ -465,7 +454,7 @@
    line's gap (or the timestamp's own margin on wide rows) spaces them, so a
    wide relative timestamp can never cover the pin. */
 .row-pin { display: inline-flex; flex-shrink: 0; align-self: center; color: var(--text-3); }
-.search-help { margin: 0; padding: 8px 18px; color: var(--text-3); font-size: calc(12px * var(--text-scale, 1)); }
+.search-help { margin: 0; padding: 8px 16px; color: var(--text-3); font-size: calc(12px * var(--text-scale, 1)); }
 .search-help[role="alert"] { color: var(--danger); }
 .search-help button { height: 22px; padding: 0 2px; border: 0; border-radius: var(--radius-control); color: var(--link); font-size: inherit; }
 
@@ -481,18 +470,27 @@
 .rail-accounts { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rail-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
 .rail-triage .tool { height: 28px; min-width: 28px; padding: 0 8px; font-size: calc(12px * var(--text-scale, 1)); }
-/* The selection gutter holds only the checkbox column — its offset, the
-   scaled checkbox width and a consistent gap — and stays reserved while
-   checkboxes are hidden so text never moves. Declared on .list so
-   --text-scale resolves where the preference lives. */
+/* Rows start one inset from the pane edge. With a mouse, the selection
+   checkbox takes the avatar's place on hover, keyboard focus or selection,
+   as in Outlook and Gmail, so no empty column sits left of the avatars and
+   text never moves. Touch keeps a visible checkbox column ahead of the
+   avatar. Declared on .list so --text-scale resolves where the preference
+   lives. */
 .list {
-  --row-gutter: calc(4px + 16px * var(--text-scale, 1) + 8px);
+  --row-inset: 16px;
+  --row-gutter: var(--row-inset);
 }
-.mail-row > .row { padding-left: var(--row-gutter, 28px); }
-.mail-select { position: absolute; z-index: 2; left: 4px; top: 50%; transform: translateY(-50%); width: calc(16px * var(--text-scale, 1)); height: calc(16px * var(--text-scale, 1)); padding: 0; border: 1px solid var(--control-edge); border-radius: 4px; background: var(--surface); color: var(--text); display: grid; place-items: center; font-size: 11px; line-height: 1; }
+.mail-row > .row { padding-left: var(--row-gutter, 16px); }
+.mail-select { position: absolute; z-index: 2; left: calc(var(--row-gutter, 16px) + (var(--avatar-size) - 16px * var(--text-scale, 1)) / 2); top: 50%; transform: translateY(-50%); width: calc(16px * var(--text-scale, 1)); height: calc(16px * var(--text-scale, 1)); padding: 0; border: 1px solid var(--control-edge); border-radius: 4px; background: var(--surface); color: var(--text); display: grid; place-items: center; font-size: 11px; line-height: 1; }
+.mail-select[aria-checked="true"] { border-color: var(--accent); background: var(--accent); color: var(--primary-ink); }
 .mail-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mail-row.bulk-selected > .row:not(:focus-visible) { background: var(--selected); }
 @media (hover: hover) and (pointer: fine) {
   .mail-select { opacity: 0; }
-  .mail-row:hover .mail-select, .mail-row:focus-within .mail-select, .bulk-selected .mail-select { opacity: 1; }
+  .mail-row:hover .mail-select, .mail-row:has(.mail-select:focus-visible) .mail-select, .bulk-selected .mail-select { opacity: 1; }
+  .mail-row:has(> .mail-select):is(:hover, .bulk-selected, :has(.mail-select:focus-visible)) .avatar > :not(.unread-dot) { opacity: 0; }
+}
+@media not ((hover: hover) and (pointer: fine)) {
+  .list { --row-gutter: calc(var(--row-inset) + 16px * var(--text-scale, 1) + 10px); }
+  .mail-row > .mail-select { left: var(--row-inset, 16px); }
 }

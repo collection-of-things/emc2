@@ -5,11 +5,12 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { ReaderContent } from "./mail/MessageContent";
 import { PrivacyContext } from "./ui/Privacy";
+import { RemoteImagesContext } from "./ui/RemoteImages";
 import type { MailAttachment } from "../shared/types";
 
 const image: MailAttachment = { id: "image", filename: "piece.png", contentType: "image/png", size: 4, contentId: "piece" };
 
-test("embedded images stay message-bound, consent-controlled and safe against late responses", async () => {
+test("embedded images stay message-bound, follow the image preference and stay safe against late responses", async () => {
   const dom = new JSDOM("<div id='root'></div>");
   const originals = new Map(["window", "document", "IS_REACT_ACT_ENVIRONMENT"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   Object.assign(globalThis, { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true });
@@ -21,19 +22,18 @@ test("embedded images stay message-bound, consent-controlled and safe against la
   globalThis.fetch = async (url) => new Promise<Response>((resolve) => requests.push({ url: String(url), resolve }));
   URL.createObjectURL = () => `blob:synthetic-${++blobs}`;
   URL.revokeObjectURL = (url) => { revoked.push(url); };
-  const render = async (id = "a:one", privacy = false, attachments = [image], src = "cid:piece", repeats = 1) => act(async () => root.render(
-    <PrivacyContext.Provider value={{ on: privacy, revealed: new Set(), toggle() {} }}>
+  const render = async (id = "a:one", privacy = false, attachments = [image], src = "cid:piece", repeats = 1, on = true) => act(async () => root.render(
+    <RemoteImagesContext.Provider value={on}><PrivacyContext.Provider value={{ on: privacy, revealed: new Set(), toggle() {} }}>
       <ReaderContent mail={{ id, html: `<h2>Expected today</h2>${`<img src="${src}" alt="Mailpiece">`.repeat(repeats)}<p>Delivery details</p>`, images: [], attachments }}
         loadImages={async () => { throw new Error("Must not load remote metadata"); }} />
-    </PrivacyContext.Provider>));
-  const click = async () => act(async () => (dom.window.document.querySelector(".image-controls button") as HTMLButtonElement).click());
+    </PrivacyContext.Provider></RemoteImagesContext.Provider>));
   const finish = async (index: number, ok = true) => act(async () => requests[index].resolve(new Response(new Uint8Array([1, 2, 3, 4]), { status: ok ? 200 : 404 })));
   try {
-    await render("a:one", false, [image], "cid:piece", 1000);
-    assert.equal(requests.length, 0);
+    await render("a:one", false, [image], "cid:piece", 1000, false);
+    assert.equal(requests.length, 0, "hidden images download nothing");
     assert.equal(dom.window.document.querySelector("img"), null);
     assert.match(dom.window.document.body.textContent!, /Expected today.*Delivery details/);
-    await click();
+    await render("a:one", false, [image], "cid:piece", 1000);
     assert.equal(requests.length, 1, "repeated CID references share one download");
     assert.equal(requests[0].url, "/api/messages/a%3Aone/attachments/image");
     await finish(0);
@@ -42,15 +42,15 @@ test("embedded images stay message-bound, consent-controlled and safe against la
     assert.equal(blobs, 1, "repeated references share one blob");
     await render("a:one", false, [{ ...image }]);
     assert.equal(requests.length, 1, "equivalent metadata does not restart the download");
-    await render("a:one", true);
+    await render("a:one", true, [image], "cid:piece", 1, false);
     assert.equal(dom.window.document.querySelector("img"), null);
     assert.deepEqual(revoked, ["blob:synthetic-1"]);
-    await click();
+    await render("a:one", true);
     await render("a:two", true);
+    assert.equal(requests.length, 3, "the new opening starts its own download");
     await finish(1);
     assert.equal(dom.window.document.querySelector("img"), null);
     assert.equal(blobs, 1, "a response for the previous opening cannot create a blob");
-    await click();
     await finish(2, false);
     assert.equal(dom.window.document.querySelector("img"), null);
     assert.ok(dom.window.document.querySelector('[aria-label="Embedded image could not be loaded."]'));
@@ -62,12 +62,10 @@ test("embedded images stay message-bound, consent-controlled and safe against la
       ["url", [image], "/api/messages/another/attachments/image"],
     ] as const) {
       await render(id, false, [...files], src);
-      await click();
       assert.equal(requests.length, 3, id);
       assert.equal(dom.window.document.querySelector("img"), null, id);
     }
     await render("encoded", false, [{ ...image, contentId: "piece@example.com" }], "cid:piece%40example.com");
-    await click();
     assert.equal(requests.length, 4);
     await finish(3);
     assert.equal(dom.window.document.querySelector("img")?.getAttribute("src"), "blob:synthetic-2");

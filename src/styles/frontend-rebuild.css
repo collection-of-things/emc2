@@ -4,16 +4,16 @@
   --sidebar: 200px;
   --rebuild-rail: var(--chrome);
   --rebuild-canvas: color-mix(in srgb, var(--surface) 80%, var(--bg));
-  --rebuild-highlight: color-mix(in srgb, var(--text) 6%, transparent);
+  /* Dividers are single hairlines; the etched second line is retired. */
+  --rebuild-highlight: transparent;
   --rebuild-edge: 24px;
 }
 :root[data-scheme="light"][data-theme="black"] {
   --rebuild-canvas: #fdf1f0;
 }
-:root[data-scheme="light"] { --rebuild-highlight: rgba(255, 255, 255, .9); }
-:root[data-scheme="dark"] { --rebuild-rail: var(--raised); }
+:root[data-scheme="dark"] { --rebuild-rail: var(--bg); }
 
-/* A source rail, breadcrumb band and etched dividers replace the old chrome. */
+/* A source rail and toolbar band divided from the panes by single hairlines. */
 :root:not([data-glass]) .sidebar { background: var(--rebuild-rail); }
 :root:not([data-glass]) :is(.app-main, .app-toolbar, .main-head,
   .mail-category-bar, .drafts-pane, .work-pane, .contacts-pane) {
@@ -59,7 +59,7 @@
 .sidebar-group button.active .sidebar-count { color: var(--accent-soft-ink); }
 .sidebar-primary > button[aria-current="page"] { background: var(--accent-soft); box-shadow: none; }
 .sidebar-group .sliding-wash { background: var(--accent-soft); box-shadow: none; }
-.sidebar-count { min-width: 18px; padding: 1px 5px; color: var(--text-3); font-size: calc(11px * var(--text-scale, 1)); font-weight: 500; }
+.sidebar-count { min-width: 18px; padding: 1px 0; text-align: right; }
 .sidebar-name { min-width: 0; }
 .sidebar-account-footer { flex-shrink: 0; width: var(--sidebar); padding: 10px 12px 6px; border-top: 1px solid var(--line); box-shadow: inset 0 2px var(--rebuild-highlight); }
 /* The account card's icon aligns to the first text line so a wrapped second
@@ -110,20 +110,19 @@
 /* Inset rows are document previews in comfortable density, including the full
    width list. Compact retains the existing one-line geometry and shortcuts. */
 :root:not([data-glass]) :is(.list-pane, .workspace .list) { background: var(--rebuild-canvas); }
-.workspace .list { padding-inline: 12px; }
-.mail-window-date .group { padding-inline: 12px; color: var(--text-4); font-size: calc(11px * var(--text-scale, 1)); font-weight: 500; }
+/* Rows run edge to edge: hover and selection fills meet both pane edges, and
+   only text keeps an inset. */
+.workspace .list { padding-inline: 0; }
+.mail-window-date .group { padding-inline: var(--row-inset, 16px); color: var(--text-3); font-size: calc(12px * var(--text-scale, 1)); font-weight: 600; }
 /* The sticky date header must cover the row band fully while rows slide
-   under it — opaque canvas and a hairline bottom rule. */
-:root:not([data-glass]) .mail-window-date { background: var(--rebuild-canvas); border-bottom: 1px solid var(--line); }
+   under it, so it keeps an opaque canvas. */
+:root:not([data-glass]) .mail-window-date { background: var(--rebuild-canvas); }
 :root:not([data-glass]) .mail-window-date .group { background-color: var(--rebuild-canvas); }
 /* Under glass the sticky date captions need the same opaque canvas, or rows
    scroll visibly through the heading. */
 :root[data-glass] .mail-window-date { background: var(--rebuild-canvas); backdrop-filter: none; }
 :root[data-glass] .mail-window-date .group { background-color: var(--rebuild-canvas); backdrop-filter: none; }
-.mail-row { margin-inline: 1px; }
-.row { border-radius: var(--radius-mark); }
-.row.card { border-radius: var(--radius-mark-sm); }
-.row.card:focus-visible { border-radius: var(--radius-mark-sm); }
+.row, .row.card, .row.card:focus-visible { border-radius: 0; }
 /* While the reader is still empty, the keyboard cursor reads as an accent
    outline; an opened row keeps the full selection fill. Without a split the
    list never shows an opened row, so the cursor outline applies there too. */
@@ -131,23 +130,22 @@
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--accent);
 }
-.row::after { display: none; }
 /* Keep the selection gutter stable when the reader hides checkboxes. Card
    slots share their content-based height with MailListWindow. */
 .mail-window-row > .mail-row { height: 100%; }
-.mail-window-row .row.card { height: 100%; padding: calc(8px * var(--text-scale, 1)) 12px; padding-left: var(--row-gutter, 28px); align-items: center; }
+.mail-window-row .row.card { height: 100%; padding: calc(8px * var(--text-scale, 1)) 16px; padding-left: var(--row-gutter, 16px); align-items: center; }
 .row.card :is(.row-line, .row-subject, .row-preview) { line-height: calc(18px * var(--text-scale, 1)); }
 .rail-wait { color: var(--text-2); }
-.row.card .avatar { display: inline-flex; width: calc(30px * var(--text-scale, 1)); height: calc(30px * var(--text-scale, 1)); margin: 0 12px 0 0; }
 .row.card .row-text { gap: calc(2px * var(--text-scale, 1)); }
-/* Read rows stay quiet; unread lifts sender and subject to 500 at full ink. */
-.row.card .row-line strong { font-size: calc(13px * var(--text-scale, 1)); font-weight: 400; color: var(--row-read-ink); }
-.row.card.unread .row-line strong { font-weight: 500; color: var(--text); }
+/* Read rows stay quiet; unread lifts the sender to 600 and the subject to 500
+   at full ink, the scan cue in Apple Mail and Superhuman. */
+.row.card .row-line strong { font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; color: var(--row-read-ink); }
+.row.card.unread .row-line strong { font-weight: 600; color: var(--text); }
 .row.card .row-subject { font-size: calc(13px * var(--text-scale, 1)); font-weight: 400; color: var(--row-read-ink); }
 .row.card.unread .row-subject { font-weight: 500; color: var(--text); }
 .row.card .row-preview { font-size: calc(12px * var(--text-scale, 1)); color: var(--row-read-preview); }
 .row.card.unread .row-preview { color: var(--text-2); }
-.row.card.unread time { color: var(--accent); }
+.row.card.unread time { color: var(--text-2); }
 /* With a preview, account and status lead the preview line, each separated by
    the same middle dot at equal spacing. display:contents keeps every part on
    the line; center alignment lets meta parts truncate cleanly (overflow:hidden
@@ -377,32 +375,40 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
 @media (width < 760px) {
   .sidebar-account-footer { width: 100%; }
   .sidebar-account-card { min-height: 48px; }
-  .workspace .list { padding-inline: 6px; }
 }
 @container (max-width: 680px) {
   .settings-column { padding: 0 0 32px; }
 }
 
-/* Brand label voice: Geist Mono small caps for section labels, date groups,
-   counts, timestamps and key hints. */
+/* One label voice: section labels and date groups are sentence-case 12px
+   semibold in muted ink, set in the interface face so they read as headings
+   rather than eyebrows. */
 :is(.sidebar-heading button, .settings-rail-label, .settings-section-context,
-  .mail-window-date .group, .list .group, .sidebar-count, .tab-count) {
-  font-family: var(--font-mono);
-  font-size: calc(11px * var(--text-scale, 1));
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  .mail-window-date .group, .list .group) {
+  font-family: inherit;
+  font-size: calc(12px * var(--text-scale, 1));
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-3);
 }
-/* Count badges are bare mono numerals, no pill fill. */
-:is(.sidebar-count, .tab-count) { background: transparent; }
+/* Counts and timestamps are data: tabular numerals in the interface face. */
+:is(.sidebar-count, .tab-count) {
+  font-family: inherit;
+  font-size: calc(12px * var(--text-scale, 1));
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  background: transparent;
+  color: var(--text-3);
+}
 /* A zero badge recedes to the quietest ink; a real count keeps ink. */
 :is(.sidebar-count, .tab-count)[data-zero] { color: var(--text-4); }
-.inbox-tabs button:not(.active) .tab-count:not([data-zero]) { color: var(--text-2); }
-/* Timestamps are data, not labels: mono numerals, normal case. */
+.inbox-tabs button:not(.active) .tab-count:not([data-zero]) { color: var(--text-3); }
 .row time {
-  font-family: var(--font-mono);
-  font-size: calc(11px * var(--text-scale, 1));
-  font-weight: 500;
+  font-family: inherit;
+  font-size: calc(12px * var(--text-scale, 1));
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
   color: var(--text-3);
 }

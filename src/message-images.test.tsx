@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { MessageImages, MessageText, ReaderContent, type ContentResult } from "./mail/MessageContent";
 import { PrivacyContext } from "./ui/Privacy";
+import { RemoteImagesContext } from "./ui/RemoteImages";
 import { imageSource, type MailImage } from "../shared/types";
 
 const image: MailImage = { src: "https://images.example.com/photo.png", alt: "Photo for alice@example.com" };
@@ -36,7 +37,7 @@ test("image sources reject credentials, local hosts, unsupported schemes and mal
   assert.equal(imageSource("HTTPS://images.example.com/a?x=1&y=2"), "https://images.example.com/a?x=1&y=2");
 });
 
-test("mounted reader blocks images until activation, reports loading/failure, and resets on message change", async () => {
+test("mounted reader loads images from the toolbar preference, retries failures and resets on message change", async () => {
   const dom = new JSDOM("<!doctype html><div id='root'></div>");
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
@@ -53,97 +54,72 @@ test("mounted reader blocks images until activation, reports loading/failure, an
     calls.push(id);
     return new Promise<{ images: MailImage[] }>((yes, no) => { resolve = yes; reject = no; });
   };
-  const render = async (id: string, images?: MailImage[], privacy = true) => {
-    await act(async () => root.render(
+  const render = async (id: string, images?: MailImage[], privacy = true, on = true) => {
+    await act(async () => root.render(<RemoteImagesContext.Provider value={on}>
       <PrivacyContext.Provider value={{ on: privacy, names: ["Alice Example"], revealed: new Set(), toggle() {} }}>
         <MessageImages mail={{ id, images }} loadImages={loadImages} />
-      </PrivacyContext.Provider>));
+      </PrivacyContext.Provider></RemoteImagesContext.Provider>));
   };
-  const button = () => container.querySelector("button")!;
-  const click = async () => { await act(async () => button().click()); };
+  const button = (text: string) => [...container.querySelectorAll<HTMLButtonElement>("button")].find((node) => node.textContent === text);
   try {
     await render("a:1");
-    assert.equal(button().textContent, "Show images");
-    assert.equal(button().type, "button"); // Native keyboard activation and focus semantics.
-    assert.equal(button().disabled, false);
-    assert.equal(button().getAttribute("aria-expanded"), "false");
-    assert.equal(container.querySelector("img"), null);
-    assert.deepEqual(calls, []);
-    await click();
-    assert.equal(button().textContent, "Loading images…");
-    assert.equal(button().disabled, true);
+    assert.deepEqual(calls, ["a:1"], "images load without an in-message control");
+    assert.equal(button("Show images"), undefined);
+    assert.ok(!container.textContent?.includes("Remote images can tell"), "no consent banner");
     assert.equal(container.querySelector("img"), null);
     await act(async () => resolve({ images: [image, { src: "https://localhost/private", alt: "unsafe" }] }));
-    let img = container.querySelector("img")!;
+    const img = container.querySelector("img")!;
     assert.equal(container.querySelectorAll("img").length, 1);
     assert.equal(img.getAttribute("src"), image.src);
     assert.equal(img.getAttribute("referrerpolicy"), "no-referrer");
     assert.ok(!img.alt.includes("alice@example.com"));
-    assert.equal(button().getAttribute("aria-expanded"), "true");
     await act(async () => img.dispatchEvent(new dom.window.Event("load")));
     assert.ok(!container.textContent?.includes("Loading image 1"));
     await act(async () => img.dispatchEvent(new dom.window.Event("error")));
     assert.equal(container.querySelector("img"), null);
     assert.ok(container.textContent?.includes("Image 1 could not be loaded."));
-    await click();
-    assert.equal(button().textContent, "Show images");
-    assert.equal(container.querySelector("img"), null);
+    await render("a:1", undefined, true, false);
+    assert.equal(container.querySelector("img"), null, "turning images off hides them");
+    assert.ok(!container.textContent?.includes("could not be loaded"));
 
+    calls = [];
     await render("a:2");
-    await click();
     const oldResolve = resolve;
     await render("b:1");
     await act(async () => oldResolve({ images: [image] }));
-    assert.equal(button().textContent, "Show images");
-    assert.equal(container.querySelector("img"), null);
-    await click();
+    assert.equal(container.querySelector("img"), null, "a late response cannot fill another message");
+    assert.deepEqual(calls, ["a:2", "b:1"]);
     await act(async () => reject(new Error("offline")));
-    assert.equal(button().textContent, "Try images again");
     assert.ok(container.textContent?.includes("Images could not be loaded."));
-    await click();
+    await act(async () => button("Try images again")!.click());
     await act(async () => resolve({ images: [] }));
-    assert.ok(container.textContent?.includes("No supported remote images"));
     assert.equal(container.querySelector("img"), null);
+    assert.ok(!container.textContent?.includes("No supported remote images"), "an empty result stays quiet");
 
-    await render("privacy-pending", undefined, false);
-    await click();
-    const beforePrivacy = resolve;
-    await render("privacy-pending", undefined, true);
-    assert.equal(button().textContent, "Show images");
-    await click();
-    const afterPrivacy = resolve;
-    await act(async () => beforePrivacy({ images: [image] }));
-    assert.equal(button().textContent, "Loading images…", "old request cannot satisfy fresh privacy consent");
-    assert.equal(container.querySelector("img"), null);
-    await act(async () => afterPrivacy({ images: [image] }));
-    assert.equal(container.querySelectorAll("img").length, 1);
+    await render("pending");
+    const pending = resolve;
+    await render("pending", undefined, true, false);
+    await act(async () => pending({ images: [image] }));
+    assert.equal(container.querySelector("img"), null, "turning images off cancels a pending load");
 
     calls = [];
     const privateImages = [image, { src: "https://images.example.com/?to=alice%2540example.com", alt: "Alice Example" },
       { src: "https://images.example.com/Alice+Example.png", alt: "alice@example.com" }];
     await render("cached", privateImages);
-    assert.equal(container.querySelector("img"), null);
-    await click();
     assert.equal(container.querySelectorAll("img").length, 1);
     assert.ok(container.textContent?.includes("Image unavailable while personal information is hidden"));
     for (const token of ["alice", "Alice", "Example", "%2540"])
       assert.ok(!container.innerHTML.includes(token), token);
     await act(async () => container.querySelector("img")!.dispatchEvent(new dom.window.Event("load")));
     assert.ok(!container.innerHTML.includes("alice@example.com"), "loaded captions stay masked");
-    assert.deepEqual(calls, []);
-    await click();
     await render("cached", privateImages, false);
-    await click();
     assert.equal(container.querySelectorAll("img").length, 3);
     await render("cached", privateImages, true);
-    assert.equal(container.querySelector("img"), null, "privacy activation revokes existing consent");
-    assert.equal(button().disabled, false);
-    await click();
-    assert.equal(container.querySelectorAll("img").length, 1);
+    assert.equal(container.querySelectorAll("img").length, 1, "privacy still suppresses private image sources");
+    assert.deepEqual(calls, [], "cached metadata needs no request");
     await render("empty", []);
-    await click();
-    assert.ok(container.textContent?.includes("Embedded images require a matching supported attachment"));
     assert.deepEqual(calls, []);
+    assert.equal(container.querySelector("img"), null);
   } finally {
     await act(async () => root.unmount());
     dom.window.close();
@@ -155,7 +131,7 @@ test("mounted reader blocks images until activation, reports loading/failure, an
   }
 });
 
-test("formatted reader recovery keeps text on failure, ignores late content and clears consent on privacy", async () => {
+test("formatted reader recovery keeps text on failure, ignores late content and follows the image preference", async () => {
   const dom = new JSDOM("<!doctype html><div id='root'></div>");
   const descriptors = new Map(["window", "document", "IS_REACT_ACT_ENVIRONMENT"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   Object.defineProperty(globalThis, "window", { configurable: true, value: dom.window });
@@ -172,11 +148,11 @@ test("formatted reader recovery keeps text on failure, ignores late content and 
     requested.push(id);
     return new Promise<ContentResult>((yes, no) => { resolve = yes; reject = no; });
   };
-  const render = async (id: string, privacy = false, html?: string | null, images?: MailImage[]) => {
-    await act(async () => root.render(<PrivacyContext.Provider value={{ on: privacy, revealed: new Set(), toggle() {} }}>
+  const render = async (id: string, privacy = false, html?: string | null, images?: MailImage[], on = true) => {
+    await act(async () => root.render(<RemoteImagesContext.Provider value={on}><PrivacyContext.Provider value={{ on: privacy, revealed: new Set(), toggle() {} }}>
       <ReaderContent mail={{ id, html, images, body: "Cached readable text", attachments: html === null ? [] : undefined }} loadContent={loadContent}
         loadImages={async () => { metadataCalls++; return { images: [image] }; }} />
-    </PrivacyContext.Provider>));
+    </PrivacyContext.Provider></RemoteImagesContext.Provider>));
   };
   const button = (text: string) => [...container.querySelectorAll<HTMLButtonElement>("button")].find((node) => node.textContent === text)!;
   try {
@@ -188,30 +164,29 @@ test("formatted reader recovery keeps text on failure, ignores late content and 
     assert.ok(container.textContent?.includes("Formatted email is unavailable"));
     await act(async () => button("Retry formatted email").click());
     const oldResolve = resolve;
-    await render("new", false, null);
+    await render("new", false, null, []);
     await act(async () => oldResolve({ html: "<h2>Old private content</h2>", images: [image] }));
     assert.ok(!container.textContent?.includes("Old private content"));
     assert.deepEqual(requested, ["old", "old"], "null HTML does not refetch");
     await render("formatted");
     await act(async () => resolve({ html: `<table><tbody><tr><td>Formatted text<img src="${image.src}" alt="Photo"></td></tr></tbody></table>`, images: [image] }));
-    assert.ok(container.querySelector("table")); assert.equal(container.querySelector("img"), null);
-    await act(async () => button("Show images").click());
-    assert.equal(container.querySelectorAll("img").length, 1); assert.equal(metadataCalls, 0);
+    assert.ok(container.querySelector("table"));
+    assert.equal(container.querySelectorAll("img").length, 1, "formatted images load by default");
+    assert.equal(metadataCalls, 0);
     await render("formatted", true);
-    assert.equal(container.querySelector("img"), null); assert.equal(button("Show images").disabled, false);
-    await act(async () => button("Show images").click());
-    assert.equal(container.querySelectorAll("img").length, 1);
-    await act(async () => button("Hide images").click());
+    assert.equal(container.querySelectorAll("img").length, 1, "privacy keeps public images");
+    await render("formatted", true, undefined, undefined, false);
+    assert.equal(container.querySelector("img"), null, "the toolbar preference hides images");
+    assert.ok(container.querySelector(".formatted-mail-image-placeholder"));
     await render("formatted", false);
-    assert.equal(container.querySelector("img"), null, "disabling privacy does not grant consent again");
+    assert.equal(container.querySelectorAll("img").length, 1);
     await render("empty-after-retry", false, undefined, []);
     await act(async () => reject(new Error("offline")));
-    assert.ok(button("Show images"), "content failure keeps the image control available");
     assert.ok(container.querySelector('[aria-label="Attachments"]'), "unknown attachments stay explicit");
     await act(async () => button("Retry formatted email").click());
     await act(async () => resolve({ html: null, images: [], attachments: [] }));
-    assert.equal(container.querySelector('.image-controls'), null);
     assert.equal(container.querySelector('[aria-label="Attachments"]'), null);
+    assert.equal(metadataCalls, 0, "formatted and known-empty mail never ask the provider for image metadata");
   } finally {
     await act(async () => root.unmount()); dom.window.close();
     for (const [key, descriptor] of descriptors) {
@@ -229,15 +204,13 @@ test("fallback image metadata keeps truncated private tokens out of alt and load
   const container = dom.window.document.getElementById("root")!;
   const root = createRoot(container);
   const toggled: string[] = [];
-  const render = async (id: string, alt: string, privacy: boolean, revealed = new Set<string>()) => {
-    await act(async () => root.render(
+  const render = async (id: string, alt: string, privacy: boolean, revealed = new Set<string>(), on = true) => {
+    await act(async () => root.render(<RemoteImagesContext.Provider value={on}>
       <PrivacyContext.Provider value={{ on: privacy, names: ["Nora Lane"], revealed, toggle: (key) => { toggled.push(key); } }}>
         <MessageImages mail={{ id, html: null, images: [{ ...image, alt }] }}
           loadImages={async () => { throw new Error("cached metadata must not fetch"); }} />
-      </PrivacyContext.Provider>));
+      </PrivacyContext.Provider></RemoteImagesContext.Provider>));
   };
-  const button = () => container.querySelector("button")!;
-  const click = async () => { await act(async () => button().click()); };
   const load = async () => { await act(async () => container.querySelector("img")!.dispatchEvent(new dom.window.Event("load"))); };
   try {
     const descriptions = [
@@ -252,31 +225,22 @@ test("fallback image metadata keeps truncated private tokens out of alt and load
         await t.test(`${label}: ${target}`, async () => {
           const id = `${label}:${target}`;
           await render(id, description, false);
-          assert.equal(container.querySelector("img"), null);
-          assert.equal(button().type, "button");
-          assert.equal(button().getAttribute("aria-expanded"), "false");
-          button().focus();
-          await click();
-          assert.equal(dom.window.document.activeElement, button(), "activation retains focus");
           assert.equal(container.querySelector("img")?.alt, description, "privacy off preserves metadata");
           await load();
           assert.equal(container.querySelector("figcaption")?.textContent, description);
           await render(id, description, true);
-          assert.equal(container.querySelector("img"), null, "privacy activation revokes consent");
-          await click();
           if (target === "loaded caption") await load();
           assert.equal(target === "alt" ? container.querySelector("img")?.alt : container.querySelector("figcaption")?.textContent,
             "Image 1", "uncertain metadata uses a safe description");
           assert.ok(!container.innerHTML.includes(description), "raw metadata is absent from DOM");
-          await click();
-          assert.equal(container.querySelector("img"), null, "Hide revokes consent");
+          await render(id, description, true, new Set(), false);
+          assert.equal(container.querySelector("img"), null, "the toolbar preference hides images");
         });
       }
     }
     await t.test("short private descriptions remain masked and explicitly revealable", async () => {
       const description = "Photo for Nora Lane and reader@example.com";
       await render("short-private", description, true);
-      await click();
       assert.equal(container.querySelector("img")?.alt, "Photo for •••••••• and ••••••••");
       await load();
       const caption = container.querySelector("figcaption")!;
@@ -291,8 +255,6 @@ test("fallback image metadata keeps truncated private tokens out of alt and load
     });
     await t.test("short public descriptions remain readable", async () => {
       await render("short-public", "Public landscape", true);
-      assert.equal(container.querySelector("img"), null);
-      await click();
       assert.equal(container.querySelector("img")?.alt, "Public landscape");
       await load();
       assert.equal(container.querySelector("figcaption")?.textContent, "Public landscape");
@@ -305,17 +267,18 @@ test("fallback image metadata keeps truncated private tokens out of alt and load
   }
 });
 
-test("reader hides known-empty metadata but retains consent for unknown metadata and HTML images", () => {
-  for (const [name, html, images, controls] of [
-    ["known plain text", null, [], false],
-    ["known HTML without images", "<p>Text</p>", [], false],
-    ["HTML image despite empty extracted metadata", `<p>Text<img src="${image.src}"></p>`, [], true],
-    ["unknown HTML", undefined, [], true],
-    ["unknown image metadata", null, undefined, true],
+test("reader content carries no in-message image control and keeps attachment states", () => {
+  for (const [name, html, images] of [
+    ["known plain text", null, []],
+    ["known HTML without images", "<p>Text</p>", []],
+    ["HTML image despite empty extracted metadata", `<p>Text<img src="${image.src}"></p>`, []],
+    ["unknown HTML", undefined, []],
+    ["unknown image metadata", null, undefined],
   ] as const) {
     const markup = renderToStaticMarkup(<ReaderContent mail={{ id: name, html, images: images ? [...images] : undefined, attachments: [], body: "Cached text" }}
       loadContent={async () => ({ html: null, images: [], attachments: [] })} loadImages={async () => ({ images: [] })} />);
-    assert.equal(markup.includes('class="image-controls"'), controls, name);
+    assert.ok(!markup.includes("image-controls"), name);
+    assert.ok(!markup.includes("Show images"), name);
     assert.ok(!markup.includes('aria-label="Attachments"'), name);
     assert.ok(markup.includes("Cached text") || markup.includes("Text"), name);
   }

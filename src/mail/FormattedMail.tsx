@@ -86,7 +86,7 @@ export function FormattedMail({ mailId, attachments = [], html, showImages, rend
     if (tag === "img") {
       // An empty box at the image's size keeps the sender layout; small icon
       // cells would otherwise wrap the reason one letter per line.
-      if (!showImages) return <ImagePlaceholder {...presentation} key={key} style={style} reason="Image blocked. Use Show images to load it." />;
+      if (!showImages) return <ImagePlaceholder {...presentation} key={key} style={style} reason="Image hidden. Use Show images in the toolbar to load it." />;
       const cid = /^cid:(.+)$/i.exec(a.src || "")?.[1];
       const embedded = embeddedAttachment(a.src || "", attachments);
       if (cid && privacy && privateMailLink(a.src, redactText))
@@ -152,18 +152,25 @@ export function FormattedMail({ mailId, attachments = [], html, showImages, rend
 
 // Holds a blocked image's place at its own size (24px when unsized); the reason
 // is a label and tooltip because a small icon cell cannot fit it as text.
+// Tracking pixels and spacers (2px or less on a side) keep their size but draw
+// nothing, so hidden images never leave specks in the text.
 function ImagePlaceholder({ style, reason, className, id }: { style: CSSProperties; reason: string } & Presentation) {
+  const width = Number(pxLength(style.width) ?? Infinity), height = Number(pxLength(style.height) ?? Infinity);
   return <span id={id} className={["formatted-mail-image-placeholder", className].filter(Boolean).join(" ")} role="img" aria-label={reason} title={reason}
-    style={placeholderShape(style)} />;
+    data-spacer={width <= 2 || height <= 2 ? "" : undefined} style={placeholderShape(style)} />;
 }
 
 // A placeholder narrows exactly as its image would. An image's max-width lets a
 // table cell shrink it, but a sized empty box would hold the cell open and
 // widen the whole mail, so a px width becomes min(width, 100%) and a px width
 // and height keep their ratio instead of a fixed height.
+// The sender's display, float, margins and vertical alignment carry over, so a
+// block-level logo keeps its own line and text never wraps beside its box.
 function placeholderShape(style: CSSProperties): CSSProperties {
   const width = pxLength(style.width), height = pxLength(style.height);
+  const { display, float, verticalAlign, margin, marginTop, marginRight, marginBottom, marginLeft } = style;
   return {
+    display, float, verticalAlign, margin, marginTop, marginRight, marginBottom, marginLeft,
     width: width ? `min(${width}px, 100%)` : style.width ?? 24,
     ...(width && height ? { height: "auto", aspectRatio: `${width} / ${height}` } : { height: style.height ?? 24 }),
     maxHeight: style.maxHeight,

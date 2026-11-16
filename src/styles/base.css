@@ -256,7 +256,7 @@ input[type="checkbox"][role="switch"]:disabled {
 .empty-skeleton-group {
   width: 64px;
   height: 11px;
-  margin: calc(10px * var(--text-scale, 1)) 0 calc(9px * var(--text-scale, 1)) 12px;
+  margin: calc(10px * var(--text-scale, 1)) 0 calc(9px * var(--text-scale, 1)) 16px;
   border-radius: 6px;
   background: var(--skeleton);
 }
@@ -264,11 +264,11 @@ input[type="checkbox"][role="switch"]:disabled {
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) 24px;
   grid-template-rows: repeat(3, calc(18px * var(--text-scale, 1)));
-  column-gap: 18px;
+  column-gap: 12px;
   align-items: center;
   align-content: start;
   height: calc((var(--mail-card-base) + var(--mail-card-preview)) * var(--text-scale, 1));
-  padding: 8px 12px 0 var(--row-gutter, 28px);
+  padding: 8px 16px 0 var(--row-gutter, 16px);
 }
 .empty-skeleton-card > i {
   display: block;
