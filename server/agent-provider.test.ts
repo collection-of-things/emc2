@@ -3,7 +3,9 @@ import { test } from "node:test";
 import { mkdtempSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { createServer } from "node:http";
 import express from "express";
+import { Agent, fetch as undiciFetch, Headers, Response, type RequestInfo, type RequestInit } from "undici";
 import type { Mail } from "../shared/types.js";
 import type { AgentGrant, AgentProposal } from "../shared/workspace.js";
 import { agentProviders, type AgentAutomationSettings, type AgentProvider, type AgentProviderSettings } from "../shared/agent-provider.js";
@@ -29,7 +31,11 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
   let resolveAddresses = async (_host: string): Promise<{ address: string; family: number }[]> => [{ address: "8.8.8.8", family: 4 }];
   let deadline = () => AbortSignal.timeout(30000);
   const app = express(); app.use(express.json()); mountWorkspace(app);
-  mountAgentProvider(app, { resolve: (host) => resolveAddresses(host), deadline: () => deadline() });
+  const providerDependencies = {
+    resolve: (host: string) => resolveAddresses(host), deadline: () => deadline(),
+    fetch: async (input: RequestInfo, options?: RequestInit) => { calls.push({ url: String(input), options: options! }); return respond(options!); },
+  };
+  mountAgentProvider(app, providerDependencies);
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address(); assert.ok(address && typeof address === "object");
@@ -39,7 +45,6 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
   const calls: { url: string; options: RequestInit }[] = [];
   const success = (body = "A synthetic reply.") => Response.json({ choices: [{ finish_reason: "stop", message: { role: "assistant", content: body } }] });
   let respond: (options: RequestInit) => Response | Promise<Response> = () => success();
-  globalThis.fetch = async (input, options) => { calls.push({ url: String(input), options: options! }); return respond(options!); };
   async function request<T = unknown>(route: string, method = "GET", body?: unknown) {
     const response = await nativeFetch(`http://127.0.0.1:${port}/api${route}`, { method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
     const text = await response.text();
@@ -73,6 +78,30 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
   }
   const prepare = (route: string, config: AgentProviderSettings, extras: Record<string, unknown> = {}) => request<AgentProposal>(`${route}/prepare`, "POST", { sourceMailId: mail.id, revision: config.revision, instruction: "Keep it short.", ...extras });
   try {
+    await t.test("Undici fetch accepts the pinned dispatcher and refuses redirects", async () => {
+      const paths: string[] = [];
+      const transport = createServer((req, res) => {
+        paths.push(req.url!);
+        assert.equal(req.httpVersion, "1.1");
+        if (req.url === "/redirect") { res.writeHead(302, { Location: "/forbidden" }); res.end(); }
+        else if (req.url === "/empty") { res.writeHead(204); res.end(); }
+        else res.end("synthetic");
+      });
+      await new Promise<void>((resolve) => transport.listen(0, "127.0.0.1", resolve));
+      const local = transport.address(); assert.ok(local && typeof local === "object");
+      const dispatcher = new Agent({ allowH2: false, connect: { autoSelectFamily: true, lookup: pinnedProviderLookup([{ address: "127.0.0.1", family: 4 }]) } });
+      const url = `http://provider.example.test:${local.port}`;
+      try {
+        assert.equal(await (await undiciFetch(url, { dispatcher, redirect: "error" })).text(), "synthetic");
+        assert.equal((await undiciFetch(`${url}/empty`, { dispatcher })).body, null);
+        await assert.rejects(undiciFetch(`${url}/redirect`, { dispatcher, redirect: "error" }), /fetch failed/);
+        await assert.rejects(undiciFetch(url, { dispatcher, signal: AbortSignal.abort() }), { name: "AbortError" });
+        assert.deepEqual(paths, ["/", "/empty", "/redirect"]);
+      } finally {
+        await dispatcher.close();
+        await new Promise<void>((resolve) => transport.close(() => resolve()));
+      }
+    });
     await t.test("key storage is encrypted, settings are sanitized, endpoint changes require a fresh key", async () => {
       const route = await fixture(); const config = await save(route);
       assert.equal(calls.length, 0, "saving must not test a connection");
@@ -227,7 +256,7 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
       assert.equal((await request<AgentProposal>(`/agent/proposals/${old.id}/approve`, "POST", { digest: old.digest })).status, 200);
       store.put("agentProvider", agent.id, { provider: "claude-code", baseURL: "local:claude-code", model: "sonnet", apiKey: "", revision: crypto.randomUUID() } as never);
       store.put("agentAutomation", agent.id, { agentId: agent.id, enabled: true, scope: "all", instruction: "", dailyLimit: 20, revision: crypto.randomUUID() });
-      mountAgentProvider(express(), { resolve: (host) => resolveAddresses(host), deadline: () => deadline() });
+      mountAgentProvider(express(), providerDependencies);
       assert.equal(store.get("agentProvider", agent.id), undefined);
       assert.equal(store.get("agentAutomation", agent.id)?.enabled, false);
     });
@@ -490,7 +519,6 @@ test("BYOK settings and reviewed drafts preserve provider, account and evidence 
       resolveAddresses = async () => [{ address: "8.8.8.8", family: 4 }];
     });
   } finally {
-    globalThis.fetch = nativeFetch;
     await new Promise<void>((resolve) => server.close(() => resolve()));
     store.closeStore(); rmSync(directory, { recursive: true, force: true });
   }

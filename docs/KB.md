@@ -73,7 +73,9 @@ are separate from these synthetic checks.
 Browser MCP configuration reports the current loopback listener port. Agent
 provider DNS is resolved once within the request deadline and all answers must
 be public; the connector can try the validated addresses without another DNS
-lookup. IMAP searches retain the newest bounded UIDs and report incomplete
+lookup. Provider requests use Undici's fetch with its matching Agent, HTTP/1.1
+only, normal TLS certificate verification, no proxy dispatcher and no redirects.
+IMAP searches retain the newest bounded UIDs and report incomplete
 results when truncated. An unbound archived destructive move requires an exact
 Message-ID and subject, and an envelope date must match when present; a missing
 envelope date is accepted. Privacy mode hides the entire text when there are
