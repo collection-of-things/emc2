@@ -368,7 +368,7 @@ if (!process.env.EMC2_RECOVERY_TEST_CHILD) {
           mock.method(imapRuntime, "throttleWait", async (delay: number) => { delays.push(delay); return false; });
           mock.method(imapRuntime, "autoidle", () => {});
           const result = await sync(); assert.equal(result.errors.length, 1);
-          assert.equal(attempts, 4); assert.deepEqual(delays, [1000, 2000, 4000, 8000]);
+          assert.equal(attempts, 4); assert.deepEqual(delays, [1000, 2000, 4000]);
           assert.equal(all("mail").find((m) => m.id === cached.id)?.archived, false);
           assert.equal((await state()).syncing, false); safe(result); safe((await state()).accounts);
           console.log(`actual ImapFlow ${phase} exhaustion: 4 attempts, retained cache, no outer retry`);

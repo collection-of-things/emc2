@@ -22,6 +22,8 @@ unversioned history without treating it as a release record.
 
 ### Fixed
 
+- Recover oversized IMAP message metadata when its date is invalid, and report a missing attachment part without leaving its connection open.
+
 - With images hidden, emails keep their layout: a hidden logo keeps its own line instead of pulling the next text beside an empty box, and tracking pixels no longer leave grey specks. ([#261](https://github.com/collection-of-things/emc2/pull/261))
 
 ## 0.2.40 - 2026-11-15

@@ -1279,5 +1279,5 @@ export async function recoverImapMetadata(a: StoredAccount, remoteId: string, me
   const env = message.envelope;
   const addresses = (list: NonNullable<FetchMessageObject["envelope"]>["from"]) => (list || []).map(x => `${x.name || ""} <${x.address || ""}>`).join(", ");
   return metadataIncoming(a, remoteId, [{ name: "From", value: addresses(env?.from) }, { name: "To", value: addresses(env?.to) }, { name: "Cc", value: addresses(env?.cc) },
-    { name: "Subject", value: env?.subject }, { name: "Message-ID", value: env?.messageId }, { name: "Date", value: env?.date?.toUTCString() }], files, !message.flags?.has("\\Seen"));
+    { name: "Subject", value: env?.subject }, { name: "Message-ID", value: env?.messageId }, { name: "Date", value: env?.date instanceof Date ? env.date.toUTCString() : env?.date }], files, !message.flags?.has("\\Seen"));
 }

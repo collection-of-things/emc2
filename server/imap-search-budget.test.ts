@@ -21,7 +21,8 @@ test("protocol search budgets apply before compact range expansion", async () =>
     };
     guardSearchExpansion(client as unknown as ImapFlow);
     const started = performance.now();
-    assert.deepEqual(await search(client, true, { uid: true }), expected);
+    if (expected === false) await assert.rejects(search(client, true, { uid: true }), /safe result limit/);
+    else assert.deepEqual(await search(client, true, { uid: true }), expected);
     assert.equal(closed, expected === false);
     assert.ok(performance.now() - started < 1000);
   }

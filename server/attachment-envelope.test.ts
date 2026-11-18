@@ -231,7 +231,7 @@ test("practical encrypted attachment envelope", { timeout: 110000 }, async t => 
     await t.test("IMAP checks UIDVALIDITY, fetches only requested part and cancels transport", async t => {
       const file = { id: "synthetic-file", filename: "large.bin", contentType: "application/octet-stream", size: 600000, unavailable: true, remotePart: "2" };
       const message = mail(file); store.put("mail", message.id, message);
-      let validity = "999", calls = 0, closed = 0, cancelDownload = true;
+      let validity = "999", calls = 0, closed = 0, cancelDownload = true, missingPart = false;
       t.mock.method(ImapFlow.prototype, "connect", async function(this: ImapFlow) { this.usable = true; });
       t.mock.method(ImapFlow.prototype, "mailboxOpen", async function(this: ImapFlow, folder: string, options?: { readOnly?: boolean }) {
         assert.equal(folder, "INBOX"); assert.equal(options?.readOnly, true);
@@ -245,6 +245,7 @@ test("practical encrypted attachment envelope", { timeout: 110000 }, async t => 
       const controller = new AbortController();
       t.mock.method(ImapFlow.prototype, "download", async (uid: string, part?: string, options?: { uid?: boolean; maxBytes?: number }) => {
         calls++; assert.equal(uid, "7"); assert.equal(part, "2"); assert.equal(options?.uid, true); assert.equal(options?.maxBytes, ATTACHMENT_BYTES + 1);
+        if (missingPart) return {};
         return { meta: {}, content: Readable.from((async function* () {
           if (cancelDownload) { yield Buffer.alloc(65536); controller.abort(); yield Buffer.alloc(65536); }
           else for (let left = file.size; left; left -= Math.min(left, 65536)) yield Buffer.alloc(Math.min(left, 65536));
@@ -258,7 +259,22 @@ test("practical encrypted attachment envelope", { timeout: 110000 }, async t => 
       cancelDownload = false;
       const saved = await download.downloadProviderAttachment(a, message, file, new AbortController().signal);
       assert.equal(saved.size, file.size); store.eraseUpload(saved.id);
+      missingPart = true;
+      const closedBeforeMissing = closed;
+      await assert.rejects(download.downloadProviderAttachment(a, message, file, new AbortController().signal), /part is no longer available/);
+      assert.ok(closed > closedBeforeMissing); assert.equal(store.all("upload").length, before);
       assert.equal(store.get("mail", message.id)!.unread, true);
+    });
+    await t.test("IMAP metadata accepts Date, raw date strings and missing dates", async () => {
+      const expected = Date.UTC(2023, 10, 14, 22, 13, 20);
+      for (const date of [new Date(expected), new Date(expected).toUTCString(), undefined, "invalid date"]) {
+        const message = await providers.recoverImapMetadata(a, "123:7", {
+          uid: 7, seq: 1, envelope: { date, messageId: "<synthetic@example.test>" },
+        });
+        if (date && date !== "invalid date") assert.equal(message.date, expected);
+        else assert.ok(Number.isFinite(message.date));
+        assert.equal(message.bodyUnavailable, true);
+      }
     });
     await t.test("large IMAP messages import only envelope and part metadata", async t => {
       let rawFetches = 0;

@@ -102,8 +102,10 @@ export async function downloadProviderAttachment(a: StoredAccount, mail: Mail, f
       if (parts.length !== 1) throw new Error("Attachment part identity is ambiguous. Sync before downloading.");
       assertDownloadIdentity(a, mail);
       const download = await imapOperation(client, () => client.download(ids[2], parts[0].part, { uid: true, maxBytes: ATTACHMENT_BYTES + 1, chunkSize: 65536 }));
-      source = download.content;
-      close = () => { download.content.destroy(); client.close(); signal.removeEventListener("abort", abort); };
+      const content = download.content;
+      if (!content) throw new Error("Attachment part is no longer available. Sync before downloading.");
+      source = content;
+      close = () => { content.destroy(); client.close(); signal.removeEventListener("abort", abort); };
     } catch (error) { client.close(); signal.removeEventListener("abort", abort); throw error; }
   }
   const abort = () => close();
