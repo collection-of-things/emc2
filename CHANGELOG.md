@@ -14,6 +14,10 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Documentation
+
+- Point the README and marketing website metadata to [the Cloudflare-hosted website](https://emc2.collection-of-devs.workers.dev/).
+
 ### Changed
 
 - Images in email now load by default. A new image button beside the Privacy eye in the toolbar hides them in every email and remembers your choice, replacing the "Show images" strip above each message. ([#261](https://github.com/collection-of-things/emc2/pull/261)) While personal information is hidden, images start hidden and the same button shows them until you hide personal information again.

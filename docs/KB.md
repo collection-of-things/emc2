@@ -1984,7 +1984,9 @@ Create a new worktree and feature branch for each new Emc² task. Bind the T3 Co
 
 ## Showcase downloads
 
-The [marketing site](../website/README.md) is a static Astro site; the Lakebed capsule is retired. It
+The [marketing site](https://emc2.collection-of-devs.workers.dev/) is a static Astro site
+([source and setup](../website/README.md)); the Lakebed capsule is retired. Its canonical origin
+defaults to this address; `SITE_URL` can override it at build time. It
 reads the combined download total for Windows, macOS and Linux installers from all published GitHub
 releases in the browser through `website/src/lib/downloads.ts`: pagination follows in the client,
 complete totals are cached for ten minutes, failed reads keep the last count, and the number stays hidden
