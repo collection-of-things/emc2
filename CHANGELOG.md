@@ -18,21 +18,20 @@ unversioned history without treating it as a release record.
 
 - Point the README and marketing website metadata to [the Cloudflare-hosted website](https://emc2.collection-of-devs.workers.dev/).
 
+## 0.2.41 - 2026-11-22
+
 ### Changed
 
 - Images in email now load by default. A new image button beside the Privacy eye in the toolbar hides them in every email and remembers your choice, replacing the "Show images" strip above each message. ([#261](https://github.com/collection-of-things/emc2/pull/261)) While personal information is hidden, images start hidden and the same button shows them until you hide personal information again.
 - The mail list runs edge to edge: the selected and hovered email fill the whole row with no gaps at the pane edges, the selection checkbox appears over the avatar when you point at a row, sender names line up with their subjects, and unread dots sit on the avatar in every layout. ([#261](https://github.com/collection-of-things/emc2/pull/261))
 - Date groups, sidebar headings and counts use plain sentence-case text instead of spaced-out capitals, dividers are single lines, and sidebar icons stay quiet until selected, so the window reads calmer. ([#261](https://github.com/collection-of-things/emc2/pull/261))
+- Update the desktop runtime to Electron 45 and refresh mail-provider libraries and build dependencies. ([#262](https://github.com/collection-of-things/emc2/pull/262), [#263](https://github.com/collection-of-things/emc2/pull/263), [#264](https://github.com/collection-of-things/emc2/pull/264), [#265](https://github.com/collection-of-things/emc2/pull/265), [#266](https://github.com/collection-of-things/emc2/pull/266), [#267](https://github.com/collection-of-things/emc2/pull/267), [#268](https://github.com/collection-of-things/emc2/pull/268))
 
 ### Fixed
 
-- Recover oversized IMAP message metadata when its date is invalid, and report a missing attachment part without leaving its connection open.
+- Recover oversized IMAP message metadata when its date is invalid, and report a missing attachment part without leaving its connection open. ([#264](https://github.com/collection-of-things/emc2/pull/264))
 
 - With images hidden, emails keep their layout: a hidden logo keeps its own line instead of pulling the next text beside an empty box, and tracking pixels no longer leave grey specks. ([#261](https://github.com/collection-of-things/emc2/pull/261))
-
-## 0.2.40 - 2026-11-15
-
-### Fixed
 
 - Correct the corrupted small macOS app icon used in system dialogs and add Retina icon representations. Existing installations need a rebuilt app to receive the corrected artwork. ([#219](https://github.com/collection-of-things/emc2/issues/219))
 
