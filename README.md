@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://emclient2.vercel.app">
+  <a href="https://emc2.collection-of-devs.workers.dev/">
     <img src=".github/assets/emc2-cover.jpg" alt="Emc² logo on the pink and purple brand artwork" width="960" />
   </a>
 </p>
@@ -14,7 +14,7 @@ between mail apps. The installed app includes its runtime, so you do not need
 a browser, terminal or separate Node installation.
 
 [Download Emc²](https://github.com/collection-of-things/emc2/releases/latest)
-· [Visit the website](https://emclient2.vercel.app)
+· [Visit the website](https://emc2.collection-of-devs.workers.dev/)
 · [Read the changelog](CHANGELOG.md)
 · [Contribute](CONTRIBUTING.md)
 

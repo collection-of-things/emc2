@@ -1,5 +1,7 @@
 # Emc² landing page
 
+Live site: [emc2.collection-of-devs.workers.dev](https://emc2.collection-of-devs.workers.dev/).
+
 The marketing site for the Emc² desktop mail client: a single static page built
 with [Astro](https://astro.build), light mode, with real product fragments
 drawn in HTML at true size over public-domain paintings.
@@ -117,9 +119,9 @@ counterpart that loads only once the dark theme shows.
   product's own light and dark schemes.
 - `src/lib/theme.ts` - reading, saving and announcing the page theme.
 - `src/assets/art/` - the three paintings and their night counterparts.
-- `SITE_URL` in the environment sets the canonical origin at build time
-  (canonical link and og:url; without it, social cards point at the
-  committed og.jpg on the main branch).
+- The canonical origin defaults to `https://emc2.collection-of-devs.workers.dev/`.
+  `SITE_URL` can override it at build time for the canonical link, og:url
+  and social image URL.
 
 ## Artwork
 
@@ -140,9 +142,8 @@ Keep the credits in the footer when changing them.
 `public/og.jpg` (3200x1800) is the approved closing brand image, with the
 Emc² logo and “Email at the speed of light. Inbox, weightless.” on a pink
 and purple background. Open Graph, Twitter cards and structured data share
-its URL; both card formats include descriptive alt text. When `SITE_URL` is
-set, the URL points to that site's `/og.jpg`; otherwise it uses the committed
-image on the main branch.
+its URL; both card formats include descriptive alt text. The image URL points
+to `/og.jpg` on the canonical origin, including when `SITE_URL` overrides it.
 
 `public/brand/emc2-lockup.svg` is the brand kit's original vector lockup.
 The header, footer and interactive inbox demo use it as a CSS mask so it
