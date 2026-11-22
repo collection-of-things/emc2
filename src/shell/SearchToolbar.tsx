@@ -1,7 +1,7 @@
 import { useContext, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { PrivacyContext } from "../ui/Privacy";
 import { commandsChord } from "../interaction";
-import { Close, Info, Search } from "../ui/icons";
+import { Close, Info, Keyboard, Search } from "../ui/icons";
 
 export function SearchToolbar({ inputRef, query, label, invalid, disabled, commandsDisabled = disabled, shortcut, onFocus, onChange, onClear, onCommands, onSaveView, optionsOpen, onOptions, scopeKey = "" }: {
   optionsOpen?: boolean;
@@ -51,6 +51,8 @@ export function SearchToolbar({ inputRef, query, label, invalid, disabled, comma
     {onOptions && <button type="button" className="icon" aria-label="Search options" title="Search options" aria-expanded={optionsOpen} aria-controls={optionsOpen ? "search-options" : undefined} disabled={disabled} onClick={onOptions}><Info size={15} /></button>}
     {onSaveView && <button data-compose-access type="button" className="save-view-button" disabled={disabled || text !== query} onClick={onSaveView}>Save view</button>}
     <button data-compose-access type="button" className="commands-button" disabled={commandsDisabled} onClick={onCommands}
-      aria-haspopup="dialog" title={`Commands (${commandsChord()})`}>Commands <kbd>{commandsChord()}</kbd></button>
+      aria-label="Commands" aria-haspopup="dialog" title={`Commands (${commandsChord()})`}>
+      <Keyboard size={16} /><span>Commands</span><kbd aria-hidden="true">{commandsChord()}</kbd>
+    </button>
   </div>;
 }

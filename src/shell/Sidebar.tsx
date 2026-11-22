@@ -5,12 +5,11 @@ import { accountLabel } from "../mail-ui";
 import { ProviderIcon } from "../mail/Avatar";
 import { relative, sidebarViews, viewNames, type View } from "../mail/format";
 import { SlidingNav } from "../ui/SlidingNav";
-import { ChevronDown, Mail as MailIcon, Plus, Settings } from "../ui/icons";
+import { ChevronDown, Compose, Mail as MailIcon, Plus, Settings } from "../ui/icons";
 import { captionDoubleClick, type Corner } from "./PaneHeader";
 import { TrafficLights } from "../ui/TrafficLights";
 
 const draftsIcon = new URL("../assets/drafts.png", import.meta.url).href;
-const newMessageIcon = new URL("../assets/new-message.png", import.meta.url).href;
 
 const foldedKey = "sidebar-folded";
 const readFolded = () => {
@@ -99,25 +98,19 @@ export function Sidebar({
         </span>
       </div>
         <div className="sidebar-content" key="mail" inert={mail.blocked}>
-          <SlidingNav activeKey={null} label="App" className="sidebar-group sidebar-primary">
+          <div className="sidebar-group sidebar-primary">
             <button className="primary-button new-message" title={`Compose (${mail.shortcut("compose")})`} onClick={mail.onCompose}>
-              <img className="compose-mark" src={newMessageIcon} alt="" />
+              <Compose size={16} />
               New message
             </button>
-            <button className={!settings && mail.view === "drafts" ? "active" : undefined} aria-current={!settings && mail.view === "drafts" ? "page" : undefined} aria-label={mail.draftCount === undefined ? "Drafts" : `Drafts, ${mail.draftCount} saved`} disabled={mail.blocked || mail.busy || !mail.accounts.length} onClick={mail.onDrafts}>
-              <span className="drafts-mark" style={{ maskImage: `url(${draftsIcon})`, WebkitMaskImage: `url(${draftsIcon})` }} aria-hidden="true" />
-              Drafts
-              {mail.draftCount !== undefined && <span className="sidebar-count" data-zero={mail.draftCount === 0 ? "" : undefined}>{mail.draftCount}</span>}
-            </button>
-          </SlidingNav>
-          {(["workspace", "mail"] as const).map((group) => <SlidingNav key={group} activeKey={settings ? null : mail.view} label={group === "workspace" ? "Workspace views" : "Mail views"} className="sidebar-group">
+          </div>
+          {(["mail", "workspace"] as const).map((group) => <SlidingNav key={group} activeKey={settings ? null : mail.view} label={group === "workspace" ? "Workspace views" : "Mail views"} className="sidebar-group">
             <Heading id={group} folded={folded.has(group)} onFold={fold}>{group === "workspace" ? "Workspace" : "Mail"}</Heading>
             {!folded.has(group) && sidebarViews.filter(({ view }) => ["actions", "calendar", "projects", "agents", "contacts"].includes(view) === (group === "workspace")).map(({ view, Icon }) => {
               const total = view === "actions" ? mail.dueCount ?? null : view === "snoozed" ? mail.snoozedCount : view === "inbox" ? mail.inboxCount : null;
               if (view === "snoozed" && total === 0 && mail.view !== "snoozed") return null;
               return (
-                <button
-                  key={view}
+                <Fragment key={view}><button
                   aria-label={view === "actions" ? mail.dueCount === undefined ? "Today, due follow-ups unavailable" : `Today, ${mail.dueCount} due follow-ups` : undefined}
                   className={!settings && mail.view === view ? "active" : undefined}
                   aria-current={!settings && mail.view === view ? "page" : undefined}
@@ -127,6 +120,11 @@ export function Sidebar({
                   {viewNames[view]}
                   {view === "actions" && mail.dueCount === undefined ? <span className="sidebar-count" aria-hidden="true">?</span> : total != null && total > 0 && <span className="sidebar-count" data-zero={total === 0 ? "" : undefined}>{total}</span>}
                 </button>
+                {view === "inbox" && <button className={!settings && mail.view === "drafts" ? "active" : undefined} aria-current={!settings && mail.view === "drafts" ? "page" : undefined} aria-label={mail.draftCount === undefined ? "Drafts" : `Drafts, ${mail.draftCount} saved`} disabled={mail.blocked || mail.busy || !mail.accounts.length} onClick={mail.onDrafts}>
+                  <span className="drafts-mark" style={{ maskImage: `url(${draftsIcon})`, WebkitMaskImage: `url(${draftsIcon})` }} aria-hidden="true" />
+                  Drafts
+                  {mail.draftCount !== undefined && <span className="sidebar-count" data-zero={mail.draftCount === 0 ? "" : undefined}>{mail.draftCount}</span>}
+                </button>}</Fragment>
               );
             })}
           </SlidingNav>)}

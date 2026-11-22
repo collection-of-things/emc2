@@ -16,6 +16,8 @@ unversioned history without treating it as a release record.
 
 ### Changed
 
+- The mailbox puts Drafts next to Inbox and gives search, Compose, and the sidebar toggle clearer positions. The list distinguishes unread mail, the keyboard cursor, bulk selection, and the message open beside it. The reader, composer, work views, and Settings use clearer headings and consistent selection styles.
+
 - New installs open on a neutral dark Graphite theme with a blue accent, app text uses the system font, compact mail rows grow to 28px and email bodies read at 15px with roomier spacing. Sender text that is too low-contrast to read is now recolored at the stricter small-text minimum. In dark mode, the email toolbar can draw the open message body on a light background, and the compose editor writes on the same light surface. The Mass theme stays available in Settings, Appearance, and existing choices are untouched.
 
 ### Documentation

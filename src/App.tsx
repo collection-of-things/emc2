@@ -53,7 +53,7 @@ import { useWorkspace } from "./work/useWorkspace";
 import { openCommitment } from "../shared/commitment-dates";
 import { nextRegion, regionOf, regionOrder, type Region } from "./region-focus";
 import { Reader, ReaderEmpty } from "./mail/Reader";
-import { sidebarViews, tabName, viewNames, viewOrder, type View } from "./mail/format";
+import { tabName, viewNames, viewOrder, type View } from "./mail/format";
 import { accountLabel, customLabels, textSizeShortcut, filterMail, matchesLabel, markMailRead } from "./mail-ui";
 import { reuseMailState } from "./mail-state";
 import { MailSearchApiContext, useMailSearch } from "./use-mail-search";
@@ -75,7 +75,7 @@ import { useMedia } from "./ui/useMedia";
 import { useSwipe } from "./ui/useSwipe";
 import { CredentialFallbackNotice } from "./shell/CredentialFallbackNotice";
 import { Notice, NotificationProvider, ToastStack, useToasts } from "./ui/Toasts";
-import { ArrowLeft, ArrowRight, ChevronRight, Eye, EyeOff, Image as ImageIcon, ImageOff, Mail as MailIcon, Settings as SettingsIcon, SidebarIcon } from "./ui/icons";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Image as ImageIcon, ImageOff, SidebarIcon } from "./ui/icons";
 
 // Direction the list pane enters from: tabs slide sideways, mail opens upward.
 type Motion = "forward" | "back" | "open" | "close";
@@ -116,7 +116,6 @@ export function App() {
   const contactsView = view === "contacts";
   const workView = view === "actions" || view === "calendar" || view === "projects" || view === "agents";
   const nonMailView = workView || contactsView;
-  const ViewIcon = settings ? SettingsIcon : sidebarViews.find((item) => item.view === view)?.Icon ?? MailIcon;
   const setSettings = (next: boolean | ((current: boolean) => boolean)) => {
     const value = typeof next === "function" ? next(settings) : next;
     navigate({ page: value ? "settings" : "mail" });
@@ -1264,14 +1263,14 @@ export function App() {
     if (!drawsWindowControls) return null;
     return windowSide === "left" ? (pane === left ? "left" : null) : (pane === "main" ? "right" : null);
   };
-  const sidebarToggle = !sidebarShown && (
+  const sidebarToggle = (roomy || !sidebarShown) && (
     <button data-compose-access
       className="icon"
       id="sidebar-toggle"
-      aria-label="Show sidebar"
-      aria-expanded={false}
+      aria-label={sidebarShown ? "Hide sidebar" : "Show sidebar"}
+      aria-expanded={sidebarShown}
       aria-controls="sidebar"
-      title={`Show sidebar (${shortcut("sidebar")})`}
+      title={`${sidebarShown ? "Hide" : "Show"} sidebar (${shortcut("sidebar")})`}
       onClick={toggleSidebar}
     >
       <SidebarIcon color="currentColor" size={16} />
@@ -1529,9 +1528,6 @@ export function App() {
           <div className="app-main" ref={swipeNavigation} inert={!roomy && mobileSidebarOpen}>
             <PaneHeader className="app-toolbar" corner={corner("main")} maximized={maximized} lead={sidebarToggle}>
               <div className="app-context" aria-label="Current view">
-                <span>{settings ? "Emc²" : nonMailView ? "Workspace" : "Mail"}</span>
-                <ChevronRight size={12} color="currentColor" />
-                <ViewIcon size={16} color="currentColor" />
                 <strong>{settings ? "Settings" : viewNames[view]}</strong>
               </div>
               <SearchToolbar inputRef={searchRef} scopeKey={JSON.stringify([page, view, accountFilter, labelFilter, readFilter, relevanceFilter, opened])} query={settings || nonMailView ? "" : query}
@@ -1620,7 +1616,7 @@ export function App() {
                 {!fullReader && <div className="rail-actions" ref={setRailActions} />}
                 {combinedReaderToolbar && actions}
               </div>}
-          <main className={split ? "workspace split" : "workspace"}>
+          <main className={split ? "workspace split" : "workspace"} data-reader-open={split && reader ? "" : undefined}>
             <section className="list-pane">
               {!settings && <CredentialFallbackNotice mode={window.desktop?.credentialFallback} />}
               {fullReader && !combinedReaderToolbar && actions}
