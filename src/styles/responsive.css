@@ -32,7 +32,7 @@
   .app-toolbar .app-context { flex: 1; }
   .app-toolbar > .icon { min-width: 44px; min-height: 44px; flex-shrink: 0; }
   .app-search-toolbar { flex-basis: 100%; order: 2; padding-bottom: 6px; }
-  .app-search-toolbar .search { min-height: 40px; }
+  .app-search-toolbar .search { flex-basis: 120px; min-height: 44px; }
   .app-toolbar .commands-button { min-width: 44px; min-height: 44px; }
   .mail-category-bar { padding-inline: 12px; column-gap: 8px; }
   .list { --row-inset: 12px; }
