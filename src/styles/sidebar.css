@@ -53,15 +53,15 @@
 }
 /* While a mailbox is selected, the account scope reads as accent text with a
    2px accent tick and no fill, so the mailbox keeps the full fill. */
-.sidebar-group:has(.active) + .sidebar-group:has(.account-dot) .sliding-wash {
+.sidebar-accounts .sliding-wash {
   display: none;
 }
-.sidebar-group:has(.active) + .sidebar-group:has(.account-dot) button.active {
+.sidebar-accounts button.active {
   color: var(--accent);
   font-weight: 500;
   box-shadow: inset 2px 0 0 var(--accent);
 }
-.sidebar-group:has(.active) + .sidebar-group:has(.account-dot) button.active > svg {
+.sidebar-accounts button.active > svg {
   color: var(--accent);
 }
 /* The hover wash glides between items under the pointer and fades when it leaves. */

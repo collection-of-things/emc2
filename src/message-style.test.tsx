@@ -92,9 +92,9 @@ test("unread dots badge the avatar corner in every layout and the account dot st
     // The badge hangs off the avatar's lower-right corner, ringed by the row
     // surface through --unread-ring in every hover, bulk and selected state.
     assert.match(rules, /\.avatar \.unread-dot \{[^}]*right:\s*-2px[^}]*bottom:\s*-2px[^}]*box-shadow:\s*0 0 0 2px var\(--unread-ring/s);
-    assert.match(rules, /\.mail-row:hover \.row\.card:not\(\.selected\) \{ --unread-ring: color-mix/);
-    assert.match(rules, /\.mail-row\.bulk-selected > \.row\.card:not\(:focus-visible\) \{ --unread-ring: color-mix/);
-    assert.match(rules, /\.list \.row\.card\.selected[^}]*--unread-ring:\s*var\(--selected-card\)/);
+    assert.match(rules, /\.mail-row:hover \.row:not\(\.selected\), \.list \.row\.selected \{ --unread-ring: var\(--hover\)/);
+    assert.match(rules, /\.list \.mail-row\.bulk-selected > \.row \{ --unread-ring: var\(--accent-soft\)/);
+    assert.match(rules, /\.workspace\[data-reader-open\] \.list \.row\.selected \{ --unread-ring: var\(--selected-card\)/);
     // Headers keep sharing the one selection gutter with the row checkboxes.
     assert.match(rules, /\.mail-view-head[^}]*padding-inline-start:\s*var\(--select-gutter\)/);
     assert.match(rules, /\.mail-category-bar[^}]*var\(--select-gutter\)/);
@@ -179,13 +179,18 @@ test("the split category strip never wraps or caps to the list column, and falls
 });
 
 test("dark selection is distinct and rebuild headers and footers retain shared geometry", () => {
-  const dom = new JSDOM('<div class="app"><div class="list"><button class="row card selected"></button></div><section class="work-pane"><header class="main-head"></header></section><div class="compose-dialog"><footer class="compose-footer"></footer></div></div>');
+  const dom = new JSDOM('<div class="app"><main class="workspace split"><div class="list"><div class="mail-row"><button class="row card selected"></button></div></div></main><section class="work-pane"><header class="main-head"></header></section><div class="compose-dialog"><footer class="compose-footer"></footer></div></div>');
   try {
     const document = dom.window.document;
     document.documentElement.dataset.scheme = "dark";
     document.head.insertAdjacentHTML("beforeend", `<style>${stylesheet()}</style>`);
     const style = (selector: string) => dom.window.getComputedStyle(document.querySelector(selector)!);
-    assert.equal(style(".row").backgroundColor, "var(--selected-card)");
+    assert.equal(style(".row").backgroundColor, "var(--hover)", "the list cursor uses a neutral fill");
+    document.querySelector(".mail-row")!.classList.add("bulk-selected");
+    assert.equal(style(".row").backgroundColor, "var(--accent-soft)", "bulk selection is distinct from the list cursor");
+    document.querySelector(".workspace")!.setAttribute("data-reader-open", "");
+    document.querySelector(".mail-row")!.classList.remove("bulk-selected");
+    assert.equal(style(".row").backgroundColor, "var(--selected-card)", "the opened row uses the reader selection fill");
     assert.equal(style(".main-head").height, "auto");
     assert.equal(style(".compose-footer").minHeight, "var(--app-footer-height)");
   } finally { dom.window.close(); }

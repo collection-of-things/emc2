@@ -24,18 +24,16 @@
 @media (width < 760px) {
   .frame { position: relative; }
   .sidebar { position: absolute; inset: 0 auto 0 0; z-index: 6; width: min(288px, calc(100vw - 56px)); background: var(--surface); }
-  .sidebar-heading { background: var(--surface); }
   .sidebar.closed { width: 0; visibility: hidden; pointer-events: none; }
-  .sidebar-head, .sidebar-content { width: 100%; }
-  .sidebar button { min-height: 44px; }
+  .sidebar-head, .sidebar-content, .sidebar-account-footer { width: 100%; }
   .sidebar-group button.account-warning { width: 44px; min-width: 44px; }
   .mobile-sidebar-backdrop { position: absolute; inset: 0; z-index: 5; border: 0; border-radius: 0; background: var(--backdrop); animation: fade-in 200ms var(--ease-out); }
   .app-toolbar { flex-wrap: wrap; height: auto; min-height: 52px; padding: 4px 12px; gap: 6px; }
   .app-toolbar .app-context { flex: 1; }
   .app-toolbar > .icon { min-width: 44px; min-height: 44px; flex-shrink: 0; }
   .app-search-toolbar { flex-basis: 100%; order: 2; padding-bottom: 6px; }
-  .app-search-toolbar .search { min-height: 40px; }
-  .commands-button { min-height: 40px; }
+  .app-search-toolbar .search { flex-basis: 120px; min-height: 44px; }
+  .app-toolbar .commands-button { min-width: 44px; min-height: 44px; }
   .mail-category-bar { padding-inline: 12px; column-gap: 8px; }
   .list { --row-inset: 12px; }
   .mail-window-row .row.card { padding-right: 12px; }
@@ -75,7 +73,7 @@
   .head-tools { flex-wrap: wrap; overflow: visible; margin-left: 0; }
   .head-tools .work-toolbar { flex-basis: 100%; flex-wrap: wrap; }
   .head-tools .agent-navigation { margin-left: 0; max-width: 100%; }
-  .mail-category-bar .inbox-tabs button, .head-tools .work-view-tabs button { min-height: 44px; }
+  .mail-category-bar .inbox-tabs button, .head-tools .work-view-tabs button, .draft-account-tabs button { min-height: 44px; }
   .main-head { height: auto; min-height: 52px; flex-wrap: wrap; gap: 6px; padding-block: 4px; }
   .message-body { font-size: calc(15px * var(--text-scale, 1)); line-height: 1.5; }
   .reader-scroll { padding-bottom: env(safe-area-inset-bottom); }
@@ -95,8 +93,10 @@
   .app:not(.desktop) .dialog.settings-dialog { width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
 
   .app .dialog-backdrop.compose-backdrop { top: var(--compose-top, 104px); }
-  .compose-dialog .dialog-title { position: static; flex-shrink: 0; min-height: 52px; justify-content: flex-end; padding: 4px 12px; border-bottom: 1px solid var(--line); }
-  .compose-dialog .compose-from-row > .compose-from-field { padding-right: 0; }
+  .compose-dialog .dialog-title { min-height: 52px; gap: 8px; padding: 4px 12px; }
+  .compose-dialog .dialog-title .compose-discard { min-width: 44px; min-height: 44px; justify-content: center; padding: 0; border: 0; }
+  .compose-dialog .dialog-title .compose-discard > span { display: none; }
+  .app .compose-dialog .compose-form :is(textarea, .compose-rich-body) { font-size: max(16px, calc(15px * var(--text-scale, 1))); }
   .compose-dialog > .compose-reply-layout { display: flex; flex-direction: column; }
   .compose-reply-layout > .compose-context { flex: 0 1 auto; max-height: 28dvh; overflow: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .compose-reply-layout > .compose-form { flex: 1; min-height: 0; }

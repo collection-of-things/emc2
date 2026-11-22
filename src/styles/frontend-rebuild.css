@@ -1,12 +1,9 @@
-/* The frontend-rebuild layout on the current renderer. Operations, recovery,
-   privacy and virtual scrolling remain owned by the current components. */
+/* Shared workspace layout and surfaces. */
 :root {
-  --sidebar: 200px;
-  --rebuild-rail: var(--chrome);
-  --rebuild-canvas: color-mix(in srgb, var(--surface) 80%, var(--bg));
-  /* Dividers are single hairlines; the etched second line is retired. */
-  --rebuild-highlight: transparent;
-  --rebuild-edge: 24px;
+  --sidebar: 216px;
+  --rebuild-rail: color-mix(in srgb, var(--surface) 44%, var(--bg));
+  --rebuild-canvas: var(--surface);
+  --app-header-height: 52px;
 }
 :root[data-scheme="light"][data-theme="black"] {
   --rebuild-canvas: #fdf1f0;
@@ -19,49 +16,40 @@
   .mail-category-bar, .drafts-pane, .work-pane, .contacts-pane) {
   background: var(--rebuild-canvas);
 }
-.sidebar {
-  border-right: 1px solid var(--line);
-  box-shadow: 2px 0 var(--rebuild-highlight);
-  z-index: 1;
-}
-.sidebar-head { gap: 8px; padding-inline: 12px; justify-content: flex-end; }
-.sidebar-head > .icon:first-child { margin-left: 0; order: 2; }
-.sidebar-head .sidebar-brand { margin-right: auto; font-size: 13px; font-weight: 500; }
+.sidebar-head { gap: 10px; padding-inline: 16px; border-bottom: 0; }
 .sidebar-brand { display: inline-flex; min-width: 0; }
 .sidebar-brand img { width: 94px; max-width: 100%; height: 24px; object-fit: contain; object-position: left center; }
 .sidebar-brand .brand-dark, :root[data-scheme="dark"] .sidebar-brand .brand-light { display: none; }
 :root[data-scheme="dark"] .sidebar-brand .brand-dark { display: block; }
 @media (width >= 760px) {
-  .app:not(.desktop) :is(.sidebar-head, .app-toolbar) { height: 40px; }
-  .app:not(.desktop) .dialog-backdrop.compose-backdrop { inset: 40px 0 0; padding: 0; }
+  .app:not(.desktop) :is(.sidebar-head, .app-toolbar) { height: var(--app-header-height); }
+  .app:not(.desktop) .dialog-backdrop.compose-backdrop { inset: var(--app-header-height) 0 0; padding: 0; }
   .app:not(.desktop)[data-view="drafts"] .dialog-backdrop.compose-backdrop { padding-top: 42px; }
-  .app:not(.desktop) .app-update-control { top: 4px; }
 }
-.sidebar-head > .icon {
-  width: 28px; height: 28px;
-  background: var(--surface); box-shadow: var(--edge); border-radius: 8px;
+@media (width >= 1200px) {
+  /* Keep the full-width inbox categories above the side-by-side composer. */
+  .app:has(.mail-category-bar .inbox-tabs) .compose-backdrop:has(> .compose-dialog:not(.compose-with-context)) {
+    padding-top: 44px;
+  }
 }
-:is(.sidebar-head, .app-toolbar) { border-bottom: 1px solid var(--line); box-shadow: 0 2px var(--rebuild-highlight); }
-.sidebar-content { padding: 14px 12px 12px; }
-.sidebar-primary { gap: 10px; }
+.sidebar-content { padding: 6px 12px 16px; }
 .sidebar-primary > .primary-button.new-message:first-of-type {
-  height: 30px; min-height: 30px; justify-content: center;
-  gap: 8px; margin-bottom: 2px; padding-inline: 12px; text-transform: capitalize;
+  min-height: 38px; height: auto; justify-content: flex-start;
+  gap: 10px; padding: 8px 12px; text-transform: none; border-radius: var(--radius-control);
 }
-.compose-mark { width: 12px; height: 12px; border-radius: 0; background: none; object-fit: contain; }
+.sidebar-primary > .new-message svg { color: inherit; }
 .drafts-mark { width: 16px; height: 16px; flex-shrink: 0; background: currentColor; mask: center / contain no-repeat; -webkit-mask: center / contain no-repeat; }
-.sidebar-group + .sidebar-group { margin-top: 18px; }
-.sidebar-heading button { padding: 0 12px 6px; font-size: calc(11px * var(--text-scale, 1)); font-weight: 500; color: var(--text-4); }
+.sidebar-group + .sidebar-group { margin-top: 20px; }
+.sidebar-heading button { padding: 0 12px 6px; font-size: calc(11px * var(--text-scale, 1)); font-weight: 500; color: var(--text-3); }
 .sidebar-group > button { min-height: 32px; padding-inline: 12px; gap: 8px; border-radius: 8px; font-size: calc(13px * var(--text-scale, 1)); }
 /* Selection is the accent-soft fill with its own ink, never an outline. */
-.sidebar-group > button.active { color: var(--accent-soft-ink); font-weight: 500; }
-.sidebar-group button.active > svg { color: var(--accent-soft-ink); }
+.sidebar-group:not(.sidebar-accounts) > button.active { color: var(--accent-soft-ink); font-weight: 600; }
+.sidebar-group:not(.sidebar-accounts) > button.active > svg { color: var(--accent-soft-ink); }
 .sidebar-group button.active .sidebar-count { color: var(--accent-soft-ink); }
-.sidebar-primary > button[aria-current="page"] { background: var(--accent-soft); box-shadow: none; }
 .sidebar-group .sliding-wash { background: var(--accent-soft); box-shadow: none; }
 .sidebar-count { min-width: 18px; padding: 1px 0; text-align: right; }
 .sidebar-name { min-width: 0; }
-.sidebar-account-footer { flex-shrink: 0; width: var(--sidebar); padding: 10px 12px 6px; border-top: 1px solid var(--line); box-shadow: inset 0 2px var(--rebuild-highlight); }
+.sidebar-account-footer { flex-shrink: 0; width: var(--sidebar); padding: 8px 12px 4px; border-top: 1px solid var(--line); }
 /* The account card's icon aligns to the first text line so a wrapped second
    line doesn't drop it mid-cell. */
 .sidebar-account-card { display: flex; align-items: flex-start; width: 100%; min-height: 44px; gap: 10px; padding: 4px; border-radius: 8px; }
@@ -73,47 +61,51 @@
 .sidebar-account-text > span { white-space: normal; overflow-wrap: anywhere; }
 .sidebar-account-text strong { font-weight: 500; font-size: calc(12px * var(--text-scale, 1)); }
 .sidebar-account-text > span { color: var(--text-4); font-size: calc(11px * var(--text-scale, 1)); }
-.sidebar-footer { padding: 0 12px; border-top: 1px solid var(--line); }
+.sidebar-footer { padding: 0 16px; border-top: 0; }
 .sidebar-footer .sidebar-settings { order: 0; width: 24px; height: 24px; }
 .sidebar-footer .sync { margin-left: 0; margin-right: auto; padding-inline: 0; font-size: calc(11px * var(--text-scale, 1)); }
 
-/* View name and search share the leading edge; history stays at the right. */
+/* Keep search central and give the primary navigation toggle a stable slot. */
 .app-toolbar { padding-inline: var(--select-gutter) 16px; gap: 10px; }
-.app-context { gap: 6px; margin-right: 2px; font-size: calc(13px * var(--text-scale, 1)); }
-.app-context > :is(span, svg) { display: none; }
-/* The view name claims a fixed slot so Search always starts at the same x. */
-.app-context strong { display: inline-block; width: calc(84px * var(--text-scale, 1)); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-search-toolbar { margin-left: 0; }
-.app-search-toolbar .search { height: 28px; border: 0; border-radius: 7px; background: var(--hover); }
+.app-context { flex: 0 1 calc(120px * var(--text-scale, 1)); margin-right: 0; font-size: calc(17px * var(--text-scale, 1)); }
+.app-context strong { font-weight: 650; letter-spacing: -0.02em; }
+.app-search-toolbar { margin-left: 0; gap: 6px; min-width: 0; }
+.app-search-toolbar .search { height: 34px; max-width: none; min-width: 0; border-color: var(--line); background: var(--hover); }
 .app-search-toolbar .search > svg { width: calc(15px * var(--text-scale, 1)); height: calc(15px * var(--text-scale, 1)); }
 .app-search-toolbar .search:focus-within { box-shadow: 0 0 0 1px var(--accent), 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
 .app-toolbar .mail-navigation { margin-left: auto; }
-.commands-button { font-size: calc(12px * var(--text-scale, 1)); }
-.app-toolbar .icon { width: 28px; height: 28px; }
-.app-toolbar .update-spacer { height: 28px; }
-:is(.mail-category-bar, .draft-account-tabs, .work-view-tabs) {
-  height: 44px; border-bottom: 1px solid var(--line); box-shadow: inset 0 -2px var(--rebuild-highlight);
+.app-toolbar :is(.icon, .commands-button) { min-height: 32px; border-radius: var(--radius-control); }
+.app-toolbar .icon { width: 32px; }
+.app-toolbar .icon.on { background: var(--accent-soft); color: var(--accent-soft-ink); }
+.commands-button { flex-shrink: 0; padding-inline: 8px; gap: 6px; font-size: calc(12px * var(--text-scale, 1)); }
+@container (max-width: 640px) {
+  .commands-button { justify-content: center; width: 34px; padding-inline: 0; }
+  .commands-button > span { display: none; }
 }
-/* In dark themes the highlight reads as a second, brighter rule: the
-   border alone carries the divider. */
-:root[data-scheme="dark"] :is(.mail-category-bar, .draft-account-tabs, .work-view-tabs) {
-  box-shadow: none;
+:is(.mail-category-bar, .draft-account-tabs, .work-view-tabs) {
+  height: 44px; border-bottom: 1px solid var(--line);
 }
 /* The bar is a size container so the category strip can trade inactive names
    for icon and count when one row cannot fit. */
 .mail-category-bar { padding-inline: var(--select-gutter) 24px; column-gap: 12px; container-type: inline-size; container-name: category-bar; }
-.mail-category-bar .inbox-tabs { gap: 24px; }
-.mail-category-bar .inbox-tabs button { font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; }
+.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs { gap: 6px; }
+:is(.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs) button {
+  min-height: 32px; align-self: center; padding-inline: 9px; border-radius: var(--radius-control); font-size: calc(12px * var(--text-scale, 1)); font-weight: 500;
+}
+:is(.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs) button:hover:not(:disabled) { background: var(--hover); }
+:is(.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs) :is(button.active, button[aria-pressed="true"]) {
+  color: var(--accent-soft-ink); background: var(--accent-soft);
+}
+.mail-category-bar .inbox-tabs .sliding-wash { display: none; }
 .mail-category-bar .tab-icon { display: inline-flex; }
 .tab-count { border-radius: 6px; }
 
-/* Inset rows are document previews in comfortable density, including the full
-   width list. Compact retains the existing one-line geometry and shortcuts. */
+/* Rows stay flush with the edges of the list and retain their measured slots. */
 :root:not([data-glass]) :is(.list-pane, .workspace .list) { background: var(--rebuild-canvas); }
 /* Rows run edge to edge: hover and selection fills meet both pane edges, and
    only text keeps an inset. */
 .workspace .list { padding-inline: 0; }
-.mail-window-date .group { padding-inline: var(--row-inset, 16px); color: var(--text-3); font-size: calc(12px * var(--text-scale, 1)); font-weight: 600; }
+.mail-window-date .group { padding-inline: var(--row-inset, 16px); border-bottom: 1px solid var(--line); }
 /* The sticky date header must cover the row band fully while rows slide
    under it, so it keeps an opaque canvas. */
 :root:not([data-glass]) .mail-window-date { background: var(--rebuild-canvas); }
@@ -123,13 +115,6 @@
 :root[data-glass] .mail-window-date { background: var(--rebuild-canvas); backdrop-filter: none; }
 :root[data-glass] .mail-window-date .group { background-color: var(--rebuild-canvas); backdrop-filter: none; }
 .row, .row.card, .row.card:focus-visible { border-radius: 0; }
-/* While the reader is still empty, the keyboard cursor reads as an accent
-   outline; an opened row keeps the full selection fill. Without a split the
-   list never shows an opened row, so the cursor outline applies there too. */
-:is(.workspace:has(.reader-pane .reader-empty), .workspace:not(.split)) .row.card.selected {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
 /* Keep the selection gutter stable when the reader hides checkboxes. Card
    slots share their content-based height with MailListWindow. */
 .mail-window-row > .mail-row { height: 100%; }
@@ -137,12 +122,11 @@
 .row.card :is(.row-line, .row-subject, .row-preview) { line-height: calc(18px * var(--text-scale, 1)); }
 .rail-wait { color: var(--text-2); }
 .row.card .row-text { gap: calc(2px * var(--text-scale, 1)); }
-/* Read rows stay quiet; unread lifts the sender to 600 and the subject to 500
-   at full ink, the scan cue in Apple Mail and Superhuman. */
+/* The sender and subject carry the scan order in both list densities. */
 .row.card .row-line strong { font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; color: var(--row-read-ink); }
-.row.card.unread .row-line strong { font-weight: 600; color: var(--text); }
+.row.card.unread .row-line strong { font-weight: 650; color: var(--text); }
 .row.card .row-subject { font-size: calc(13px * var(--text-scale, 1)); font-weight: 400; color: var(--row-read-ink); }
-.row.card.unread .row-subject { font-weight: 500; color: var(--text); }
+.row.card.unread .row-subject { font-weight: 600; color: var(--text); }
 .row.card .row-preview { font-size: calc(12px * var(--text-scale, 1)); color: var(--row-read-preview); }
 .row.card.unread .row-preview { color: var(--text-2); }
 .row.card.unread time { color: var(--text-2); }
@@ -187,27 +171,23 @@
 /* Comfortable cards keep the subject wrapper so density switches preserve
    focus inside it; the wrapper adds no box of its own. */
 .row.card .row-subject-slot { display: contents; }
-/* Unread no longer overrides the sender's avatar tint: the gutter dot and
-   weight carry the state, the tint carries the sender identity. */
-/* Selection is a soft accent fill, no bar or ring; the keyboard focus ring
-   stays a distinct outline. */
-.list .row.selected, .list:focus-within .row.selected {
-  background: var(--selected-card); box-shadow: none;
+/* An open message gets a filled row and an accent edge. The list cursor
+   before opening uses a neutral fill, and keyboard focus has its own ring. */
+.list .row.selected {
+  background-color: var(--hover); box-shadow: inset 0 0 0 1px var(--line-3);
 }
-.list:focus-within .row.selected:focus-visible { outline: 2px solid var(--accent); }
-/* The open message keeps its accent fill when it is also checked. */
-.list .mail-row.bulk-selected > .row.selected { background: var(--selected-card); }
-:root[data-scheme="dark"] .list .row.selected,
-:root[data-scheme="dark"] .list:focus-within .row.selected {
-  background-color: var(--selected-card); box-shadow: none;
+.workspace[data-reader-open] .list .row.selected {
+  background-color: var(--selected-card); box-shadow: inset 3px 0 var(--accent);
 }
+.list .row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.list .mail-row.bulk-selected > .row { background-color: var(--accent-soft); }
 
 /* The unread card dot badges the sender avatar's lower-right corner. Its ring
    repaints in the row's own surface — canvas, hover wash or selected fill —
    so the badge reads in light and dark themes and every row state. */
 .list { --mail-row-bed: var(--rebuild-canvas); }
 :root[data-glass] .list { --mail-row-bed: var(--pane-glass); }
-.row.card { --unread-ring: var(--mail-row-bed); }
+.row { --unread-ring: var(--mail-row-bed); }
 .avatar .unread-dot {
   top: auto;
   left: auto;
@@ -218,32 +198,33 @@
   height: calc(7px * var(--text-scale, 1));
   box-shadow: 0 0 0 2px var(--unread-ring, var(--surface));
 }
-.mail-row:hover .row.card:not(.selected) { --unread-ring: color-mix(in srgb, var(--mail-row-bed) 96%, var(--text)); }
-.mail-row.bulk-selected > .row.card:not(:focus-visible) { --unread-ring: color-mix(in srgb, var(--mail-row-bed) 93%, var(--text)); }
-.row.card.selected { --unread-ring: var(--selected); }
-.list .row.card.selected, .list:focus-within .row.card.selected { --unread-ring: var(--selected-card); }
-:is(.workspace:has(.reader-pane .reader-empty), .workspace:not(.split)) .row.card.selected { --unread-ring: var(--mail-row-bed); }
+.mail-row:hover .row:not(.selected), .list .row.selected { --unread-ring: var(--hover); }
+.list .mail-row.bulk-selected > .row { --unread-ring: var(--accent-soft); }
+.workspace[data-reader-open] .list .row.selected { --unread-ring: var(--selected-card); }
 
-.row-actions { right: 8px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius-mark); box-shadow: var(--shadow); }
-.row-actions button { border-radius: var(--radius-mark-sm); }
+.row-actions { right: 8px; padding: 3px; border: 1px solid var(--line-2); border-radius: var(--radius-control); box-shadow: var(--shadow); }
+.row-actions button { border-radius: var(--radius-control); }
 
-/* Reader and editor are white documents beside the inset preview list. */
-.reader-pane { border-left: 1px solid var(--line); box-shadow: -2px 0 var(--rebuild-highlight); }
-:root[data-scheme="dark"] .reader-pane { box-shadow: none; }
+/* The list and reading pane share a baseline and a single divider. */
+.reader-pane { border-left: 1px solid var(--line); }
 :root:not([data-glass]) .reader-head { background: var(--surface); }
-.reader-head { height: 40px; min-height: 40px; padding-inline: 18px; border-bottom: 1px solid var(--line); }
+.reader-head { height: 44px; min-height: 44px; padding-inline: 16px; border-bottom: 1px solid var(--line); }
 .reader-head .mail-actions { gap: 6px; }
 .reader-head .mail-actions .tool { width: 32px; padding-inline: 0; justify-content: center; }
 .reader-head .tool-label { display: none; }
 .reader-head .mail-actions .reader-close-hint { width: auto; padding-inline: 6px; }
 .mail-actions .tool { min-height: 32px; border-radius: 6px; }
-.reader-scroll .message { padding: 20px 24px 32px; }
-.message h1 { font-size: calc(20px * var(--text-scale, 1)); font-weight: 500; line-height: 1.3; letter-spacing: -.02em; }
-.message .message-from { margin-top: 16px; margin-bottom: 20px; padding-bottom: 16px; }
-.message-from .avatar { width: 30px; height: 30px; }
-.from-line strong { font-size: calc(13px * var(--text-scale, 1)); }
+.reader-scroll, .full-reading .list { --reader-gutter: clamp(20px, 3vw, 36px); }
+.reader-scroll .message, .full-reading .list .message { padding: 24px var(--reader-gutter, 24px) 36px; }
+.conversation-subject { padding-top: 24px; }
+:is(.message h1, .conversation-subject) { font-size: calc(25px * var(--text-scale, 1)); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; }
+.message .message-from { margin-block: 18px 22px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.message-from .avatar { width: 36px; height: 36px; }
+.from-line strong { font-size: calc(14px * var(--text-scale, 1)); font-weight: 600; }
 .from-address, .from-to, .message-from time { font-size: calc(12px * var(--text-scale, 1)); }
-.message-body { line-height: 1.5; }
+.message-from time { max-width: 36%; overflow: hidden; text-overflow: ellipsis; }
+.message-body { line-height: 1.65; }
+.conversation-message:has(.conversation-selected) .conversation-toggle[aria-expanded="false"] { background: var(--selected-card); }
 .reader-secondary-tools { margin-top: 24px; padding-top: 12px; }
 /* One footer row of quiet links, all on one baseline. */
 .reader-secondary-tools { align-items: baseline; gap: 10px 16px; }
@@ -256,35 +237,41 @@
 .reader-secondary-tools .offer-times { border: 0; padding: 0; margin: 0; }
 .reader-secondary-tools .offer-times:has(.settings-form) { flex-basis: 100%; }
 .reader-empty { background: transparent; }
-.reader-empty .empty-title { font-size: calc(17px * var(--text-scale, 1)); }
+.reader-empty .empty-title { color: var(--text); font-size: calc(16px * var(--text-scale, 1)); font-weight: 600; }
 
-/* Saved drafts share the branch's date list, envelope hierarchy and white editor. */
-.draft-account-tabs { gap: 24px; padding-inline: 24px; background: transparent; }
-.draft-list { padding: 8px 12px 24px; }
-.draft-list-heading { padding: 8px 12px; color: var(--text-4); }
-.draft-list > ul { gap: 2px; }
-.draft-list .draft-row { min-height: 0; padding: 8px 54px 8px 12px; border: 1px solid transparent; border-radius: var(--radius-mark); }
-:root:not([data-glass]) .draft-list .draft-row:hover:not(:disabled), .draft-list .draft-row:focus-visible { border-color: transparent; background: var(--surface); box-shadow: 0 1px 3px var(--hover); }
+/* Saved drafts use the same flush rows and type hierarchy as mail. */
+.draft-tab-bar { height: 44px; }
+.draft-account-tabs { padding-inline: 16px; background: transparent; }
+.draft-list { padding: 0 0 24px; }
+.draft-list-heading { padding: 10px 24px; color: var(--text-3); }
+.draft-list > ul { gap: 0; }
+.draft-list .draft-row { min-height: 0; padding: 10px 54px 10px 24px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
+.draft-list .draft-row:hover:not(:disabled) { background: var(--hover); }
+.draft-list .draft-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .draft-row-recipient { font-size: calc(13px * var(--text-scale, 1)); }
 .draft-row-preview, .draft-row-meta { font-size: calc(12px * var(--text-scale, 1)); }
+.compose-dialog .dialog-title { min-height: 48px; flex-shrink: 0; padding: 6px 16px 6px 24px; border-bottom: 1px solid var(--line); }
+.compose-dialog .dialog-title h2 { margin-right: auto; font-size: calc(16px * var(--text-scale, 1)); font-weight: 650; }
 .compose-dialog .compose-envelope { padding-top: 0; }
 .compose-dialog .compose-body { font-size: calc(14px * var(--text-scale, 1)); line-height: 1.6; }
 .compose-dialog .compose-from-row { box-sizing: border-box; min-height: 36px; }
+.compose-dialog .compose-reply-layout > .compose-context { background: var(--hover); }
+.compose-dialog .compose-form :is(textarea, .compose-rich-body) { margin-block: 12px; padding-block: 12px; font-size: calc(15px * var(--text-scale, 1)); line-height: 1.65; }
+.compose-format-tools button:active:not(:disabled) { background: var(--accent-soft); color: var(--accent-soft-ink); }
 .compose-dialog .compose-file-action { font-size: calc(12px * var(--text-scale, 1)); }
 .compose-dialog .compose-footer { border-top: 1px solid var(--line); }
 .compose-save-status { font-size: calc(12px * var(--text-scale, 1)); }
 
-/* Today, Projects and Agent review retain their current controls and details,
-   using the same inset list and document surfaces as Mail. */
+/* Workspace pages use the same quiet dividers and selection as Mail. */
 .work-pane .main-head { height: auto; min-height: 44px; padding-inline: 24px; }
-.work-content { padding: 12px 16px 20px; }
+.work-content { padding: 16px 24px 24px; }
 .work-content > .work-empty, .work-projects > .work-editing > .work-empty { padding: 12px 16px; }
 .work-group { margin-bottom: 12px; }
-.work-group h2 { margin: 0 0 4px; padding: 6px 8px; border: 0; color: var(--text-4); font-size: calc(11px * var(--text-scale, 1)); font-weight: 500; }
+.work-group h2 { margin: 0 0 2px; padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--text-3); font-size: calc(12px * var(--text-scale, 1)); font-weight: 600; }
 .work-group h2 span { font-size: inherit; }
-.work-group .work-row, .project-tasks .work-row { margin-block: 0; padding: 6px 8px; border-radius: var(--radius-mark); border: 1px solid transparent; }
-.work-group .work-row.selected, .project-tasks .work-row.selected { background: var(--surface); border-color: transparent; box-shadow: inset 2px 0 0 var(--accent), 0 1px 3px var(--hover); }
-.today-layout > .work-main, .today-reader { padding: 12px 16px; }
+.work-group .work-row, .project-tasks .work-row { margin-block: 0; padding: 9px 12px; border-radius: var(--radius-control); }
+.work-group .work-row.selected, .project-tasks .work-row.selected { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+.today-layout > .work-main, .today-reader { padding: 16px 20px; }
 .work-select { gap: 2px; padding-block: 0; }
 .work-row { gap: 10px; }
 .work-row-complete { margin-top: 3px; }
@@ -296,7 +283,7 @@
 .work-select strong { font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; }
 .work-select .work-meta, :is(.work-context, .project-context, .agent-review-context) :is(p, dl),
 .project-overview p, .project-mail-subject { font-size: calc(12px * var(--text-scale, 1)); }
-:is(.work-context, .project-context, .agent-review-context) h2 { font-size: calc(20px * var(--text-scale, 1)); font-weight: 500; }
+:is(.work-context, .project-context, .agent-review-context) h2 { font-size: calc(21px * var(--text-scale, 1)); font-weight: 650; overflow-wrap: anywhere; }
 .work-content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { background: var(--surface); border-radius: 8px; }
 .project-overview, .agent-provider-card { border-radius: 14px; }
 
@@ -305,11 +292,11 @@
 section.work-calendar[data-layout="month"], .work-layout.has-selection section.work-calendar[data-layout="month"] {
   display: grid; grid-template-columns: minmax(0, 296px) minmax(0, 1fr); column-gap: 28px;
 }
-.calendar-period h2 { font-size: calc(14px * var(--text-scale, 1)); }
+.calendar-period h2 { font-size: calc(16px * var(--text-scale, 1)); font-weight: 650; }
 .calendar-grid { width: 100%; max-width: 336px; gap: 3px; border: 0; }
 .calendar-weekday { border: 0; background: none; text-align: center; padding: 6px 0; font-size: calc(10px * var(--text-scale, 1)); font-weight: 400; }
-.calendar-grid button { min-height: 48px; padding: 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
-.calendar-grid [aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.calendar-grid button { min-height: 48px; padding: 5px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); }
+.calendar-grid [aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); border-color: var(--accent); }
 .calendar-day-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px; width: 100%; }
 .calendar-grid [aria-current="date"] > span.calendar-day-heading { display: flex; justify-content: space-between; min-width: 0; min-height: 0; border-radius: 0; background: none; color: var(--accent); }
 .calendar-day-heading small { padding-inline: 2px; border-radius: 3px; background: var(--selected); color: var(--text-3); font-size: calc(9px * var(--text-scale, 1)); font-weight: 500; }
@@ -330,22 +317,22 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
 }
 
 /* Contacts and all Settings sections use the same page hierarchy and fields. */
-:root:not([data-glass]) .settings-navigation { background: var(--rebuild-canvas); }
-.settings-navigation { padding: 18px 12px; }
+:root:not([data-glass]) .settings-navigation { background: var(--rebuild-rail); }
+.settings-navigation { padding: 18px 12px; border-inline-end: 1px solid var(--line); }
 .settings-navigation button { min-height: 32px; padding-inline: 12px; border-radius: 8px; }
 .settings-navigation button[aria-current="page"] { background: var(--accent-soft); color: var(--accent-soft-ink); box-shadow: none; }
-.settings-column { padding: 16px 20px 28px; }
-.settings-section-heading { margin-bottom: 16px; }
-.settings h1 { font-size: calc(17px * var(--text-scale, 1)); font-weight: 500; letter-spacing: -.02em; }
-.settings-section-heading p { margin-top: 6px; line-height: 1.6; font-size: calc(12px * var(--text-scale, 1)); }
-.settings .settings-group { border-radius: 14px; background: var(--surface); box-shadow: var(--edge); }
-.settings .settings-row { min-height: 40px; }
-.settings :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { background: var(--surface); border-radius: 8px; }
+.settings-column { padding: 24px 28px 36px; }
+.settings-section-heading { margin-bottom: 20px; }
+.settings h1 { font-size: calc(23px * var(--text-scale, 1)); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; }
+.settings-section-heading p { margin-top: 8px; line-height: 1.55; font-size: calc(13px * var(--text-scale, 1)); }
+.settings .settings-group { border-radius: 12px; background: var(--surface); border-color: var(--line-2); }
+.settings .settings-row { min-height: 44px; }
+.settings :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { background: var(--hover); border-radius: var(--radius-control); }
 .settings .settings-facts > div { min-height: 36px; }
 .settings .theme-preview { border-radius: 6px; }
 .contacts-pane .settings { background: transparent; }
 .dialog:not(.compose-dialog) { border-radius: 14px; box-shadow: var(--edge), var(--shadow-dialog); }
-.mail-menu, .dropdown-menu { border-radius: 14px; }
+.mail-menu, .dropdown-menu { border-radius: 12px; }
 :is(button, a, summary, input, select, textarea) { touch-action: manipulation; }
 
 /* The quiet disclosures share the icon set's chevron-right at 12px in muted

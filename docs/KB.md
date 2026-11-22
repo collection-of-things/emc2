@@ -899,7 +899,9 @@ Windows offers Off, Subtle (Mica) and Glass (Acrylic); macOS offers Off and Glas
 
 The renderer uses macOS-style chrome in light or dark on every desktop platform: a themed window frame and sidebar, near-neutral mail and reader panes, grouped Settings controls and rounded menus/dialogs. `src/styles/tokens.css` defines every color, surface and radius token for both schemes. Pane and menu transitions are brief opacity/transform animations; there are no looping effects or wheel-event handlers. Scroll containers use native smooth programmatic scrolling and contained overscroll. New panes reset instantly, and reduced-motion preferences disable smooth scrolling and shorten animations.
 
-The mail sidebar places Drafts directly below New message. A Settings gear and sync status share one fixed footer row. The theme picker grows with its previews and labels; the fixed mail-row height applies only to mail rows, so accent swatches stay below the theme choices.
+The Mail group leads the sidebar and places Drafts below Inbox. The toolbar keeps a show/hide toggle on desktop and opens the navigation drawer at phone widths. A Settings gear and sync status share one fixed footer row. The theme picker grows with its previews and labels; the fixed mail-row height applies only to mail rows, so accent swatches stay below the theme choices.
+
+The mailbox list uses a neutral cursor, an accent edge and a selection fill for the message open in split view, and a separate accent fill for bulk-selected rows. Keyboard focus keeps its own outline. Inbox categories, draft account tabs, and workspace tabs use filled active states. Compose and Reply have a visible header above the envelope and formatting toolbar.
 
 Mail date headings stick at `top: 0`. Rows run edge to edge without pane gutters, row insets, corner radii or vertical margins; text has 18px horizontal padding and separators remain inset. Every comfortable row is 34px and every compact row 28px; high-relevance mail carries a small filled importance marker in the sorting-reason colour inside the 150px sender column, so subjects stay aligned. Side-by-side cards use the same full-width washes and 18px horizontal padding, at 100px or 72px in compact density, with a preview in comfortable density. All row heights scale with text size.
 
@@ -1009,7 +1011,7 @@ Never infer an unsent message from a recovered draft or retry because copying
 to Sent failed. Resending an uncertain draft requires explicit duplicate-risk
 confirmation. Editing cannot clear the marker; manual discard is confirmed.
 
-Drafts sits directly below New message in the sidebar and lists account-scoped summaries; opening one fetches its body
+Drafts sits directly below Inbox in the sidebar and lists account-scoped summaries; opening one fetches its body
 without sending. Privacy mode omits private summary subjects and recipients.
 Close, Escape and Keep draft wait for the latest save. Discard is separately
 confirmed. Save errors keep text open and protect unload. Saved text survives
@@ -3043,7 +3045,7 @@ behavior. Live browser testing remains restricted by PRODUCT.md.
 
 ### Mobile browser layout
 
-Below 760px, Settings uses a native section picker while desktop retains the section rail. The picker uses the existing section navigation and save guards. Mobile Settings fills the available viewport, descriptions wrap, and form text remains at least 16px. Reply context stacks above the editor and remains independently scrollable. Touch controls, including the primary New Message action, target 44px and respect browser safe areas. Responsive CSS loads after application styles so compact desktop rules cannot override these sizes. The viewport requests content resizing for supported Android keyboards. `src/navigation.test.tsx` covers the phone picker, drawer and theme persistence with synthetic state; actual keyboard and screen geometry require device verification.
+Below 760px, Settings uses a native section picker while desktop retains the section rail. The picker uses the existing section navigation and save guards. Mobile Settings fills the available viewport, descriptions wrap, and form text remains at least 16px. Reply context stacks above the editor and remains independently scrollable. Search shares a row with its shortcuts, and the Inbox category rail grows to fit its 44px picker. Touch controls, including the primary New Message action, target 44px and respect browser safe areas. Responsive CSS loads after application styles so compact desktop rules cannot override these sizes. The viewport requests content resizing for supported Android keyboards. `src/navigation.test.tsx` covers the phone picker, drawer and theme persistence with synthetic state; actual keyboard and screen geometry require device verification.
 
 Phone Contacts uses content-sized navigation rows so the section picker cannot consume the empty viewport. Labeled Settings switches keep their horizontal track inside the touch-sized row. Phone accent choices keep 32px circular targets and wrap when needed. Work header controls wrap separately from Agent review tabs. Review guidance is collapsed under About review and permissions; Google connection and sorting disclosures appear inside their setup section before its fields.
 

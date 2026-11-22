@@ -1103,7 +1103,11 @@ test("sidebar hides with its shortcut, reopens from the toolbar and survives a r
     const head = app.container.querySelector(".sidebar-head")!;
     assert.equal(head.querySelector("button"), null, "the sidebar header holds no toggle");
     assert.ok(head.querySelector(".sidebar-brand"), "the brand lockup remains");
-    assert.equal(app.container.querySelector('.app-toolbar [aria-controls="sidebar"]'), null);
+    const hide = app.button("Hide sidebar");
+    assert.equal(hide.getAttribute("aria-expanded"), "true");
+    await app.click(hide);
+    assert.equal(app.button("Show sidebar"), hide, "the desktop toggle keeps its identity when it closes");
+    await app.click(hide);
     await act(async () => app.button("Inbox").focus());
     await app.key("[");
     // The panel stays mounted so it can animate closed, but leaves the focus order.
@@ -2245,7 +2249,11 @@ test("compose keyboard cycle reaches sidebar and toolbar without stealing editin
     await app.click(app.button("Show sidebar"));
     await act(async () => app.button("New message").focus());
     await app.key("Tab");
-    assert.equal(doc.activeElement, app.button("Drafts"));
+    assert.equal(doc.activeElement === app.button("Mail"), true, "New message leads into the Mail section toggle");
+    await app.key("Tab");
+    assert.equal(doc.activeElement === app.button("Inbox"), true, "Inbox is the first destination in Mail");
+    await app.key("Tab");
+    assert.equal(doc.activeElement === app.button("Drafts"), true, "Drafts follows Inbox in the focus order");
     await act(async () => app.button("Back").focus());
     await app.key("Tab");
     assert.equal(doc.activeElement?.getAttribute("aria-label"), "Close dialog", "history ends the toolbar before the composer");

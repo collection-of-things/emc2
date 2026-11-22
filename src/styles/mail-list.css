@@ -108,14 +108,6 @@
   .mail-row:hover .row time { opacity: 0; }
 }
 .row-actions button:focus-visible { outline-offset: -2px; }
-/* Selection: an accent tint while the list has focus, a gray wash otherwise.
-   Text keeps its own colors, so it reads with every accent and mode. */
-.row.selected {
-  background: var(--selected);
-}
-.list:focus-within .row.selected {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-}
 /* Unread mail carries a small accent dot badging the sender avatar's
    lower-right corner in every layout, so the left edge stays clean. */
 .unread-dot {
