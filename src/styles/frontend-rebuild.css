@@ -1,4 +1,4 @@
-/* Workspace layout and the final shared treatment across app sections. */
+/* Shared workspace layout and surfaces. */
 :root {
   --sidebar: 216px;
   --rebuild-rail: color-mix(in srgb, var(--surface) 44%, var(--bg));
@@ -25,6 +25,12 @@
   .app:not(.desktop) :is(.sidebar-head, .app-toolbar) { height: var(--app-header-height); }
   .app:not(.desktop) .dialog-backdrop.compose-backdrop { inset: var(--app-header-height) 0 0; padding: 0; }
   .app:not(.desktop)[data-view="drafts"] .dialog-backdrop.compose-backdrop { padding-top: 42px; }
+}
+@media (width >= 1200px) {
+  /* Keep the full-width inbox categories above the side-by-side composer. */
+  .app:has(.mail-category-bar .inbox-tabs) .compose-backdrop:has(> .compose-dialog:not(.compose-with-context)) {
+    padding-top: 44px;
+  }
 }
 .sidebar-content { padding: 6px 12px 16px; }
 .sidebar-primary > .primary-button.new-message:first-of-type {
