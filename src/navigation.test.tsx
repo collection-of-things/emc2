@@ -2249,7 +2249,11 @@ test("compose keyboard cycle reaches sidebar and toolbar without stealing editin
     await app.click(app.button("Show sidebar"));
     await act(async () => app.button("New message").focus());
     await app.key("Tab");
-    assert.equal(doc.activeElement, app.button("Drafts"));
+    assert.equal(doc.activeElement === app.button("Mail"), true, "New message leads into the Mail section toggle");
+    await app.key("Tab");
+    assert.equal(doc.activeElement === app.button("Inbox"), true, "Inbox is the first destination in Mail");
+    await app.key("Tab");
+    assert.equal(doc.activeElement === app.button("Drafts"), true, "Drafts follows Inbox in the focus order");
     await act(async () => app.button("Back").focus());
     await app.key("Tab");
     assert.equal(doc.activeElement?.getAttribute("aria-label"), "Close dialog", "history ends the toolbar before the composer");

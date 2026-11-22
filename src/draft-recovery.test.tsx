@@ -131,7 +131,9 @@ test("mounted drafts use encrypted HTTP persistence, recover edits and guard unc
     const drafts = button("Drafts");
     assert.equal(draftCount(), 0, "Empty saved drafts display zero");
     assert.equal(drafts.closest("aside")?.id, "sidebar");
-    assert.equal(button("New message").nextElementSibling, drafts);
+    const inbox = [...container.querySelectorAll<HTMLButtonElement>(".sidebar button")]
+      .find((control) => control.textContent?.trim().startsWith("Inbox"));
+    assert.equal(inbox?.nextElementSibling === drafts, true, "Drafts is under Inbox in the Mail section");
     assert.equal(container.querySelector(".pane-tools button")?.textContent === "Drafts", false);
     await click(button("New message"));
     await fill('input[type="email"]', "unfinished-recipient");
