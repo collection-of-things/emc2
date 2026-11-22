@@ -1011,7 +1011,7 @@ Never infer an unsent message from a recovered draft or retry because copying
 to Sent failed. Resending an uncertain draft requires explicit duplicate-risk
 confirmation. Editing cannot clear the marker; manual discard is confirmed.
 
-Drafts sits directly below New message in the sidebar and lists account-scoped summaries; opening one fetches its body
+Drafts sits directly below Inbox in the sidebar and lists account-scoped summaries; opening one fetches its body
 without sending. Privacy mode omits private summary subjects and recipients.
 Close, Escape and Keep draft wait for the latest save. Discard is separately
 confirmed. Save errors keep text open and protect unload. Saved text survives
