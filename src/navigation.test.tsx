@@ -474,7 +474,7 @@ test("edit, duplicate, rename conflicts and confirmed deletion preserve independ
     await app.click(themeButton(app, "Delete theme"));
     await app.click(themeButton(app, "Delete theme"));
     assert.equal(read().customThemes.length, 1);
-    assert.equal(read().theme, "black");
+    assert.equal(read().theme, "graphite");
     assert.equal(document.documentElement.style.getPropertyValue("--bg"), "");
   } finally { await app.close(); }
 });
@@ -3382,6 +3382,29 @@ for (const width of [360, 1440]) for (const readerToolbar of ["compact", "action
     } finally { await app.close(); }
   });
 }
+
+test("the Light background toggle papers the open message and resets on the next", async () => {
+  const app = await mount();
+  try {
+    await app.open("a:1");
+    const toggle = app.button("Light background");
+    assert.equal(toggle.getAttribute("aria-pressed"), "false");
+    await app.click(toggle);
+    assert.equal(toggle.getAttribute("aria-pressed"), "true");
+    assert.ok(app.container.querySelector(".message-body.paper"), "the body takes the light paper surface");
+    await app.open("a:2");
+    assert.equal(app.button("Light background").getAttribute("aria-pressed"), "false", "a different message starts on the dark surface");
+    assert.equal(app.container.querySelector(".message-body.paper"), null);
+  } finally { await app.close(); }
+});
+
+test("the Light background toggle is absent in the light scheme", async () => {
+  const app = await mount(false, (_state, storage) => storage.setItem("emc2.appearance.v1", JSON.stringify({ mode: "light" })));
+  try {
+    await app.open("a:1");
+    assert.equal(app.container.querySelector('[aria-label="Light background"]'), null);
+  } finally { await app.close(); }
+});
 
 test("Appearance changes the full-width toolbar immediately and preserves the choice after reopening", async () => {
   const app = await mount(false, (_state, storage) => storage.setItem("emc2.appearance.v1", JSON.stringify({ reading: "full" })));

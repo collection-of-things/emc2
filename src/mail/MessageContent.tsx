@@ -99,6 +99,8 @@ type ImageProps = {
   loadImages: (id: string) => Promise<{ images: MailImage[] }>;
   loadContent?: (id: string) => Promise<ContentResult>;
   body?: boolean;
+  /* Draws the body on the dark scheme's light paper surface. */
+  paper?: boolean;
 };
 export function MessageImages(props: ImageProps) {
   return <ImageConsent key={JSON.stringify([props.mail.accountId, props.mail.id, props.mail.contentVersion])} {...props} />;
@@ -109,7 +111,7 @@ export function ReaderContent(props: ImageProps) {
 // Loads message images while the toolbar preference allows them. A new
 // opening (a new key) starts fresh; turning the preference off blocks images
 // again and cancels a pending load.
-function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) {
+function ImageConsent({ mail, loadImages, loadContent, body, api, paper }: ImageProps) {
   const { on: privacy, names } = useContext(PrivacyContext);
   const imagesOn = useContext(RemoteImagesContext);
   const [status, setStatus] = useState("blocked");
@@ -189,7 +191,7 @@ function ImageConsent({ mail, loadImages, loadContent, body, api }: ImageProps) 
         Images could not be loaded. The email may be unavailable or archived.
         <button type="button" className="link" onClick={() => void show()}>Try images again</button>
       </p>}
-      {body && <div className="message-body">
+      {body && <div className={paper ? "message-body paper" : "message-body"}>
         {content.html ? <FormattedMail mailId={mail.id} attachments={content.attachments} html={content.html} showImages={imagesOn} privacy={privacy} privateNames={names}
           renderText={(text, segments) => <Redact text={text} segments={segments} />} redactText={(text) => redactPrivateText(text, names)}
           fallback={<>{textBody}{gallery}</>} /> : textBody}

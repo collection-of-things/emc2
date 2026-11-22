@@ -1215,6 +1215,11 @@ export function App() {
           : motion,
     };
   const readerKey = opened && selected ? selected.id : null;
+  // The light reading surface is a per-message preference: it resets when the
+  // open email changes and only exists in the dark scheme. Keying it to the
+  // message id resets it in the same render, so the next email never flashes.
+  const [paperFor, setPaperFor] = useState<string | null>(null);
+  const paper = scheme === "dark" && readerKey !== null && paperFor === readerKey;
   useLayoutEffect(() => {
     if (!opened) {
       if (listFocusPending.current) {
@@ -1311,6 +1316,8 @@ export function App() {
       snoozed={isSnoozed(selected)}
       trashUnavailable={trashUnavailable(selected)}
       shortcut={shortcut}
+      paper={paper}
+      onTogglePaper={scheme === "dark" ? () => setPaperFor(paper ? null : readerKey) : undefined}
       onTrash={() => setTrashMail(selected)}
       onRead={() => markRead(selected)}
       onUnread={() => void changeMessage(selected, "unread")}
@@ -1344,6 +1351,7 @@ export function App() {
       onChanged={reload}
       onReplyAll={() => startCompose(selected, true)}
       onForward={() => void forwardMail(selected)}
+      paper={paper}
       onLabels={() => setLabelMail(selected)}
       onUnsnooze={() => void changeMessage(selected, "unsnooze")}
       onChangeTime={(event) => showSnooze(selected, event)}

@@ -31,15 +31,22 @@ test("contrastRatio matches WCAG known values", () => {
   assert.ok(Math.abs(contrastRatio([0x76, 0x76, 0x76, 1], WHITE) - 4.54) < 0.01);
 });
 
-test("readableInk marks only text below 3:1 and picks the stronger fixed ink", () => {
+test("readableInk marks only text below the 4.5:1 small-text threshold and picks the stronger fixed ink", () => {
   // Preheader ink on the background's own white.
   assert.equal(readableInk([0xfe, 0xfe, 0xfe, 1], [], WHITE), "dark");
   // Sender gray on an unstyled element over a dark reader surface.
   assert.equal(readableInk([0x33, 0x33, 0x33, 1], [], [0x15, 0x05, 0x10, 1]), "light");
-  // Below 3:1 on white still gets dark ink, the stronger side.
+  // Below 4.5:1 on white still gets dark ink, the stronger side.
   assert.equal(readableInk([0x99, 0x99, 0x99, 1], [], WHITE), "dark");
-  // 4.54:1 clears the bar and keeps the sender color.
+  // ~3.9:1 on white passed the old 3:1 bar; it is now re-inked.
+  const under: Rgba = [130, 130, 130, 1];
+  assert.ok(contrastRatio(under, WHITE) >= 3 && contrastRatio(under, WHITE) < 4.5);
+  assert.equal(readableInk(under, [], WHITE), "dark");
+  // 4.54:1 and ~5.1:1 clear the bar and keep the sender color.
   assert.equal(readableInk([0x76, 0x76, 0x76, 1], [], WHITE), null);
+  const over: Rgba = [110, 110, 110, 1];
+  assert.ok(contrastRatio(over, WHITE) >= 4.5);
+  assert.equal(readableInk(over, [], WHITE), null);
   // Fully transparent text has no readable form, so ink is always chosen.
   assert.equal(readableInk([0, 0, 0, 0], [], WHITE), "dark");
   assert.equal(readableInk([0, 0, 0, 0], [], [0x15, 0x05, 0x10, 1]), "light");

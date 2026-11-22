@@ -11,7 +11,7 @@ export const modes = [
 // sidebar; the working panes stay close to neutral in both.
 export const themes = [
   { id: "black", label: "Mass", lightLabel: "Lumen", dark: "#150510", light: "#f8e8e8" },
-  { id: "graphite", label: "Graphite", lightLabel: "Graphite", dark: "#1c1c1e", light: "#e4e4e8" },
+  { id: "graphite", label: "Graphite", lightLabel: "Graphite", dark: "#0c0c0e", light: "#ebebed" },
   { id: "midnight", label: "Midnight", lightLabel: "Midnight", dark: "#0b1020", light: "#e1e7f3" },
   { id: "forest", label: "Forest", lightLabel: "Forest", dark: "#0b1410", light: "#dfeae3" },
 ] as const;
@@ -21,7 +21,7 @@ export const themes = [
 // button keeps its exact color instead of the lifted scheme value.
 export const accents = [
   { id: "energy", label: "Energy", dark: "#e05cbe", light: "#a50685", fill: "#a50685", fillInk: "#fff3f2" },
-  { id: "blue", label: "Blue", dark: "#6b9cff", light: "#2563eb" },
+  { id: "blue", label: "Blue", dark: "#7aa2ff", light: "#1d4ed8" },
   { id: "purple", label: "Purple", dark: "#a78bfa", light: "#7c3aed" },
   { id: "pink", label: "Pink", dark: "#f472b6", light: "#db2777" },
   { id: "orange", label: "Orange", dark: "#fb923c", light: "#ea580c" },
@@ -69,7 +69,7 @@ export type Appearance = {
   customThemes: CustomTheme[];
 };
 
-export const defaultAppearance: Appearance = { mode: "dark", theme: "black", accent: "energy", transparency: "glass", glassOpacity: 70, reading: "split", readerToolbar: "compact", customThemes: [] };
+export const defaultAppearance: Appearance = { mode: "dark", theme: "graphite", accent: "blue", transparency: "glass", glassOpacity: 70, reading: "split", readerToolbar: "compact", customThemes: [] };
 const storageKey = "emc2.appearance.v1";
 const glassOpacitySchema = z.number().int().min(0).max(100);
 
@@ -154,7 +154,10 @@ export function applyAppearance(value: Appearance, scheme: Scheme = resolveSchem
   clearPalette(root);
   const accent = accents.find((candidate) => candidate.id === value.accent)!;
   root.style.setProperty("--accent", accent[activeScheme]);
-  const palette = preview?.palette ?? value.customThemes.find((theme) => theme.id === value.theme)?.palettes[activeScheme];
+  const custom = value.customThemes.find((theme) => theme.id === value.theme);
+  // The light accent inks the paper surfaces used inside a dark scheme.
+  root.style.setProperty("--accent-light", custom?.palettes.light.accent ?? accent.light);
+  const palette = preview?.palette ?? custom?.palettes[activeScheme];
   if (palette) applyPalette(palette, root);
   const pinnedFill = "fill" in accent ? accent.fill : undefined;
   const pinnedInk = "fillInk" in accent ? accent.fillInk : undefined;
