@@ -31,7 +31,7 @@ export function scopedSheet(css: string, scope: string): string {
 // focus rings, selection and the privacy bars. Inherited host styles stop at
 // the message root; only theme custom properties pass through.
 const base = `
-:where([data-mail-scope]){all:initial;display:block;font:calc(14px * var(--text-scale, 1))/1.5 system-ui,sans-serif;color:var(--text-body)}
+:where([data-mail-scope]){all:initial;display:block;font:calc(15px * var(--text-scale, 1))/1.5 system-ui,sans-serif;color:var(--text-body)}
 *{scrollbar-width:none}::-webkit-scrollbar{display:none;width:0;height:0}
 ::selection{background:color-mix(in srgb,var(--accent) 35%,transparent)}
 :focus-visible{outline:1px solid var(--accent);outline-offset:2px;border-radius:4px}
@@ -69,10 +69,11 @@ export function readerSurface(element: Element | null): Rgba {
   return composite(surface, WHITE);
 }
 
-// Sender colors keep their meaning, but text below 3:1 against its composited
-// background is re-inked. Container queries, theme and preference changes can
-// change either side, so marks are re-evaluated on resize, ancestor theme
-// attributes and every render. The surface starts at the shadow host.
+// Sender colors keep their meaning, but text below the small-text 4.5:1
+// contrast threshold against its composited background is re-inked. Container
+// queries, theme and preference changes can change either side, so marks are
+// re-evaluated on resize, ancestor theme attributes and every render. The
+// surface starts at the shadow host.
 export function useReadableInk(root: HTMLElement | null, enabled: boolean) {
   useEffect(() => {
     if (!enabled || !root) return;

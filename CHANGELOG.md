@@ -14,6 +14,10 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Changed
+
+- New installs open on a neutral dark Graphite theme with a blue accent, app text uses the system font, compact mail rows grow to 28px and email bodies read at 15px with roomier spacing. Sender text that is too low-contrast to read is now recolored at the stricter small-text minimum. In dark mode, the email toolbar can draw the open message body on a light background, and the compose editor writes on the same light surface. The Mass theme stays available in Settings, Appearance, and existing choices are untouched.
+
 ### Documentation
 
 - Point the README and marketing website metadata to [the Cloudflare-hosted website](https://emc2.collection-of-devs.workers.dev/).

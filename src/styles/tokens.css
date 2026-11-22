@@ -14,7 +14,7 @@
      name, the select-all checkbox and every row's avatar start on one x. */
   --select-gutter: 16px;
   --mail-row-medium: 34px;
-  --mail-row-compact: 24px;
+  --mail-row-compact: 28px;
   --mail-row-card-medium: 100px;
   --mail-row-card-compact: 48px;
   --mail-card-compact: 48px;
@@ -57,8 +57,6 @@
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
   --font-accent: "Instrument Serif", serif;
   font-family:
-    "Host Grotesk Variable",
-    "Host Grotesk",
     -apple-system,
     BlinkMacSystemFont,
     "SF Pro Text",
@@ -135,19 +133,33 @@
 :root[data-scheme="dark"][data-theme="graphite"] {
   /* Graphite is neutral end to end: its text ramp drops the brand mauve so
      muted dates and counts read cleanly on the gray panes. */
-  --text: #f4f4f5;
+  --bg: #0c0c0e;
+  --surface: #161618;
+  --raised: #222226;
+  --hover: rgba(255, 255, 255, 0.06);
+  --selected: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.10);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --line-3: rgba(255, 255, 255, 0.20);
+  --control-edge: color-mix(in srgb, var(--text-4) 70%, var(--surface));
+  --text: #f5f5f7;
   --text-body: #e6e6e9;
-  --text-2: #b8b8c0;
+  --text-2: #a1a1aa;
   --text-3: #9a9aa3;
   --text-4: #8e8e99;
-  --bg: #141416;
-  --surface: #1a1a1d;
-  --raised: #29292d;
+  --row-read-ink: #c8c8ce;
+  --selected-card: color-mix(in srgb, #fff 8%, var(--surface));
+  --danger: #f0a0a0;
   --veil: #2a2a2e;
   --veil-hover: #333338;
-  --control-edge: color-mix(in srgb, var(--text-4) 70%, var(--surface));
   --skeleton: color-mix(in srgb, var(--veil-hover) 80%, var(--text-4));
   --skeleton-peak: color-mix(in srgb, var(--skeleton) 80%, var(--text-4));
+  --avatar: #26262a;
+  --avatar-text: #a1a1aa;
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-dialog: 0 24px 64px rgba(0, 0, 0, 0.55);
 }
 :root[data-scheme="dark"][data-theme="midnight"] {
   --bg: #050813;
@@ -227,14 +239,32 @@
   --shadow-dialog: 0 24px 64px rgba(21, 5, 16, 0.18);
 }
 :root[data-scheme="light"][data-theme="graphite"] {
+  --bg: #ebebed;
+  --surface: #ffffff;
+  --raised: #f4f4f5;
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(0, 0, 0, 0.06);
+  --line: rgba(0, 0, 0, 0.08);
+  --line-2: rgba(0, 0, 0, 0.13);
+  --line-3: rgba(0, 0, 0, 0.22);
+  --control-edge: color-mix(in srgb, var(--text-4) 85%, var(--surface));
   --text: #111113;
   --text-body: #26262b;
   --text-2: #4a4a52;
   --text-3: #5c5c64;
   --text-4: #696972;
-  --bg: #e4e4e8;
-  --surface: #fbfbfc;
-  --control-edge: color-mix(in srgb, var(--text-4) 85%, var(--surface));
+  --selected-card: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  --danger: #b42318;
+  --veil: #ededf0;
+  --veil-hover: #e4e4e8;
+  --skeleton: var(--veil-hover);
+  --avatar: #ececef;
+  --avatar-text: #5c5c64;
+  --lights-off: #d8d8dc;
+  --backdrop: rgba(0, 0, 0, 0.22);
+  --edge: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --shadow-dialog: 0 24px 64px rgba(0, 0, 0, 0.18);
 }
 :root[data-scheme="light"][data-theme="midnight"] {
   --bg: #e1e7f3;
@@ -245,6 +275,37 @@
   --bg: #dfeae3;
   --surface: #fdfefd;
   --control-edge: color-mix(in srgb, var(--text-4) 85%, var(--surface));
+}
+
+/* Paper is a light document surface drawn inside the dark scheme: the
+   reader's Light background toggle and the compose editor. var() inside a
+   custom property resolves where the property is declared, so every derived
+   value is redeclared here against the paper ramp. */
+:root[data-scheme="dark"] .paper {
+  color-scheme: light;
+  --surface: #f4f4f5;
+  --raised: #ffffff;
+  --text: #111113;
+  --text-body: #26262b;
+  --text-2: #4a4a52;
+  --text-3: #5c5c64;
+  --text-4: #696972;
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(0, 0, 0, 0.06);
+  --line: rgba(0, 0, 0, 0.08);
+  --line-2: rgba(0, 0, 0, 0.13);
+  --line-3: rgba(0, 0, 0, 0.22);
+  --veil: #e8e8eb;
+  --veil-hover: #dedee2;
+  --accent: var(--accent-light, #1d4ed8);
+  --link: color-mix(in srgb, var(--accent) 88%, #000);
+  --code-ink: color-mix(in oklab, var(--accent) 70%, var(--text));
+  --quote: color-mix(in srgb, var(--accent) 40%, var(--line-2));
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  --accent-soft-ink: color-mix(in oklab, var(--accent) 70%, var(--text));
+  --control-edge: color-mix(in srgb, var(--text-4) 80%, var(--surface));
+  background: var(--surface);
+  color: var(--text-body);
 }
 
 /* One adjustable tint covers the window. Child panes stay clear so their

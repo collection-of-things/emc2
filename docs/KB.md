@@ -891,7 +891,7 @@ Synthetic tests cover file validation, library limits, persistence/restart, reso
 
 Formatted mail removes sub-6px and unitless-zero font sizes, line heights, heights and max-heights from text-bearing elements so compressed preview text remains readable without collapsing its wrapper. Image styles retain small max-height caps, including in blocked, unsupported, private-source and failed-image placeholders. A loaded image keeps the sender's declared shape: a px width and height become an aspect ratio, a declared height alone stays fixed, and only unsized images fall back to their natural size, so spacer and divider images cannot stretch into giant boxes. Inline image status adds no prose to the sender layout. Synthetic parser and renderer tests cover these cases. Installed rendering and remote image delivery are not verified here.
 
-When sender HTML is parsed, a run of three or more invisible padding units — a zero-width space or joiner, grapheme joiner, word joiner, byte-order mark or soft hyphen plus any spacing — collapses to one space, so hidden preheader padding can no longer form a tall empty band. In sender-styled mail, text whose computed color falls below 3:1 contrast against its composited background is re-inked to whichever of a fixed dark or light reads stronger, while `.address` and image-placeholder elements are never marked; see [ADR 0125](adr/0125-readable-hidden-sender-text.md). Single padding characters and ZWJ are preserved for script shaping and emoji sequences.
+When sender HTML is parsed, a run of three or more invisible padding units — a zero-width space or joiner, grapheme joiner, word joiner, byte-order mark or soft hyphen plus any spacing — collapses to one space, so hidden preheader padding can no longer form a tall empty band. In sender-styled mail, text whose computed color falls below 4.5:1 contrast against its composited background is re-inked to whichever of a fixed dark or light reads stronger, while `.address` and image-placeholder elements are never marked; see [ADR 0125](adr/0125-readable-hidden-sender-text.md), raised to the small-text minimum in [ADR 0135](adr/0135-neutral-default-theme-and-reading-contrast.md). Single padding characters and ZWJ are preserved for script shaping and emoji sequences.
 
 With transparency enabled, `src/styles/tokens.css` puts one shared `--pane-glass` tint on `.app`, covering the full window. Its persisted `glassOpacity` is 0 to 100 percent, defaulting to 70 in both schemes. See [ADR 0068](adr/0068-window-opacity.md). The toolbar, mail list, reader, Settings, work and Drafts panes stay transparent to avoid stacking tints. Sticky date headings, the agent review tabs and Today mail actions use a 60% surface tint with 12px blur; scrolling panes themselves gain no CSS blur. Secondary text brightens for built-in and custom themes; text opacity and opaque privacy masks remain intact. The `data-glass` gate keeps Off and unsupported platforms opaque. This shared layer replaces the separate pane tints recorded in [ADR 0035](adr/0035-frosted-working-panes.md). Native appearance, contrast over desktop content and movement smoothness still need target-platform verification.
 
@@ -901,7 +901,7 @@ The renderer uses macOS-style chrome in light or dark on every desktop platform:
 
 The mail sidebar places Drafts directly below New message. A Settings gear and sync status share one fixed footer row. The theme picker grows with its previews and labels; the fixed mail-row height applies only to mail rows, so accent swatches stay below the theme choices.
 
-Mail date headings stick at `top: 0`. Rows run edge to edge without pane gutters, row insets, corner radii or vertical margins; text has 18px horizontal padding and separators remain inset. Every comfortable row is 34px and every compact row 24px; high-relevance mail carries a small filled importance marker in the sorting-reason colour inside the 150px sender column, so subjects stay aligned. Side-by-side cards use the same full-width washes and 18px horizontal padding, at 100px or 72px in compact density, with a preview in comfortable density. All row heights scale with text size.
+Mail date headings stick at `top: 0`. Rows run edge to edge without pane gutters, row insets, corner radii or vertical margins; text has 18px horizontal padding and separators remain inset. Every comfortable row is 34px and every compact row 28px; high-relevance mail carries a small filled importance marker in the sorting-reason colour inside the 150px sender column, so subjects stay aligned. Side-by-side cards use the same full-width washes and 18px horizontal padding, at 100px or 72px in compact density, with a preview in comfortable density. All row heights scale with text size.
 
 Right-click mail rows or opened messages to use Mark as read without opening the message. Already-read mail disables that item. Explicit read and read-on-open both use `markMailRead` in `src/mail-ui.ts`, coalesce pending requests and call the existing read endpoint independently of other UI busy state. Requests wait behind server sync; failures keep unread state and can be retried from the menu or by reopening mail. Other context-menu provider writes remain disabled during sync.
 
@@ -1849,7 +1849,7 @@ layout. Installed-app proof remains separate.
 The reader splits blank-line runs, including whitespace-only lines, into one
 paragraph break. It preserves single line breaks, indentation, text links and
 address masking. This changes display only; cached body strings are unchanged.
-The body uses 15px text at 1.45 line height within a 65ch column. Sender details
+The body uses 15px text at 1.5 line height within a 65ch column. Sender details
 and the date wrap within the header.
 
 Images load by default ([ADR 0127](adr/0127-default-images-and-flush-mail-list.md)).
@@ -3019,7 +3019,7 @@ Agent review, Calendar, Contacts and Settings.
 Comfortable MailList uses its card layout at every width and passes that same
 choice to MailListWindow. Card heights use a 54px sender/subject base, 18px for
 visible metadata and 20px for nonempty comfortable previews, all text-scaled.
-Compact wide rows stay 24px; compact cards omit previews. Row controls, bulk selection, scrolling, focus, account
+Compact wide rows stay 28px; compact cards omit previews. Row controls, bulk selection, scrolling, focus, account
 identity and all current handlers remain shared. The list uses the existing
 measured card tokens rather than changing heights only in CSS. Date headings
 cover scrolling rows outside glass mode; compact bulk cards keep the checkbox
@@ -3305,7 +3305,7 @@ It shares App's density state with Commands and the configured density shortcut.
 Explicit changes save `emc2.density` on this device; startup reads the saved value
 without writing it. A failed save keeps the session value and shows a notice.
 Density changes spacing independently of text scale.
-The virtual list retains 24px compact wide rows and computes narrow card
+The virtual list retains 28px compact wide rows and computes narrow card
 heights from visible metadata and preview content. Density and text-scale changes scroll the selected row into
 view without taking focus from Settings or editors. Passive scrolling and mail
 refreshes retain their existing behavior. Synthetic coverage is in

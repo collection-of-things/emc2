@@ -410,7 +410,7 @@ else {
           // macOS vibrancy and a Windows 11 material sit behind the page. The
           // renderer paints an opaque theme over them unless Transparency is on,
           // so the material only shows where the app leaves surfaces translucent.
-          backgroundColor: isMac || process.platform === "win32" ? "#00000000" : "#0a0a0a",
+          backgroundColor: isMac || process.platform === "win32" ? "#00000000" : "#0c0c0e",
           vibrancy: isMac ? "under-window" : undefined,
           visualEffectState: isMac ? "followWindow" : undefined,
           // Appearance replaces this with the user's choice once the page loads.
@@ -422,7 +422,7 @@ else {
           // caption buttons sit over the top-right corner. Windows still rounds
           // and shadows the frame, so the corners belong to the OS.
           titleBarStyle: isMac ? "hiddenInset" : "hidden",
-          titleBarOverlay: nativeControls ? { color: "#0e0e10", symbolColor: "#ffffff", height: 52 } : undefined,
+          titleBarOverlay: nativeControls ? { color: "#0c0c0e", symbolColor: "#ffffff", height: 52 } : undefined,
           trafficLightPosition: isMac ? { x: 20, y: 20 } : undefined,
           webPreferences: {
             preload: path.join(__dirname, "preload.cjs"),

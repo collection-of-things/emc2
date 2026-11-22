@@ -153,8 +153,14 @@ article.message {
   max-width: 65ch;
   overflow-wrap: anywhere;
   font-size: calc(15px * var(--text-scale, 1));
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-body);
+}
+/* The Light background toggle draws the body as a light document inside the
+   dark pane; the paper tokens only exist under data-scheme="dark". */
+.message-body.paper {
+  padding: 16px 20px;
+  border-radius: var(--radius-control);
 }
 .message-body p {
   margin: 0 0 0.85em;

@@ -1,22 +1,23 @@
 import type { ComponentType, MouseEvent } from "react";
 import type { RendererMail as Mail } from "../../shared/types";
-import { Archive, CalendarPlus, Check, ChevronDown, ChevronUp, Clock, Close, Inbox, Mail as MailUnread, Pin, Reply, TaskSquare, Trash } from "../ui/icons";
+import { Archive, CalendarPlus, Check, ChevronDown, ChevronUp, Clock, Close, Inbox, Mail as MailUnread, Pin, Reply, Sun, TaskSquare, Trash } from "../ui/icons";
 
 type Icon = ComponentType<{ color?: string; size?: number }>;
 
 // Keep the accessible name when compact layouts hide the visible label.
-function Tool({ label, text = label, title, Icon, disabled, busy, onClick }: {
+function Tool({ label, text = label, title, Icon, disabled, busy, pressed, onClick }: {
   label: string;
   text?: string;
   title?: string;
   Icon: Icon;
   disabled?: boolean;
   busy?: boolean;
+  pressed?: boolean;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
     <button type="button" className="tool" aria-label={label} title={title ?? label}
-      disabled={disabled} aria-busy={busy} onClick={onClick}>
+      disabled={disabled} aria-busy={busy} aria-pressed={pressed} onClick={onClick}>
       {/* The glyphs are drawn on a 24-unit grid, so size 20 renders the
           strokes at about 16px inside the 32px cells. */}
       <Icon color="currentColor" size={20} />
@@ -31,9 +32,9 @@ function Tool({ label, text = label, title, Icon, disabled, busy, onClick }: {
  * Mark as read. Opened mail adds a close control at the right.
  */
 export function MailActions({
-  mail, opened, reading, busy, mutationBusy = busy, syncing, snoozed, trashUnavailable, shortcut,
+  mail, opened, reading, busy, mutationBusy = busy, syncing, snoozed, trashUnavailable, shortcut, paper,
   onRead, onUnread, onInbox, onReply, onArchive, onTrash, onSnooze, onUnsnooze, onClose,
-  onPrevious, onNext, previousDisabled, nextDisabled, onPin, onTrack, onSchedule,
+  onPrevious, onNext, previousDisabled, nextDisabled, onPin, onTrack, onSchedule, onTogglePaper,
 }: {
   mail: Mail;
   opened: boolean;
@@ -60,6 +61,9 @@ export function MailActions({
   onPin?: () => void;
   onTrack?: () => void;
   onSchedule?: () => void;
+  /* The dark scheme's per-message light reading surface; off in light mode. */
+  paper?: boolean;
+  onTogglePaper?: () => void;
 }) {
   const readLabel = reading ? "Marking as read…" : mail.unread ? "Mark as read" : "Read";
   return (
@@ -87,6 +91,9 @@ export function MailActions({
       {(onTrack || onSchedule) && <div className="tool-group">
         {onTrack && <Tool label="Track work" text="Track" Icon={TaskSquare} disabled={busy} onClick={onTrack} />}
         {onSchedule && <Tool label="Schedule meeting" text="Meeting" Icon={CalendarPlus} disabled={busy} onClick={onSchedule} />}
+      </div>}
+      {opened && onTogglePaper && <div className="tool-group">
+        <Tool label="Light background" title="Read this message on a light background" Icon={Sun} pressed={paper} onClick={onTogglePaper} />
       </div>}
       <span role="status">{reading ? "Read update pending." : mutationBusy ? "Updating email…" : ""}</span>
       {trashUnavailable && <span id="trash-unavailable">{trashUnavailable}</span>}

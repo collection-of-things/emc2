@@ -2,7 +2,7 @@ import { Notice, useFeedbackState } from "../ui/Toasts";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  accents, modes, readingLayouts, readerToolbars, supportsGlass, themes, transparencyChoices,
+  accents, defaultAppearance, modes, readingLayouts, readerToolbars, supportsGlass, themes, transparencyChoices,
   type Appearance, type Scheme,
 } from "../appearance";
 import {
@@ -202,13 +202,13 @@ export function AppearanceSettings({ value, scheme, onChange, onPreview = noPrev
         ...theme, id: `custom:${crypto.randomUUID()}`, name: uniqueThemeName(theme.name, value.customThemes),
       })} />, document.body)}
       {dialog?.kind === "delete" && createPortal(<Dialog title="Delete theme" onClose={close}>
-        <p className="dialog-copy">Delete this custom theme from this device? The app will use the Mass or Lumen theme.</p>
+        <p className="dialog-copy">Delete this custom theme from this device? The app will use the Graphite theme.</p>
         {error && <Notice text={error} />}
         <div className="theme-actions">
           <button type="button" className="button" onClick={close}>Cancel</button>
           <button type="button" className="button" onClick={() => {
             const customThemes = value.customThemes.filter((theme) => theme.id !== dialog.theme.id);
-            if (onChange({ ...value, theme: value.theme === dialog.theme.id ? "black" : value.theme, customThemes })) close();
+            if (onChange({ ...value, theme: value.theme === dialog.theme.id ? defaultAppearance.theme : value.theme, customThemes })) close();
             else setError("This theme could not be deleted on this device. Try again.");
           }}>Delete theme</button>
         </div>

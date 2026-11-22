@@ -1,6 +1,7 @@
-// Readable ink for sender-styled mail (ADR 0125). Sender text below
-// 3:1 contrast against its effective background is re-inked to the stronger
-// of a fixed dark or light; text at 3:1 or better keeps the sender color.
+// Readable ink for sender-styled mail (ADR 0125, amended by ADR 0135). Sender
+// text below the WCAG 2.2 small-text threshold of 4.5:1 against its effective
+// background is re-inked to the stronger of a fixed dark or light; text at
+// 4.5:1 or better keeps the sender color.
 
 export type Rgba = [red: number, green: number, blue: number, alpha: number];
 
@@ -51,14 +52,14 @@ export function contrastRatio(a: Rgba, b: Rgba): number {
 }
 
 // `layers` are the element's backgrounds from nearest to farthest; the reader
-// surface sits behind all of them. Text already at 3:1 keeps its color.
+// surface sits behind all of them. Text already at 4.5:1 keeps its color.
 export function readableInk(text: Rgba, layers: Rgba[], surface: Rgba): "dark" | "light" | null {
   const background = layers.reduceRight((below, layer) => composite(layer, below), surface);
   return inkOnBackground(text, background);
 }
 
 function inkOnBackground(text: Rgba, background: Rgba): "dark" | "light" | null {
-  if (contrastRatio(composite(text, background), background) >= 3) return null;
+  if (contrastRatio(composite(text, background), background) >= 4.5) return null;
   return contrastRatio(DARK_INK, background) >= contrastRatio(LIGHT_INK, background) ? "dark" : "light";
 }
 

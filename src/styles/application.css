@@ -313,7 +313,7 @@
 .message-from .avatar { width: 32px; height: 32px; }
 .from-line strong { font-size: calc(12px * var(--text-scale, 1)); }
 .from-address, .from-to, .message-from time { font-size: calc(11px * var(--text-scale, 1)); }
-.message-body { font-size: calc(13px * var(--text-scale, 1)); line-height: 1.85; }
+.message-body { font-size: calc(15px * var(--text-scale, 1)); line-height: 1.5; }
 .message-body p { margin-bottom: 18px; }
 .group { font-size: calc(10px * var(--text-scale, 1)); padding-inline: 18px; }
 :root:not([data-glass]) .split .list { background: var(--chrome); }
@@ -529,6 +529,8 @@ section.work-calendar[data-layout="month"] > .calendar-backlog { grid-column: 2;
 .compose-format-tools button[aria-label="Italic"] { font-style: italic; }
 .compose-format-tools button[aria-label="Underline"] { text-decoration: underline; }
 .compose-rich-body { flex: 1 0 180px; min-height: 180px; min-width: 0; margin: 6px 0; padding: 12px 14px; font-size: calc(13px * var(--text-scale, 1)); line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* The compose editor is paper in dark mode: a light card with near-black ink. */
+:root[data-scheme="dark"] :is(.compose-rich-body, .compose-veiled-body).paper { border-radius: var(--radius-control); }
 .compose-rich-body:focus-visible { outline: 0; box-shadow: inset 2px 0 0 0 var(--accent); }
 .compose-rich-body :is(p, div) { margin: 0; }
 .compose-rich-body :is(ul, ol) { padding-left: 24px; margin: 8px 0; }

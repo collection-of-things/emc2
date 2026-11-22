@@ -221,3 +221,7 @@ export function CalendarPlus(props: IconProps) {
 export function TaskSquare(props: IconProps) {
   return <Outline {...props}><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="m8.5 12.5 2.5 2.5L16 9.5" /></Outline>;
 }
+
+export function Sun(props: IconProps) {
+  return <Outline {...props}><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Outline>;
+}

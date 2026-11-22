@@ -26,7 +26,7 @@ function readerDate(date: number) {
  * An opened email: subject, then one sender line with the recipient beneath
  * and the date at the right, Gmail labels, and the body with its image consent.
  */
-function SingleReader({ mail, provider, labels, busy, isMutationPending, api, onLabels, onMenu, onMenuKey, onOpen, onChanged, onReplyAll, onForward, onOpenDraft, onUnsnooze, onChangeTime, onReviewingUnsubscribe, state, fromMeta }: {
+function SingleReader({ mail, provider, labels, busy, isMutationPending, api, onLabels, onMenu, onMenuKey, onOpen, onChanged, onReplyAll, onForward, onOpenDraft, onUnsnooze, onChangeTime, onReviewingUnsubscribe, state, fromMeta, paper }: {
   mail: Mail;
   state?: State;
   provider?: Provider;
@@ -48,6 +48,8 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
   /* A quiet note on the sender line, just left of the date — the conversation
      reader places its "Selected for actions" text here. */
   fromMeta?: ReactNode;
+  /* The dark scheme's per-message light reading surface. */
+  paper?: boolean;
 }) {
   const mutationBusy = busy || !!isMutationPending?.(mail);
   const content = useMailBody(mail, api);
@@ -78,7 +80,7 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
         </p>}
         {hydrated && <InvitationPanel key={`invitation:${mailBodyKey(mail)}`} mail={hydrated} api={api} onOpenDraft={onOpenDraft} onChanged={onChanged} />}
         {!hydrated && <p role="status">{content.error || "Loading cached email…"}{content.error && <> <button type="button" className="link" onClick={content.retry}>Try again</button></>}</p>}
-        {hydrated && <ReaderContent api={api} key={`content:${mailBodyKey(mail)}`} mail={hydrated}
+        {hydrated && <ReaderContent api={api} key={`content:${mailBodyKey(mail)}`} mail={hydrated} paper={paper}
           loadContent={(id) => api(`/messages/${encodeURIComponent(id)}/content`, "POST")}
           loadImages={(id) => api(`/messages/${encodeURIComponent(id)}/images`, "POST")} />}
         <footer className="reader-secondary-tools">

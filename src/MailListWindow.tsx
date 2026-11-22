@@ -17,7 +17,7 @@ export function MailListWindow<T extends Mail>({ messages, selectedId, focusSele
 }) {
   const windowRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ top: 0, height: 600, offset: 0 });
-  const [sizes, setSizes] = useState({ medium: 34, compact: 24, group: 30, cardBase: 54, cardCompact: 48, metadata: 18, preview: 20 });
+  const [sizes, setSizes] = useState({ medium: 34, compact: 28, group: 30, cardBase: 54, cardCompact: 48, metadata: 18, preview: 20 });
   const [measured, setMeasured] = useState(false);
   const geometry = useMemo(() => {
     let height = 0;
@@ -57,7 +57,7 @@ export function MailListWindow<T extends Mail>({ messages, selectedId, focusSele
     const token = (name: string, fallback: number) => (parseFloat(style.getPropertyValue(`--mail-row-${narrow ? "card-" : ""}${name}`)) || fallback) * scale;
     const nextSizes = {
       medium: token("medium", narrow ? 100 : 34),
-      compact: token("compact", narrow ? 48 : 24),
+      compact: token("compact", narrow ? 48 : 28),
       cardBase: (parseFloat(style.getPropertyValue("--mail-card-base")) || 54) * scale,
       cardCompact: (parseFloat(style.getPropertyValue("--mail-card-compact")) || 48) * scale,
       metadata: (parseFloat(style.getPropertyValue("--mail-card-meta")) || 18) * scale,

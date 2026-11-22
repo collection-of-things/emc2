@@ -61,7 +61,7 @@ async function mount(count = 3000, pageOffset = 0) {
     if (pageOffset && this.classList.contains("row")) {
       const top = pageOffset + offset + parseFloat(this.closest<HTMLElement>(".mail-window-row")!.style.top) -
         (document.querySelector<HTMLElement>(".list")?.scrollTop || 0);
-      const rowHeight = props.narrow ? (props.density === "compact" ? 48 : 100) : props.density === "compact" ? 24 : 34;
+      const rowHeight = props.narrow ? (props.density === "compact" ? 48 : 100) : props.density === "compact" ? 28 : 34;
       const scale = parseFloat(dom.window.getComputedStyle(document.querySelector(".list")!).getPropertyValue("--text-scale")) || 1;
       return { top, bottom: top + rowHeight * scale, height: rowHeight * scale } as DOMRect;
     }
@@ -199,7 +199,7 @@ test("density, date groups, offsets, resize, filtering, sort, shrink and empty a
     assert.equal(app.list().scrollTop, 3000);
     assert.equal(app.scrolls.length, before);
     app.props.density = "compact"; await app.render();
-    assert.ok(Math.abs(app.windowHeight() - (180 * 24 + groups.length * 30)) < 0.01);
+    assert.ok(Math.abs(app.windowHeight() - (180 * 28 + groups.length * 30)) < 0.01);
     await app.scroll(app.list().scrollHeight);
     assert.ok(app.row(179));
     app.props.messages = [...app.all].reverse(); app.props.sort = "oldest"; await app.render();
@@ -278,7 +278,7 @@ test("split cards retain every message across density and pane layout changes", 
     await app.select(2999);
     assert.equal(app.document.activeElement, app.row(2999));
     app.props.narrow = false; await app.render();
-    assert.equal(app.windowHeight(), 3000 * 24);
+    assert.equal(app.windowHeight(), 3000 * 28);
     await app.scroll(app.list().scrollHeight);
     assert.ok(app.row(2999), "returning to the wide list retains the tail");
   } finally { await app.close(); }

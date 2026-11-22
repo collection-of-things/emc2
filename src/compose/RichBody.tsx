@@ -337,14 +337,14 @@ export function RichBody({ draft, disabled, onChange }: { draft: Compose; disabl
         <button type="button" disabled={disabled} onClick={() => format("createLink", link)}>Add link</button>
         <button type="button" onClick={cancelLink}>Cancel link</button>
       </div>}
-      {hidden ? <div ref={veil} className="compose-body compose-veiled-body" role="textbox" aria-label="Message body" aria-multiline="true"
+      {hidden ? <div ref={veil} className="compose-body compose-veiled-body paper" role="textbox" aria-label="Message body" aria-multiline="true"
           aria-readonly="true" data-private-field tabIndex={disabled ? -1 : 0}
           onFocus={() => { if (!disabled && !suppressReveal.current) { veilFocus.current = true; setRevealed(true); } }}
           onClick={() => { if (!disabled) { veilFocus.current = true; setRevealed(true); } }}
           onKeyDown={event => { if (!disabled && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); veilFocus.current = true; setRevealed(true); } }}>Hidden. Focus to edit.</div> :
-        draft.html === undefined ? <textarea ref={plain} className="compose-body" aria-label="Message body" placeholder="Write your message"
+        draft.html === undefined ? <textarea ref={plain} className="compose-body paper" aria-label="Message body" placeholder="Write your message"
         required disabled={disabled} onKeyDown={shortcut} maxLength={1000000} value={draft.body} onChange={event => onChange({ ...draft, body: event.target.value })} /> :
-        <div ref={editor} className="compose-body compose-rich-body" role="textbox" aria-label="Message body" aria-multiline="true" aria-required="true"
+        <div ref={editor} className="compose-body compose-rich-body paper" role="textbox" aria-label="Message body" aria-multiline="true" aria-required="true"
           aria-disabled={disabled} tabIndex={disabled ? -1 : 0} contentEditable={!disabled} suppressContentEditableWarning
           onInput={publish} onKeyUp={remember} onMouseUp={remember} onBlur={remember}
           onClick={event => { if ((event.target as Element).closest("a")) event.preventDefault(); }}
