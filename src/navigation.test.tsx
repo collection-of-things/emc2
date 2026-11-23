@@ -3164,8 +3164,10 @@ test("section headings pin under the sidebar head and account status sits on the
     "desktop markers keep their compact width");
   assert.match(responsive, /@media\s*\(width\s*<\s*760px\)\s*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\.sidebar-group button\.account-warning\s*\{[^}]*width:\s*44px;[^}]*min-width:\s*44px/s,
     "the drawer gives the marker a wider touch target");
-  assert.match(tokens, /:is\([^)]*\.sidebar-heading[^)]*\)\s*\{[^}]*backdrop-filter:\s*blur/s,
-    "pinned headings keep the glass tint and blur like other sticky surfaces");
+  assert.match(tokens, /:root\[data-glass\] \.sidebar-heading\s*\{[^}]*position:\s*static;[^}]*background:\s*transparent/s,
+    "under glass the headings scroll with their rows instead of banding over the shared tint");
+  assert.match(tokens, /:is\([^)]*\.group[^)]*\)\s*\{[^}]*background:\s*transparent;[^}]*backdrop-filter:\s*var\(--glass-cover-blur\)/s,
+    "other sticky surfaces blur without stacking a second tint");
 });
 
 test("persistent density agrees between Appearance, shortcut and Commands", async () => {

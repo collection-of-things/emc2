@@ -5,7 +5,7 @@ import { accountLabel } from "../mail-ui";
 import { ProviderIcon } from "../mail/Avatar";
 import { relative, sidebarViews, viewNames, type View } from "../mail/format";
 import { SlidingNav } from "../ui/SlidingNav";
-import { ChevronDown, Compose, Mail as MailIcon, Plus, Settings } from "../ui/icons";
+import { ChevronDown, Compose, Mail as MailIcon, MailStack, Plus, Settings } from "../ui/icons";
 import { captionDoubleClick, type Corner } from "./PaneHeader";
 import { TrafficLights } from "../ui/TrafficLights";
 
@@ -137,7 +137,7 @@ export function Sidebar({
                 disabled={mail.blocked}
                 onClick={() => mail.onAccount("all")}
               >
-                <kbd>0</kbd><span className="sidebar-name">All accounts</span>
+                <kbd>0</kbd><MailStack color="currentColor" size={16} /><span className="sidebar-name">All accounts</span>
               </button>
             )}
             {!folded.has("accounts") && mail.accounts.map((account, index) => (

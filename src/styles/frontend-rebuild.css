@@ -39,15 +39,35 @@
 }
 .sidebar-primary > .new-message svg { color: inherit; }
 .drafts-mark { width: 16px; height: 16px; flex-shrink: 0; background: currentColor; mask: center / contain no-repeat; -webkit-mask: center / contain no-repeat; }
-.sidebar-group + .sidebar-group { margin-top: 20px; }
-.sidebar-heading button { padding: 0 12px 6px; font-size: calc(11px * var(--text-scale, 1)); font-weight: 500; color: var(--text-3); }
-.sidebar-group > button { min-height: 32px; padding-inline: 12px; gap: 8px; border-radius: 8px; font-size: calc(13px * var(--text-scale, 1)); }
+.sidebar-group + .sidebar-group { margin-top: 16px; }
+/* Section labels sit on a 28px track that is also the fold target; the
+   chevron shows on hover, on focus and while folded. */
+.sidebar-heading button { min-height: calc(28px * var(--text-scale, 1)); padding: 0 10px; color: var(--text-3); }
+.sidebar-heading button:hover { color: var(--text-2); }
+.sidebar-group > button { min-height: calc(30px * var(--text-scale, 1)); padding-inline: 10px; gap: 10px; border-radius: var(--radius-control); font-size: calc(13px * var(--text-scale, 1)); }
+.sidebar-group > button:disabled:not(.active) { color: var(--disabled-ink, var(--text-4)); }
 /* Selection is the accent-soft fill with its own ink, never an outline. */
 .sidebar-group:not(.sidebar-accounts) > button.active { color: var(--accent-soft-ink); font-weight: 600; }
-.sidebar-group:not(.sidebar-accounts) > button.active > svg { color: var(--accent-soft-ink); }
+/* The drafts mark paints with currentColor, so it takes the icons' muted ink. */
+.sidebar-group > button > .drafts-mark { color: var(--text-3); }
+.sidebar-group:not(.sidebar-accounts) > button.active > :is(svg, .drafts-mark) { color: var(--accent-soft-ink); }
 .sidebar-group button.active .sidebar-count { color: var(--accent-soft-ink); }
 .sidebar-group .sliding-wash { background: var(--accent-soft); box-shadow: none; }
 .sidebar-count { min-width: 18px; padding: 1px 0; text-align: right; }
+/* The account scope's 2px accent tick is a rounded bar inset from the row's
+   top and bottom, so it reads as a marker rather than a border. */
+.sidebar-accounts button.active { box-shadow: none; }
+.sidebar-accounts > button.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+.sidebar-accounts > button > :is(svg, .provider-icon) { flex-shrink: 0; }
 .sidebar-name { min-width: 0; }
 .sidebar-account-footer { flex-shrink: 0; width: var(--sidebar); padding: 8px 12px 4px; border-top: 1px solid var(--line); }
 /* The account card's icon aligns to the first text line so a wrapped second
@@ -110,10 +130,10 @@
    under it, so it keeps an opaque canvas. */
 :root:not([data-glass]) .mail-window-date { background: var(--rebuild-canvas); }
 :root:not([data-glass]) .mail-window-date .group { background-color: var(--rebuild-canvas); }
-/* Under glass the sticky date captions need the same opaque canvas, or rows
-   scroll visibly through the heading. */
-:root[data-glass] .mail-window-date { background: var(--rebuild-canvas); backdrop-filter: none; }
-:root[data-glass] .mail-window-date .group { background-color: var(--rebuild-canvas); backdrop-filter: none; }
+/* Under glass the date container stays clear: it spans every row of its
+   group. Only the sticky caption blurs the rows that scroll beneath it. */
+:root[data-glass] .mail-window-date { background: transparent; }
+:root[data-glass] .mail-window-date .group { background-color: transparent; backdrop-filter: var(--glass-cover-blur); }
 .row, .row.card, .row.card:focus-visible { border-radius: 0; }
 /* Keep the selection gutter stable when the reader hides checkboxes. Card
    slots share their content-based height with MailListWindow. */

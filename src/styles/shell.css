@@ -95,7 +95,7 @@
 /* macOS draws its own lights at (20, 20); the header in that corner reserves room. */
 .pane-head.reserve-lights,
 .sidebar-head.reserve-lights {
-  padding-left: 84px;
+  padding-left: 92px;
 }
 /* The system caption buttons (Windows style) cover the top-right corner: three 46px buttons. */
 .pane-head.reserve-caption {
