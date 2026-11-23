@@ -334,10 +334,11 @@
    even a clear blur reads as a band; the sidebar's section labels therefore
    scroll with their rows under glass rather than pinning over them. */
 :root[data-glass] {
+  --glass-cover: transparent;
   --glass-cover-blur: blur(14px);
 }
 :root[data-glass] :is(.group, .agent-navigation, .today-mail > .mail-actions) {
-  background: transparent;
+  background: var(--glass-cover);
   backdrop-filter: var(--glass-cover-blur);
 }
 :root[data-glass] .sidebar-heading {
@@ -348,6 +349,7 @@
 @media (prefers-reduced-transparency: reduce) {
   :root[data-glass] {
     --pane-glass: var(--surface);
+    --glass-cover: var(--surface);
     --glass-cover-blur: none;
   }
 }

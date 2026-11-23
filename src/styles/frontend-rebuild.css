@@ -133,7 +133,7 @@
 /* Under glass the date container stays clear: it spans every row of its
    group. Only the sticky caption blurs the rows that scroll beneath it. */
 :root[data-glass] .mail-window-date { background: transparent; }
-:root[data-glass] .mail-window-date .group { background-color: transparent; backdrop-filter: var(--glass-cover-blur); }
+:root[data-glass] .mail-window-date .group { background-color: var(--glass-cover); backdrop-filter: var(--glass-cover-blur); }
 .row, .row.card, .row.card:focus-visible { border-radius: 0; }
 /* Keep the selection gutter stable when the reader hides checkboxes. Card
    slots share their content-based height with MailListWindow. */

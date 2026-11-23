@@ -3166,8 +3166,10 @@ test("section headings pin under the sidebar head and account status sits on the
     "the drawer gives the marker a wider touch target");
   assert.match(tokens, /:root\[data-glass\] \.sidebar-heading\s*\{[^}]*position:\s*static;[^}]*background:\s*transparent/s,
     "under glass the headings scroll with their rows instead of banding over the shared tint");
-  assert.match(tokens, /:is\([^)]*\.group[^)]*\)\s*\{[^}]*background:\s*transparent;[^}]*backdrop-filter:\s*var\(--glass-cover-blur\)/s,
+  assert.match(tokens, /:is\([^)]*\.group[^)]*\)\s*\{[^}]*background:\s*var\(--glass-cover\);[^}]*backdrop-filter:\s*var\(--glass-cover-blur\)/s,
     "other sticky surfaces blur without stacking a second tint");
+  assert.match(tokens, /prefers-reduced-transparency:\s*reduce\)\s*\{[^@]*--glass-cover:\s*var\(--surface\)/s,
+    "with Reduce transparency the covers turn opaque so rows cannot show through");
 });
 
 test("persistent density agrees between Appearance, shortcut and Commands", async () => {
