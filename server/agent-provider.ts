@@ -305,7 +305,7 @@ export function runAgentAutomations(mailIds: string[]) {
 // Start scan: run one assistant now over its cached unread inbox mail, newest first.
 function scanAgent(agentId: string) {
   const permission = grant(agentId);
-  const mailIds = all("mail").filter((mail) => mail.direction !== "sent" && mail.unread && !mail.archived && permission.accountIds.includes(mail.accountId))
+  const mailIds = all("mail").filter((mail) => mail.direction !== "sent" && mail.unread && !mail.archived && !mail.handled && permission.accountIds.includes(mail.accountId))
     .sort((a, b) => b.date - a.date).map((mail) => mail.id);
   const previous = automationQueue;
   automationQueue = trackMailWork(() => previous.then(() => automate(mailIds, agentId))).catch(() => undefined);
