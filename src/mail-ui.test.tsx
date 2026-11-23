@@ -133,6 +133,23 @@ test("local cache preserves Inbox tab, archive and active snooze boundaries; sea
   assert.deepEqual(ids("archive"), ["archive"]);
 });
 
+test("Handled mail leaves every Inbox tab and search, and only the Handled view lists it", () => {
+  const handled = { at: 1, by: "agent" as const, reason: "Fixed" };
+  const messages: Mail[] = [
+    { ...mail, id: "inbox", archived: false },
+    { ...mail, id: "handled", archived: false, handled },
+    { ...mail, id: "promo-handled", archived: false, category: "other", labelIds: ["CATEGORY_PROMOTIONS"], handled },
+    { ...mail, id: "archived-handled", archived: true, handled },
+  ];
+  const ids = (view: "inbox" | "handled" | "archive", tab: "primary" | "promotions" = "primary", query = "") =>
+    filterMail(messages, { ...location, view, tab, query }, undefined, 100).map(mail => mail.id).sort();
+  assert.deepEqual(ids("inbox"), ["inbox"]);
+  assert.deepEqual(ids("inbox", "promotions"), []);
+  assert.deepEqual(ids("inbox", "primary", "sender@example.com"), ["inbox"]);
+  assert.deepEqual(ids("handled"), ["handled", "promo-handled"]);
+  assert.deepEqual(ids("archive"), ["archived-handled"]);
+});
+
 test("Newest, Oldest and Relevance sorts have deterministic date and ID ties across accounts", () => {
   const messages: Mail[] = [
     { ...mail, archived: false, id: "b:1", accountId: "b", date: 30, relevance: 1 },

@@ -34,7 +34,7 @@ function Tool({ label, text = label, title, Icon, disabled, busy, pressed, onCli
 export function MailActions({
   mail, opened, reading, busy, mutationBusy = busy, syncing, snoozed, trashUnavailable, shortcut, paper,
   onRead, onUnread, onInbox, onReply, onArchive, onTrash, onSnooze, onUnsnooze, onClose,
-  onPrevious, onNext, previousDisabled, nextDisabled, onPin, onTrack, onSchedule, onTogglePaper,
+  onPrevious, onNext, previousDisabled, nextDisabled, onPin, onHandle, onUnhandle, onTrack, onSchedule, onTogglePaper,
 }: {
   mail: Mail;
   opened: boolean;
@@ -59,6 +59,9 @@ export function MailActions({
   previousDisabled?: boolean;
   nextDisabled?: boolean;
   onPin?: () => void;
+  /* Local: hides mail from the Inbox without changing the provider. */
+  onHandle?: () => void;
+  onUnhandle?: () => void;
   onTrack?: () => void;
   onSchedule?: () => void;
   /* The dark scheme's per-message light reading surface; off in light mode. */
@@ -71,6 +74,9 @@ export function MailActions({
       <div className="tool-group">
         <Tool label="Archive" title={`Archive in your provider (${shortcut("done")})`} Icon={Archive}
           disabled={mutationBusy || syncing || mail.archived || mail.direction === "sent"} onClick={onArchive} />
+        {mail.handled ? onUnhandle && <Tool label="Return to inbox" title="Return to inbox (undo Handled)" Icon={Inbox} disabled={mutationBusy} onClick={onUnhandle} />
+          : onHandle && <Tool label="Mark handled" text="Handled" title="Mark handled: leaves the Inbox in this app only; the provider mailbox is unchanged" Icon={Check}
+            disabled={mutationBusy || mail.archived || mail.direction === "sent"} onClick={onHandle} />}
         {onInbox && mail.archived && <Tool label="Move to Inbox" Icon={Inbox} disabled={mutationBusy || syncing || mail.direction === "sent"} onClick={onInbox} />}
         <Tool label="Move to Trash" text="Trash" title={trashUnavailable || "Move to Trash"} Icon={Trash}
           disabled={mutationBusy || syncing || !!trashUnavailable} onClick={onTrash} />

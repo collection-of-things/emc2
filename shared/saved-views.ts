@@ -3,7 +3,7 @@ import { z } from "zod";
 export const savedViewNameSchema = z.string().trim().min(1).max(80)
   .refine(value => !/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(value));
 export const savedViewDefinitionSchema = z.object({
-  view: z.enum(["inbox", "snoozed", "archive", "sent", "all", "drafts"]),
+  view: z.enum(["inbox", "snoozed", "handled", "archive", "sent", "all", "drafts"]),
   tab: z.enum(["primary", "social", "promotions", "newsletters", "transactions", "updates"]),
   query: z.string().max(4000),
   accountFilter: z.string().min(1).max(200),

@@ -26,7 +26,7 @@ function readerDate(date: number) {
  * An opened email: subject, then one sender line with the recipient beneath
  * and the date at the right, Gmail labels, and the body with its image consent.
  */
-function SingleReader({ mail, provider, labels, busy, isMutationPending, api, onLabels, onMenu, onMenuKey, onOpen, onChanged, onReplyAll, onForward, onOpenDraft, onUnsnooze, onChangeTime, onReviewingUnsubscribe, state, fromMeta, paper }: {
+function SingleReader({ mail, provider, labels, busy, isMutationPending, api, onLabels, onMenu, onMenuKey, onOpen, onChanged, onReplyAll, onForward, onOpenDraft, onUnsnooze, onUnhandle, onChangeTime, onReviewingUnsubscribe, state, fromMeta, paper }: {
   mail: Mail;
   state?: State;
   provider?: Provider;
@@ -42,6 +42,7 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
   onOpenDraft?: (draft: Draft) => void;
   onReviewingUnsubscribe?: (open: boolean) => void;
   onUnsnooze?: () => void;
+  onUnhandle?: () => void;
   onChangeTime?: (event: MouseEvent<HTMLElement>) => void;
   onMenu: (event: MouseEvent<HTMLElement>, mail: Mail) => void;
   onMenuKey: (event: KeyboardEvent<HTMLElement>, mail: Mail) => void;
@@ -73,6 +74,11 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
             {readerDate(mail.date)}
           </time>
         </div>
+        {mail.handled && <p className="message-return">
+          Handled {mail.handled.by === "agent" ? <>by <Redact text={mail.handled.agentName || "an assistant"} /></> : "by you"} <time dateTime={new Date(mail.handled.at).toISOString()}>{new Date(mail.handled.at).toLocaleString()}</time>
+          {mail.handled.reason && <>: <Redact text={mail.handled.reason} /></>}
+          {onUnhandle && <> · <button type="button" className="link" disabled={mutationBusy} onClick={onUnhandle}>Return to inbox</button></>}
+        </p>}
         {mail.snoozedUntil !== null && mail.snoozedUntil > Date.now() && <p className="message-return">
           Returns to Inbox <time dateTime={new Date(mail.snoozedUntil).toISOString()}>{new Date(mail.snoozedUntil).toLocaleString()}</time> (local time)
           {onUnsnooze && <> · <button type="button" className="link" disabled={mutationBusy} onClick={onUnsnooze}>Return to inbox</button></>}
@@ -115,6 +121,7 @@ export function Reader(props: Parameters<typeof SingleReader>[0]) {
       onReplyAll={mail.id === props.mail.id ? props.onReplyAll : undefined}
       onForward={mail.id === props.mail.id ? props.onForward : undefined}
       onUnsnooze={mail.id === props.mail.id ? props.onUnsnooze : undefined}
+      onUnhandle={mail.id === props.mail.id ? props.onUnhandle : undefined}
       onChangeTime={mail.id === props.mail.id ? props.onChangeTime : undefined}
       state={mail.id === props.mail.id ? props.state : undefined}
       fromMeta={fromMeta} />} />;

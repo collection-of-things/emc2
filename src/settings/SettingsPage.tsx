@@ -16,7 +16,7 @@ import { accountLabel } from "../mail-ui";
 import { redactPrivateText } from "../privacy";
 import { ProviderChoices, type ImapProvider } from "../dialogs/ConnectDialog";
 import { ProviderIcon } from "../mail/Avatar";
-import { relevanceNames } from "../mail/format";
+import { relevanceNames, tabName } from "../mail/format";
 import { AboutVersion } from "./AboutVersion";
 import { aboutStorageSentence } from "../shell/CredentialFallbackNotice";
 import { PrivacyContext, Redact } from "../ui/Privacy";
@@ -239,7 +239,8 @@ export function SettingsPage({
                     <Redact text={rule.instruction} />
                   </p>
                   <span>
-                    {rule.category === "important" ? "Pinned to Primary" : "Sorted by type"} ·{" "}
+                    {rule.tab ? `Routed to ${tabName(rule.tab)}` : rule.category === "important" ? "Pinned to Primary" : "Sorted by type"} ·{" "}
+                    {rule.agentId && <>Set by an assistant ·{" "}</>}
                     <Redact text={rule.sender} /> ·{" "}
                     {relevanceNames[rule.relevance].toLowerCase()} relevance
                   </span>

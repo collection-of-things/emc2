@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inboxTab } from "../shared/inbox-tabs.js";
+import { correspondents, inboxTab, protectCorrespondent } from "../shared/inbox-tabs.js";
 
 const mail = (patch: Partial<Parameters<typeof inboxTab>[0]>) => ({
   address: "someone@example.com", sender: "Someone", subject: "Hello", preview: "", reason: "", labelIds: [], ...patch,
@@ -47,4 +47,28 @@ test("live tabs use account conditions, exclusions and the same rule precedence 
   assert.equal(inboxTab(promo, rules), "promotions");
   assert.equal(inboxTab({ ...promo, accountId: "b" }, rules), "primary");
   assert.equal(inboxTab(promo, [{ ...rules[0], excludedMailIds: [promo.id] }]), "promotions");
+});
+
+test("a rule's explicit tab routes matching mail there", () => {
+  const ci = mail({ address: "ci@forge.example", subject: "Build failed" });
+  assert.equal(inboxTab(ci, [{ sender: "ci@forge.example", category: "other", tab: "updates" }]), "updates");
+  assert.equal(inboxTab(ci, [{ sender: "ci@forge.example", category: "important", tab: "primary" }]), "primary");
+});
+
+test("people you have written to stay in Primary unless your own rule moves them", () => {
+  const known = correspondents([
+    { accountId: "a", direction: "sent", to: "Friend <Friend@Example.test>, other@example.test", cc: "copy@example.test" },
+    { accountId: "a", to: "never@example.test" },
+    { accountId: "b", direction: "sent", to: "elsewhere@example.test" },
+  ]);
+  const promo = { ...mail({ address: "friend@example.test", labelIds: ["CATEGORY_PROMOTIONS"] }), accountId: "a" };
+  assert.equal(inboxTab(promo), "promotions");
+  assert.equal(protectCorrespondent(inboxTab(promo), promo, known), "primary");
+  assert.equal(protectCorrespondent("newsletters", { ...promo, address: "copy@example.test" }, known), "primary");
+  assert.equal(protectCorrespondent("promotions", { ...promo, address: "never@example.test" }, known), "promotions", "received mail is not correspondence");
+  assert.equal(protectCorrespondent("promotions", { ...promo, accountId: "b" }, known), "promotions", "correspondence is per account");
+  const agentRule = { sender: "friend@example.test", category: "other" as const, tab: "updates" as const, agentId: "agent" };
+  assert.equal(protectCorrespondent(inboxTab(promo, [agentRule]), promo, known, [agentRule]), "primary", "assistant rules cannot demote correspondents");
+  const ownRule = { sender: "friend@example.test", category: "other" as const, tab: "updates" as const };
+  assert.equal(protectCorrespondent(inboxTab(promo, [ownRule]), promo, known, [ownRule]), "updates", "the user's Teach rule wins");
 });

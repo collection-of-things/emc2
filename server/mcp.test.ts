@@ -282,6 +282,11 @@ test("MCP HTTP authentication, tools and shared mail operations", async (t) => {
             "list_commitments",
             "create_project",
             "track_commitment",
+            "mark_handled",
+            "unmark_handled",
+            "list_inbox_rules",
+            "set_inbox_rule",
+            "remove_inbox_rule",
           ].sort(),
         );
         assert.deepEqual(

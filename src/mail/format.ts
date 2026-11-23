@@ -3,7 +3,7 @@ import { inboxTabs, type InboxTab } from "../../shared/inbox-tabs";
 import { Archive, Bell, Clock, Inbox, Megaphone, Newspaper, Receipt, Users, Check, Reply, Calendar, Folder, Cpu, MailStack } from "../ui/icons";
 
 export type View = MailLocation["view"];
-export const viewOrder: View[] = ["actions", "calendar", "projects", "agents", "contacts", "inbox", "snoozed", "archive", "sent", "all", "drafts"];
+export const viewOrder: View[] = ["actions", "calendar", "projects", "agents", "contacts", "inbox", "snoozed", "handled", "archive", "sent", "all", "drafts"];
 // Sidebar order matches the view order used for pane motion.
 export const sidebarViews = [
   { view: "actions", Icon: Check },
@@ -13,6 +13,7 @@ export const sidebarViews = [
   { view: "contacts", Icon: Users },
   { view: "inbox", Icon: Inbox },
   { view: "snoozed", Icon: Clock },
+  { view: "handled", Icon: Check },
   { view: "archive", Icon: Archive },
   { view: "sent", Icon: Reply },
   { view: "all", Icon: MailStack },
@@ -29,6 +30,7 @@ export const viewNames: Record<View, string> = {
   all: "All cached",
   inbox: "Inbox",
   snoozed: "Snoozed",
+  handled: "Handled",
   archive: "Archive",
 };
 export const tabIcons: Record<InboxTab, typeof Inbox> = {

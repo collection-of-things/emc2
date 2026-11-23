@@ -4,7 +4,7 @@ import type { SettingsSection } from "./settings/sections";
 
 export type MailLocation = {
   page: "mail" | "settings";
-  view: "actions" | "calendar" | "projects" | "agents" | "contacts" | "inbox" | "snoozed" | "archive" | "sent" | "all" | "drafts";
+  view: "actions" | "calendar" | "projects" | "agents" | "contacts" | "inbox" | "snoozed" | "handled" | "archive" | "sent" | "all" | "drafts";
   tab: InboxTab;
   settingsSection: SettingsSection;
   accountFilter: string;
@@ -30,7 +30,7 @@ export function takeBrowserUpdateLocation(): Partial<MailLocation> {
     if (!saved) return {};
     const { location, at } = JSON.parse(saved);
     if (!Number.isFinite(at) || Date.now() - at > 120_000 || Date.now() < at || !location || location.page !== "mail" ||
-      !["inbox", "snoozed", "archive", "sent", "all"].includes(location.view) ||
+      !["inbox", "snoozed", "handled", "archive", "sent", "all"].includes(location.view) ||
       !inboxTabs.some(tab => tab.id === location.tab) ||
       !["all", "unread"].includes(location.readFilter) || !["all", "1", "2", "3"].includes(location.relevanceFilter) ||
       !["newest", "oldest", "relevance"].includes(location.sort) || typeof location.opened !== "boolean" ||

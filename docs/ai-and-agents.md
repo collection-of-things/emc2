@@ -159,9 +159,24 @@ keep it private.
 
 Tools: `list_accounts`, `list_emails`, `search_emails`, `read_email`,
 `get_thread`, `propose_draft`, `reply_to_email`, `archive_email`, `mark_read`,
-`list_projects`, `list_commitments`, `create_project`, and `track_commitment`.
-Each requires its named grant and permitted account. Email lists return summaries
-with ISO dates and numeric offset pagination (25 by default, maximum 100).
+`list_projects`, `list_commitments`, `create_project`, `track_commitment`,
+`mark_handled`, `unmark_handled`, `list_inbox_rules`, `set_inbox_rule` and
+`remove_inbox_rule`. Each requires its named grant and permitted account; the
+two `*_handled` tools use the `mark_handled` grant and the three rule tools use
+`manage_inbox_rules`. Email lists return summaries with ISO dates and numeric
+offset pagination (25 by default, maximum 100).
+
+### Managing the Inbox
+
+`mark_handled` takes an email out of the Inbox immediately with a reason the
+user sees, for example a CI failure the assistant already fixed. It is local to
+Emc²: the provider mailbox is unchanged, no review proposal is created, and the
+user can return it from the Handled view or with Undo. `set_inbox_rule` routes a
+sender, optionally only when a subject, body or recipient condition matches, to
+an Inbox tab and re-sorts cached mail at once. It is refused for senders the
+user has written to (unless the tab is Primary) and for the user's own Teach
+rules; `remove_inbox_rule` removes only assistant rules. Settings, Sorting labels
+rules an assistant set. See [ADR 0137](adr/0137-handled-mail-and-agent-inbox-rules.md).
 
 Search matches sender, address, subject and plain-text body in cached mail.
 Threads link cached messages within one account using Gmail thread IDs or

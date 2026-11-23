@@ -101,7 +101,7 @@ test('CLI uses the real authenticated MCP contract with isolated synthetic encry
     assert.equal(JSON.parse(executable.stdout).connected, true);
     const status = await call(['status']);
     assert.equal(status.code, 0, status.stderr);
-    assert.deepEqual(JSON.parse(status.stdout).tools.length, 14);
+    assert.deepEqual(JSON.parse(status.stdout).tools.length, 19);
     assert.doesNotMatch(status.stdout, /fixture-account|fixture-hidden|synthetic-cli-token|CLI fixture|example/);
     assert.deepEqual(JSON.parse(status.stdout).connection.permissions, {
       tools: ['list_accounts','list_emails','search_emails','read_email','get_thread','reply_to_email','mark_read','archive_email','list_projects','list_commitments','create_project','track_commitment','propose_draft'], accountCount: 1,

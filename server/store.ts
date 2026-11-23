@@ -50,7 +50,7 @@ export type Records = {
   savedView: import("../shared/saved-views.js").SavedView;
   phoneCredential: import("../shared/phone-access.js").PhoneCredential;
   phoneAccess: import("../shared/phone-access.js").PhoneAccessRecord;
-  workspaceMailState: { id: string; accountId: string; pinned?: boolean; snoozedUntil: number | null };
+  workspaceMailState: { id: string; accountId: string; pinned?: boolean; snoozedUntil: number | null; handled?: import("../shared/types.js").MailHandled };
   availability: import("../shared/availability.js").AvailabilitySettings;
   calendarOffer: import("../shared/offers.js").CalendarOffer;
   calendarOperation: { id: string; accountId: string; eventId: string; revision: number; kind: string; draftId?: string; state: "complete" | "unknown"; remoteId?: string; result?: import("../shared/calendar.js").CalendarEvent; input?: string; requestId?: string; response?: import("../shared/calendar.js").CalendarResponse; sourceMailId?: string; sourceFingerprint?: string };
@@ -107,6 +107,7 @@ export function mailSummary(mail: Mail, rules: Rule[] = all("rule")): MailSummar
     subject: mail.subject, preview: mail.preview, date: mail.date, unread: mail.unread,
     pinned: mail.pinned, labelIds: mail.labelIds && [...mail.labelIds], category: mail.category, relevance: mail.relevance,
     reason: mail.reason, archived: mail.archived, snoozedUntil: mail.snoozedUntil,
+    ...(mail.handled ? { handled: { ...mail.handled } } : {}),
     messageId: mail.messageId, threadId: mail.threadId, references: mail.references && [...mail.references],
     direction: mail.direction, inReplyTo: mail.inReplyTo, mailbox: mail.mailbox && { ...mail.mailbox },
     attachments: mail.attachments?.map(summaryAttachment),
@@ -116,7 +117,7 @@ export function mailSummary(mail: Mail, rules: Rule[] = all("rule")): MailSummar
 }
 // Every field mailSummary projects, except the derived contentVersion and
 // inboxTab. Used to ask "would saving this row change the summary?"
-const summaryFields = ["id", "accountId", "remoteId", "sender", "address", "to", "cc", "replyTo", "subject", "preview", "date", "unread", "pinned", "labelIds", "category", "relevance", "reason", "archived", "snoozedUntil", "messageId", "threadId", "references", "direction", "inReplyTo", "mailbox", "attachments"] as const;
+const summaryFields = ["id", "accountId", "remoteId", "sender", "address", "to", "cc", "replyTo", "subject", "preview", "date", "unread", "pinned", "labelIds", "category", "relevance", "reason", "archived", "snoozedUntil", "handled", "messageId", "threadId", "references", "direction", "inReplyTo", "mailbox", "attachments"] as const;
 // True when a would-be saved record is identical on every summary field. Sync
 // uses it to report presence without reopening the encrypted record.
 export function sameMailSummary(incoming: Partial<Mail>, summary: MailSummary): boolean {
@@ -407,8 +408,8 @@ export function workspaceMailFlags(): Records["workspaceMailState"][] {
   const flags = new Map(all("workspaceMailState").map(value => [value.id, value]));
   for (const row of db.prepare("SELECT value FROM records WHERE kind='mail'").iterate()) {
     const mail = decrypt(String(row.value)) as Mail;
-    if (mail.pinned || mail.snoozedUntil != null)
-      flags.set(mail.id, { id: mail.id, accountId: mail.accountId, pinned: mail.pinned, snoozedUntil: mail.snoozedUntil ?? null });
+    if (mail.pinned || mail.snoozedUntil != null || mail.handled)
+      flags.set(mail.id, { id: mail.id, accountId: mail.accountId, pinned: mail.pinned, snoozedUntil: mail.snoozedUntil ?? null, ...(mail.handled ? { handled: mail.handled } : {}) });
   }
   return [...flags.values()];
 }
@@ -456,7 +457,7 @@ export function put<K extends keyof Records>(
   if (kind === "mail") {
     const flags = get("workspaceMailState", id);
     if (flags && flags.accountId === (value as Mail).accountId && !get("mail", id)) {
-      value = { ...value, pinned: flags.pinned, snoozedUntil: flags.snoozedUntil };
+      value = { ...value, pinned: flags.pinned, snoozedUntil: flags.snoozedUntil, ...(flags.handled ? { handled: flags.handled } : {}) };
       remove("workspaceMailState", id);
     }
   }
