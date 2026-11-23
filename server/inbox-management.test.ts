@@ -70,6 +70,7 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     assert.equal(get("mail", "b:ci")!.handled, undefined);
     const handled = await call(agent, "mark_handled", { id: "a:ci", reason: "CI fix pushed in synthetic PR" });
     assert.equal(handled.error, false);
+    assert.deepEqual(Object.keys(handled.value.email).sort(), ["handled", "id"], "the Handled grant alone does not reveal mail content");
     assert.deepEqual({ ...get("mail", "a:ci")!.handled, at: 0 }, { at: 0, by: "agent", agentId: get("agent", all("agent").find(a => a.token === agent)!.id)!.id, agentName: "Synthetic inbox agent", reason: "CI fix pushed in synthetic PR" });
     assert.equal(all("proposal").length, 0, "no review proposal is created");
     const inbox = await call(agent, "list_emails", { view: "inbox" });
@@ -95,6 +96,13 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     const listed = await call(agent, "list_inbox_rules", { accountId: "a" });
     assert.deepEqual(listed.value.rules.map((r: { sender: string; createdBy: string }) => `${r.sender}:${r.createdBy}`).sort(),
       ["boss@example.test:you", "ci@forge.example.test:assistant", "friend@example.test:assistant"]);
+    const { matchingRule } = await import("../shared/rules.js");
+    const bossMail = { ...base_mail, address: "boss@example.test", subject: "Weekly report" };
+    const overlapping = { id: "overlap", accountId: "a", sender: "boss@example.test", instruction: "x", category: "other" as const, relevance: 1 as const,
+      condition: { field: "subject" as const, contains: "report" }, agentId: "synthetic", createdAt: Date.now() + 1000 };
+    assert.equal(matchingRule(bossMail, [...all("rule"), overlapping])!.id, "teach", "a Teach rule outranks a more specific assistant rule");
+    const { captureBackup, sealBackup } = await import("./workspace-backup.js");
+    await sealBackup(captureBackup(), "synthetic backup password");
     assert.equal((await call(agent, "remove_inbox_rule", { id: rule.id })).error, false);
     assert.equal(get("rule", rule.id), undefined);
     assert.equal(get("mail", "a:ci")!.category, "important", "removing the rule re-sorts cached mail");
