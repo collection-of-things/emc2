@@ -742,7 +742,7 @@ export function App() {
     (m) => m.direction !== "sent" && !m.archived && isSnoozed(m) && matchesLabel(m, activeLabel),
   ).length;
   const handledCount = state.messages.filter(
-    (m) => m.direction !== "sent" && !m.archived && m.handled && matchesLabel(m, activeLabel),
+    (m) => m.direction !== "sent" && !m.archived && !isSnoozed(m) && m.handled && matchesLabel(m, activeLabel),
   ).length;
   const executeAction = async <T,>(task: () => Promise<T>, success?: string, localUndo?: (result: T) => LocalMailUndo | undefined) => {
     try {

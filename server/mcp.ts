@@ -106,6 +106,7 @@ const filters = {
   offset: z.number().int().min(0).default(0),
 };
 class InvalidSearchError extends Error {}
+class HandledRefused extends Error {}
 
 function page(input: z.infer<z.ZodObject<typeof filters>>, allowedAccounts: string[], query?: string, syntax = "substring") {
   const searchAccounts = query && syntax === "app" ? all("account").filter((a) => allowedAccounts.includes(a.id)) : [];
@@ -178,6 +179,8 @@ export function createMcpServer(
     } catch (error) {
       if (error instanceof AgentRuleRefused)
         return json({ code: "MCP_RULE_REFUSED", error: error.message }, true);
+      if (error instanceof HandledRefused)
+        return json({ code: "MCP_HANDLED_REFUSED", error: error.message }, true);
       if (error instanceof InvalidSearchError)
         return json({ code: "MCP_INVALID_QUERY", error: "Invalid search. Check quotes, fields, and dates." }, true);
       if (error instanceof AgentPermissionError)
@@ -398,22 +401,27 @@ export function createMcpServer(
     annotations: localChange,
   }, async ({ id, reason }) => safe(async () => {
     permittedMail(id, "mark_handled");
+    if (get("mail", id)?.archived) throw new HandledRefused("Archived mail cannot be marked handled. It is already out of the Inbox.");
     const mail = await updateMessage(id, { action: "handle", reason }, undefined, undefined, undefined, { by: "agent", agentId, agentName: get("agent", agentId!)?.name });
     changed();
     return { email: handledState(mail) };
   })());
   server.registerTool("unmark_handled", {
-    description: "Return an email you or the user marked handled to the Inbox.",
+    description: "Return an email you marked handled to the Inbox. Refused for mail the user or another assistant marked handled.",
     inputSchema: { id: z.string() },
     annotations: localChange,
   }, async ({ id }) => safe(async () => {
     permittedMail(id, "mark_handled");
+    // An assistant must not silently undo the user's or another assistant's decision.
+    const handled = get("mail", id)?.handled;
+    if (handled && (handled.by !== "agent" || handled.agentId !== agentId))
+      throw new HandledRefused(handled.by === "agent" ? "Another assistant marked this email handled. Only it or the user can return it to the Inbox." : "The user marked this email handled. Only the user can return it to the Inbox.");
     const mail = await updateMessage(id, { action: "unhandle" });
     changed();
     return { email: handledState(mail) };
   })());
   server.registerTool("list_inbox_rules", {
-    description: "List the rules that route one account's mail to Inbox tabs, including rules the user set in Teach (createdBy \"you\"), which you cannot change.",
+    description: "List the rules that route one account's mail to Inbox tabs, including rules the user set in Teach (createdBy \"you\"), which you cannot change. A rule without a tab leaves the tab to automatic sorting.",
     inputSchema: { accountId: z.string().trim().min(1).max(2000) },
     annotations: readOnly,
   }, async ({ accountId }) => safe(() => ({ rules: listAgentRules(agentId || "", accountId) }))());

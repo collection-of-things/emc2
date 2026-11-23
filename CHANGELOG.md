@@ -18,7 +18,7 @@ unversioned history without treating it as a release record.
 
 - Mark handled takes an email out of the Inbox in Emc² only; the provider mailbox is unchanged. Handled mail is listed in the Handled view, shows who handled it and why, and Undo or Return to inbox brings it back. A new reply arrives in the Inbox as usual.
 - People you have written to stay in Primary even when their mail looks like a newsletter or promotion. Only your own Teach rule can move them.
-- Assistants can be granted two new permissions: Mark email handled (for example, a CI failure they already fixed) and Route senders to Inbox tabs. Both apply immediately without review, stay within the assistant's accounts, cannot demote people you have written to and cannot change your Teach rules. Rules an assistant set are labelled in Settings, where you can delete them.
+- Assistants can be granted two new permissions: Mark email handled (for example, a CI failure they already fixed) and Route senders to Inbox tabs. Both apply immediately without review, stay within the assistant's accounts, cannot demote people you have written to and cannot change your Teach rules. An assistant can change or remove only its own rules and return to the Inbox only mail it marked handled itself, and archived mail cannot be marked handled. Rules an assistant set are labelled in Settings, where you can delete them.
 
 ### Changed
 
