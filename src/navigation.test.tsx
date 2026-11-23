@@ -2249,7 +2249,10 @@ test("compose keyboard cycle reaches sidebar and toolbar without stealing editin
     await app.click(app.button("Show sidebar"));
     await act(async () => app.button("New message").focus());
     await app.key("Tab");
-    assert.equal(doc.activeElement === app.button("Mail"), true, "New message leads into the Mail section toggle");
+    assert.equal(doc.activeElement === app.button("Workspace"), true, "New message leads into the Workspace section toggle");
+    await app.key("Tab");
+    assert.equal(doc.activeElement === app.button("Today"), true, "Today is the first destination in Workspace");
+    await act(async () => app.button("Mail").focus());
     await app.key("Tab");
     assert.equal(doc.activeElement === app.button("Inbox"), true, "Inbox is the first destination in Mail");
     await app.key("Tab");
