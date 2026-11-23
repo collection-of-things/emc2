@@ -62,8 +62,9 @@ export function McpSection({
       </div>
       {open && <p className="note">
         Enable the local connection for external agents. Choose each assistant’s accounts
-        and permissions above. Mail changes need your review; direct project
-        and commitment creation needs a separate permission. The legacy token has no account access.
+        and permissions above. Mail changes need your review. Marking mail handled,
+        routing senders to Inbox tabs and creating projects and commitments apply
+        immediately and each needs its own permission. The legacy token has no account access.
       </p>}
       {error && <Notice text={error} />}
       {settings && (
