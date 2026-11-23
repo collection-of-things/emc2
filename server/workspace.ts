@@ -437,7 +437,7 @@ export function mountWorkspace(app: express.Express) {
         return fail(409, "Account changed during expansion.");
       for (const m of messages) {
         const old = get("mail", m.id);
-        put("mail", m.id, { ...m, category: old?.category || "important", relevance: old?.relevance || 2, reason: old?.reason || "Conversation evidence", archived: old?.archived ?? !m.labelIds?.includes("INBOX"), snoozedUntil: old?.snoozedUntil || null, ...(old?.pinned ? { pinned: true } : {}) });
+        put("mail", m.id, { ...m, category: old?.category || "important", relevance: old?.relevance || 2, reason: old?.reason || "Conversation evidence", archived: old?.archived ?? !m.labelIds?.includes("INBOX"), snoozedUntil: old?.snoozedUntil || null, ...(old?.pinned ? { pinned: true } : {}), ...(old?.handled ? { handled: old.handled } : {}) });
       }
     });
     res.json(conversation(mail.id));
