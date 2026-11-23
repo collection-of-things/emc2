@@ -16,7 +16,7 @@ unversioned history without treating it as a release record.
 
 ### Changed
 
-- The sidebar has quieter section labels, tighter rows, a rounded account marker and an icon for All accounts; the Drafts icon matches the other icons. On macOS 26 the app name no longer crowds the larger window buttons.
+- The sidebar lists Workspace above Mail and has quieter section labels, tighter rows, a rounded account marker and an icon for All accounts; the Drafts icon matches the other icons. On macOS 26 the app name no longer crowds the larger window buttons.
 
 ### Fixed
 
