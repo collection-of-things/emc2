@@ -28,6 +28,9 @@ const category = (m: Mail) =>
     : m.snoozedUntil && m.snoozedUntil > Date.now()
       ? "snoozed"
       : m.category;
+const handledSummary = (m: Mail, names?: readonly string[]) => m.handled
+  ? { at: new Date(m.handled.at).toISOString(), by: m.handled.by, ...(m.handled.reason ? { reason: names ? redactPrivateText(m.handled.reason, names) : m.handled.reason } : {}) }
+  : undefined;
 const summary = (m: Mail) => ({
   id: m.id,
   from: { name: m.sender, address: m.address },
@@ -42,8 +45,10 @@ const summary = (m: Mail) => ({
   direction: m.direction || "received",
   pinned: m.pinned === true,
   snoozedUntil: m.snoozedUntil ?? null,
-  ...(m.handled ? { handled: { at: new Date(m.handled.at).toISOString(), by: m.handled.by, ...(m.handled.reason ? { reason: m.handled.reason } : {}) } } : {}),
+  ...(m.handled ? { handled: handledSummary(m) } : {}),
 });
+// The Handled grant alone does not allow reading mail.
+const handledState = (m: Mail) => ({ id: m.id, handled: handledSummary(m) ?? null });
 const full = (m: Mail) => ({
   ...summary(m),
   body: m.body,
@@ -64,6 +69,7 @@ const redactedSummary = (m: Mail, names: readonly string[]) => ({
   to: redactAddress(m.to, names),
   subject: redactPrivateText(m.subject, names),
   preview: redactPrivateText(m.preview, names),
+  ...(m.handled ? { handled: handledSummary(m, names) } : {}),
 });
 // Message-IDs carry unique tokens and internal hostnames, so mask them whole.
 const redactMessageId = (id: string | null | undefined) => {
@@ -394,7 +400,7 @@ export function createMcpServer(
     permittedMail(id, "mark_handled");
     const mail = await updateMessage(id, { action: "handle", reason }, undefined, undefined, undefined, { by: "agent", agentId, agentName: get("agent", agentId!)?.name });
     changed();
-    return { email: summary(mail) };
+    return { email: handledState(mail) };
   })());
   server.registerTool("unmark_handled", {
     description: "Return an email you or the user marked handled to the Inbox.",
@@ -404,7 +410,7 @@ export function createMcpServer(
     permittedMail(id, "mark_handled");
     const mail = await updateMessage(id, { action: "unhandle" });
     changed();
-    return { email: summary(mail) };
+    return { email: handledState(mail) };
   })());
   server.registerTool("list_inbox_rules", {
     description: "List the rules that route one account's mail to Inbox tabs, including rules the user set in Teach (createdBy \"you\"), which you cannot change.",
