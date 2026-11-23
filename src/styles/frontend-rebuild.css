@@ -45,7 +45,10 @@
 .sidebar-heading button { min-height: calc(28px * var(--text-scale, 1)); padding: 0 10px; color: var(--text-3); }
 .sidebar-heading button:hover { color: var(--text-2); }
 .sidebar-group > button { min-height: calc(30px * var(--text-scale, 1)); padding-inline: 10px; gap: 10px; border-radius: var(--radius-control); font-size: calc(13px * var(--text-scale, 1)); }
-.sidebar-group > button:disabled:not(.active) { color: var(--disabled-ink, var(--text-4)); }
+/* Disabled rows take --disabled-ink alone, like Settings, instead of also
+   inheriting the global :disabled opacity. */
+.sidebar-group > button:disabled:not(.active) { opacity: 1; color: var(--disabled-ink, var(--text-4)); }
+.sidebar-group > button:disabled:not(.active) > :is(svg, .drafts-mark, .sidebar-count) { color: inherit; }
 /* Selection is the accent-soft fill with its own ink, never an outline. */
 .sidebar-group:not(.sidebar-accounts) > button.active { color: var(--accent-soft-ink); font-weight: 600; }
 /* The drafts mark paints with currentColor, so it takes the icons' muted ink. */

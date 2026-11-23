@@ -352,4 +352,10 @@
     --glass-cover: var(--surface);
     --glass-cover-blur: none;
   }
+  /* Opaque covers cannot band, so headings pin again like the other sticky
+     surfaces. */
+  :root[data-glass] .sidebar-heading {
+    position: sticky;
+    background: var(--glass-cover);
+  }
 }

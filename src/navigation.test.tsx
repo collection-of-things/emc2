@@ -3170,6 +3170,11 @@ test("section headings pin under the sidebar head and account status sits on the
     "other sticky surfaces blur without stacking a second tint");
   assert.match(tokens, /prefers-reduced-transparency:\s*reduce\)\s*\{[^@]*--glass-cover:\s*var\(--surface\)/s,
     "with Reduce transparency the covers turn opaque so rows cannot show through");
+  assert.match(tokens, /prefers-reduced-transparency:\s*reduce\)\s*\{[^@]*:root\[data-glass\] \.sidebar-heading\s*\{[^}]*position:\s*sticky;[^}]*background:\s*var\(--glass-cover\)/s,
+    "with Reduce transparency the headings pin again on the opaque cover");
+  const rebuild = readFileSync(new URL("./styles/frontend-rebuild.css", import.meta.url), "utf8");
+  assert.match(rebuild, /\.sidebar-group > button:disabled:not\(\.active\)\s*\{[^}]*opacity:\s*1;[^}]*color:\s*var\(--disabled-ink/s,
+    "disabled rows use the disabled ink without the global opacity on top");
 });
 
 test("persistent density agrees between Appearance, shortcut and Commands", async () => {
