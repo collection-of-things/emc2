@@ -1,6 +1,6 @@
 import type { MailLocation } from "../navigation";
 import { inboxTabs, type InboxTab } from "../../shared/inbox-tabs";
-import { Archive, Bell, Clock, Inbox, Megaphone, Newspaper, Receipt, Users, Check, Reply, Calendar, Folder, Cpu, MailStack } from "../ui/icons";
+import { Archive, Bell, Clock, Inbox, Megaphone, Newspaper, Receipt, Users, Check, CircleCheck, Reply, Calendar, Folder, Cpu, MailStack } from "../ui/icons";
 
 export type View = MailLocation["view"];
 export const viewOrder: View[] = ["actions", "calendar", "projects", "agents", "contacts", "inbox", "snoozed", "handled", "archive", "sent", "all", "drafts"];
@@ -13,7 +13,7 @@ export const sidebarViews = [
   { view: "contacts", Icon: Users },
   { view: "inbox", Icon: Inbox },
   { view: "snoozed", Icon: Clock },
-  { view: "handled", Icon: Check },
+  { view: "handled", Icon: CircleCheck },
   { view: "archive", Icon: Archive },
   { view: "sent", Icon: Reply },
   { view: "all", Icon: MailStack },

@@ -1,6 +1,6 @@
 import type { ComponentType, MouseEvent } from "react";
 import type { RendererMail as Mail } from "../../shared/types";
-import { Archive, CalendarPlus, Check, ChevronDown, ChevronUp, Clock, Close, Inbox, Mail as MailUnread, Pin, Reply, Sun, TaskSquare, Trash } from "../ui/icons";
+import { Archive, CalendarPlus, Check, ChevronDown, ChevronUp, CircleCheck, Clock, Close, Inbox, Mail as MailUnread, Pin, Reply, Sun, TaskSquare, Trash } from "../ui/icons";
 
 type Icon = ComponentType<{ color?: string; size?: number }>;
 
@@ -75,7 +75,7 @@ export function MailActions({
         <Tool label="Archive" title={`Archive in your provider (${shortcut("done")})`} Icon={Archive}
           disabled={mutationBusy || syncing || mail.archived || mail.direction === "sent"} onClick={onArchive} />
         {mail.handled ? onUnhandle && <Tool label="Return to inbox" title="Return to inbox (undo Handled)" Icon={Inbox} disabled={mutationBusy} onClick={onUnhandle} />
-          : onHandle && <Tool label="Mark handled" text="Handled" title="Mark handled: leaves the Inbox in this app only; the provider mailbox is unchanged" Icon={Check}
+          : onHandle && <Tool label="Mark handled" text="Handled" title="Mark handled: leaves the Inbox in this app only; the provider mailbox is unchanged" Icon={CircleCheck}
             disabled={mutationBusy || mail.archived || mail.direction === "sent"} onClick={onHandle} />}
         {onInbox && mail.archived && <Tool label="Move to Inbox" Icon={Inbox} disabled={mutationBusy || syncing || mail.direction === "sent"} onClick={onInbox} />}
         <Tool label="Move to Trash" text="Trash" title={trashUnavailable || "Move to Trash"} Icon={Trash}
