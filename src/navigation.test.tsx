@@ -1456,11 +1456,6 @@ test("sidebar sections fold away and stay folded after a restart", async () => {
       [...app.container.querySelectorAll(".sidebar-heading button")].map((button) => button.textContent?.trim()),
       ["Workspace", "Mail", "Accounts"],
       "sidebar group order is a maintainer decision (ADR 0139); do not reorder");
-    await act(async () => app.button("Workspace").focus());
-    for (const name of ["Today", "Calendar", "Projects", "Agent review", "Contacts", "Mail"]) {
-      await app.key("Tab");
-      assert.equal(app.window.document.activeElement, app.button(name), `Workspace precedes Mail: ${name}`);
-    }
     await app.click(app.button("Accounts"));
     assert.equal(app.accountButtons().length, 0);
     assert.equal(app.button("Accounts").getAttribute("aria-expanded"), "false");
@@ -2262,9 +2257,12 @@ test("compose keyboard cycle reaches sidebar and toolbar without stealing editin
     await act(async () => app.button("New message").focus());
     await app.key("Tab");
     assert.equal(doc.activeElement === app.button("Workspace"), true, "New message leads into the Workspace section toggle");
-    await app.key("Tab");
-    assert.equal(doc.activeElement === app.button("Today"), true, "Today is the first destination in Workspace");
-    await act(async () => app.button("Mail").focus());
+    // The composer implements Tab traversal explicitly; check the full
+    // sidebar order while that cycle is active.
+    for (const name of ["Today", "Calendar", "Projects", "Agent review", "Contacts", "Mail"]) {
+      await app.key("Tab");
+      assert.equal(doc.activeElement === app.button(name), true, `Workspace precedes Mail: ${name}`);
+    }
     await app.key("Tab");
     assert.equal(doc.activeElement === app.button("Inbox"), true, "Inbox is the first destination in Mail");
     await app.key("Tab");
