@@ -89,7 +89,10 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     assert.ok(!inbox.value.emails.some((m: { id: string }) => m.id === "a:ci"), "handled mail leaves the MCP Inbox view");
     const other = await grant(["mark_handled"]);
     assert.equal((await call(other, "unmark_handled", { id: "a:ci" })).value.code, "MCP_HANDLED_REFUSED", "another assistant cannot clear this mark");
-    assert.ok(get("mail", "a:ci")!.handled);
+    assert.equal((await call(other, "mark_handled", { id: "a:ci", reason: "Synthetic takeover" })).value.code, "MCP_HANDLED_REFUSED", "another assistant cannot take this mark over");
+    assert.equal(get("mail", "a:ci")!.handled?.reason, "CI fix pushed in synthetic PR");
+    assert.equal((await call(agent, "mark_handled", { id: "a:ci", reason: "Updated synthetic reason" })).error, false, "the owner can update its own mark");
+    assert.equal(get("mail", "a:ci")!.handled?.reason, "Updated synthetic reason");
     assert.equal((await call(agent, "unmark_handled", { id: "a:ci" })).error, false);
     assert.equal(get("mail", "a:ci")!.handled, undefined);
     const archived = await call(agent, "mark_handled", { id: "a:old", reason: "Fixed" });
@@ -103,6 +106,11 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     const refused = await call(agent, "unmark_handled", { id: "a:ci" });
     assert.equal(refused.value.code, "MCP_HANDLED_REFUSED");
     assert.equal(get("mail", "a:ci")!.handled?.by, "you");
+    // Re-marking first would make the mark the assistant's, which it could then clear.
+    const takeover = await call(agent, "mark_handled", { id: "a:ci", reason: "Synthetic takeover" });
+    assert.equal(takeover.value.code, "MCP_HANDLED_REFUSED");
+    assert.equal(get("mail", "a:ci")!.handled?.by, "you", "the user's mark is not replaced");
+    assert.equal((await call(agent, "unmark_handled", { id: "a:ci" })).value.code, "MCP_HANDLED_REFUSED");
     assert.equal((await fetch(`${base}/api/messages/a:ci`, { method: "PATCH", headers: authorized, body: JSON.stringify({ action: "unhandle" }) })).status, 200);
     assert.equal(get("mail", "a:ci")!.handled, undefined);
   });
