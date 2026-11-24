@@ -11,25 +11,19 @@ test("protocol search budgets apply before compact range expansion", async () =>
     [["1:4294967295"], false], [["1:6000", "6001:12000"], false], [["2:4,8"], [2, 3, 4, 8]],
   ] as const) {
     let closed = false;
-    const warnings: string[] = [];
     const client = {
-      state: 3, states: { SELECTED: 3 }, mailbox: { exists: 4294967295 },
-      log: { warn(entry: { err?: Error }) { if (entry.err) warnings.push(entry.err.message); } },
+      state: 3, states: { SELECTED: 3 }, mailbox: { exists: 4294967295 }, log: { warn() {} },
       close() { closed = true; },
-      async exec(_command: string, _attrs: unknown, options: {
-        untagged: Record<string, (response: { attributes: { type: string; value: string }[] }) => Promise<void>>;
-      }) {
+      async exec(_command: string, _attrs: unknown, options: any) {
         for (const range of ranges) await options.untagged.ESEARCH({ attributes: [{ type: "ATOM", value: "ALL" }, { type: "ATOM", value: range }] });
         return { next() {} };
       },
     };
     guardSearchExpansion(client as unknown as ImapFlow);
     const started = performance.now();
-    // ImapFlow 2 logs command errors and returns false after the guard closes.
-    assert.deepEqual(await search(client, true, { uid: true }), expected);
+    if (expected === false) await assert.rejects(search(client, true, { uid: true }), /safe result limit/);
+    else assert.deepEqual(await search(client, true, { uid: true }), expected);
     assert.equal(closed, expected === false);
-    if (expected === false) assert.match(warnings.join("\n"), /safe result limit/);
-    else assert.deepEqual(warnings, []);
     assert.ok(performance.now() - started < 1000);
   }
 });
