@@ -27,6 +27,20 @@ unversioned history without treating it as a release record.
 - On phones, search and Commands share a row and the Inbox category picker keeps its full touch area.
 
 - New installs open on a neutral dark Graphite theme with a blue accent, app text uses the system font, compact mail rows grow to 28px and email bodies read at 15px with roomier spacing. Sender text that is too low-contrast to read is now recolored at the stricter small-text minimum. In dark mode, the email toolbar can draw the open message body on a light background, and the compose editor writes on the same light surface. The Mass theme stays available in Settings, Appearance, and existing choices are untouched.
+- Sidebar sizing and spacing stay aligned with [#276](https://github.com/collection-of-things/emc2/pull/276) and [#284](https://github.com/collection-of-things/emc2/pull/284), while provider marks show their brand colors again, sender avatars and signature controls take the brand's asymmetric corner shape, each Inbox category tints its tab icon, and sorting reasons read as quiet chips.
+
+### Added
+
+- Fastmail and Yahoo show their real marks, and custom IMAP accounts with Outlook, Proton, Zoho, AOL, GMX, Yandex, Tuta, mailbox.org, HEY or Posteo addresses show that provider's mark.
+- Sender logos can come from the domain's own BIMI record when the brand library has no entry.
+
+### Fixed
+
+- The sidebar lists Workspace above Mail again, then Accounts.
+- Mail row dividers run the full width of the list, and date headings close with a heavier rule.
+- Drafts account tabs match the Inbox tabs and show each account's mark, and draft account labels sit under the recipient.
+- Opening and closing a new message no longer leaves a signature-only draft.
+- Mail row dividers stay visible while another row is hovered.
 
 ### Documentation
 

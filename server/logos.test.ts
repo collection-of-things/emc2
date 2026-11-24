@@ -10,6 +10,7 @@ import {
   matchDomain,
   normalizeDomain,
   registrableDomain,
+  setBimiSource,
   syncLogos,
   variantOf,
 } from "./logos.js";
@@ -99,7 +100,11 @@ const use = (dir: string) => {
   process.env.MAIL_DATA_DIR = dir;
   return dir;
 };
+// BIMI is stubbed off for the whole file so no test does real DNS; the two
+// BIMI tests swap in their own source and restore this one afterwards.
+const restoreBimi = setBimiSource(async () => null);
 after(() => {
+  restoreBimi();
   for (const dir of dataDirs) rmSync(dir, { recursive: true, force: true });
 });
 
@@ -296,4 +301,33 @@ test("a rejected SVG refresh preserves the expired image on disk", async (t) => 
   respond(t, (url) => url.endsWith("/registry.json") ? asRegistry() : new Response("not an image"));
   assert.equal((await companySvg("github.com"))?.body.toString(), previous);
   assert.equal(readFileSync(file, "utf8"), previous);
+});
+
+test("a domain the registry does not know uses its BIMI logo", async (t) => {
+  const dir = use(freshDataDir());
+  respond(t, (url) => url.endsWith("/registry.json") ? asRegistry() : new Response("not an image"));
+  const restore = setBimiSource(async () => ({ body: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><title>BIMI</title></svg>'), type: "image/svg+xml" }));
+  try {
+    assert.equal((await companySvg("sender@bimi-only.example"))?.body.toString(), '<svg xmlns="http://www.w3.org/2000/svg"><title>BIMI</title></svg>');
+    assert.equal(readFileSync(path.join(dir, "logos", "bimi-only.example.svg"), "utf8"), '<svg xmlns="http://www.w3.org/2000/svg"><title>BIMI</title></svg>');
+  } finally {
+    restore();
+  }
+});
+
+test("a registry match never reaches the BIMI lookup", async (t) => {
+  use(freshDataDir());
+  respond(t, (url) => {
+    if (url.endsWith("/registry.json")) return asRegistry();
+    if (url.includes("/github/")) return asSvg();
+    return new Response("not an image");
+  });
+  let called = false;
+  const restore = setBimiSource(async () => { called = true; return null; });
+  try {
+    assert.ok(await companySvg("no-reply@github.com"));
+    assert.equal(called, false);
+  } finally {
+    restore();
+  }
 });

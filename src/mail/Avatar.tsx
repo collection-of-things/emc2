@@ -2,20 +2,23 @@ import { memo, useContext, useState } from "react";
 import { logoDomain, type Mail, type Provider } from "../../shared/types";
 import { PrivacyContext } from "../ui/Privacy";
 import { Cloud, Gmail, Mail as MailIcon } from "../ui/icons";
+import { mailBrand, providerMarks } from "../ui/provider-marks";
 
-export function ProviderIcon({ provider }: { provider: Provider }) {
+// The account's provider mark: drawn icons for Gmail and iCloud, a bundled
+// brand SVG for Fastmail, Yahoo and the IMAP hosts recognized from the
+// address domain, and a neutral envelope for anything else.
+export function ProviderIcon({ provider, email }: { provider: Provider; email?: string }) {
+  const brand = mailBrand(provider, email);
   return (
-    <span className={`provider-icon ${provider === "gmail-imap" ? "gmail" : provider}`} aria-hidden="true">
-      {provider === "gmail" || provider === "gmail-imap" ? (
+    <span className={`provider-icon ${provider === "gmail-imap" ? "gmail" : provider}`} data-brand={brand ?? undefined} aria-hidden="true">
+      {brand ? (
+        <img src={providerMarks[brand]} alt="" draggable={false} />
+      ) : provider === "gmail" || provider === "gmail-imap" ? (
         <Gmail />
       ) : provider === "icloud" ? (
         <Cloud />
-      ) : provider === "imap" ? (
-        <MailIcon color="currentColor" />
       ) : (
-        <b>
-          {provider === "fastmail" ? "F" : "y!"}
-        </b>
+        <MailIcon color="currentColor" />
       )}
     </span>
   );

@@ -117,12 +117,12 @@
   border-radius: 50%;
   background: var(--accent);
 }
-/* Hairlines between rows start at the text and run to the pane edge; they
-   give way around the selection and hover. */
+/* Hairlines between rows run the full width of the pane and stay put on
+   hover, so pointing at one row never erases its neighbours' rules. */
 .row::after {
   content: "";
   position: absolute;
-  left: calc(var(--row-gutter, 16px) + var(--avatar-size) + var(--avatar-gap));
+  left: 0;
   right: 0;
   bottom: 0;
   height: 1px;
@@ -130,11 +130,10 @@
   pointer-events: none;
 }
 /* Each message sits alone in its .mail-window-row wrapper, so neighbours are
-   matched across wrappers: a row's line hides when it or the row below is
-   hovered, selected or bulk-selected, so fills never carry a stray rule. */
+   matched across wrappers: only the selected row, which draws its own edge,
+   drops its line and the line of the row above it. */
 .row.selected::after,
-.mail-row:is(:hover, .bulk-selected) .row::after,
-.mail-window-row:has(+ .mail-window-row :is(.row.selected, .mail-row:hover, .mail-row.bulk-selected)) .row::after {
+.mail-window-row:has(+ .mail-window-row .row.selected) .row::after {
   opacity: 0;
 }
 .row:focus-visible {
@@ -167,7 +166,7 @@
   width: 100%;
   height: 100%;
   padding: 3px;
-  border-radius: 50%;
+  border-radius: var(--radius-avatar);
   background: #ededed;
   object-fit: contain;
 }
@@ -177,7 +176,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-avatar);
   background: var(--avatar);
   color: var(--avatar-text);
   font-size: calc(10.5px * var(--text-scale, 1));
@@ -258,6 +257,9 @@
 .row-line .row-preview {
   flex: 1 1 0;
 }
+/* Status reasons read as quiet chips: a hover tint behind muted ink. The
+   label stays on the shared baseline and ellipsizes inside the capped
+   status column. */
 .row-label {
   display: inline-block;
   max-width: 100%;
@@ -265,11 +267,14 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   vertical-align: baseline;
+  padding: 1px 6px;
+  border-radius: var(--radius-mark-sm);
+  background: var(--hover);
   font-size: calc(12px * var(--text-scale, 1));
-  color: var(--text-3);
+  color: var(--text-2);
 }
-/* Attention reasons are the one loud element in the meta line. Visible
-   overflow keeps the pill's own text on the shared baseline. */
+/* Attention is the only accent chip; other reasons are neutral chips.
+   Visible overflow keeps the pill's own text on the shared baseline. */
 .row-label-attention {
   overflow: visible;
   padding: 1px 6px;

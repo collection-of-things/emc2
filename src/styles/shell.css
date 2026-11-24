@@ -174,8 +174,9 @@
 .traffic.right {
   flex-direction: row-reverse;
 }
-/* Provider marks render monochrome in the chrome: Gmail, iCloud, Fastmail,
-   Yahoo, custom IMAP. Sender logos on avatars are content and stay colored. */
+/* Provider marks keep their brand colors so accounts are recognizable at a
+   glance; custom IMAP stays neutral. Marks whose brand is bundled render as
+   the full tile image; sender logos on avatars are content and stay colored. */
 .provider-icon {
   width: 13px;
   height: 13px;
@@ -189,21 +190,31 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.provider-icon b {
-  font-weight: 500;
-  letter-spacing: -0.04em;
-}
 .provider-icon svg {
   width: 68%;
   height: 68%;
-}
-.provider-icon svg path {
-  fill: currentColor;
 }
 .provider-icon.gmail svg,
 .provider-icon.imap svg {
   width: 100%;
   height: 100%;
+}
+.provider-icon.icloud {
+  color: #3d9bff;
+}
+:root[data-scheme="light"] .provider-icon.icloud {
+  color: #1877d6;
+}
+.provider-icon.icloud svg path {
+  fill: currentColor;
+}
+.provider-icon[data-brand] {
+  background: transparent;
+}
+.provider-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* The sidebar and working panes sit flush, divided by hairlines. */

@@ -591,3 +591,28 @@ test("formatted draft save, lost acknowledgement, restart and separate copy reta
   assert.equal(copy.content.html, restarted.content.html);
   assert.equal(copy.content.sendUnknown, true);
 });
+
+test("an untouched signature alone never creates a draft", async () => {
+  const { session, requests } = fixture();
+  const composer = session({ accountId: "synthetic", to: [], subject: "", body: "\n\n-- \nSignature A" });
+  composer.change(composer.content);
+  await composer.flush();
+  assert.equal(requests.length, 0);
+  assert.equal(composer.dirty, false);
+});
+
+test("typing into a signature-only message saves the draft", async () => {
+  const { session, methods } = fixture();
+  const composer = session({ accountId: "synthetic", to: [], subject: "", body: "\n\n-- \nSignature A" });
+  composer.change({ ...composer.content, body: "Hi\n\n-- \nSignature A" });
+  await composer.flush();
+  assert.deepEqual(methods(), ["POST"]);
+});
+
+test("an untouched reply still saves with its thread tie", async () => {
+  const { session, methods } = fixture();
+  const composer = session({ accountId: "synthetic", to: [], subject: "", body: "\n\n-- \nSignature A", inReplyTo: "<synthetic@example.test>" });
+  composer.change(composer.content);
+  await composer.flush();
+  assert.deepEqual(methods(), ["POST"]);
+});

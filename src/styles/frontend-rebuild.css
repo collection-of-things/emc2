@@ -35,7 +35,7 @@
 .sidebar-content { padding: 6px 12px 16px; }
 .sidebar-primary > .primary-button.new-message:first-of-type {
   min-height: 38px; height: auto; justify-content: flex-start;
-  gap: 10px; padding: 8px 12px; text-transform: none; border-radius: var(--radius-control);
+  gap: 10px; padding: 8px 12px; text-transform: none; border-radius: var(--radius-mark-sm);
 }
 .sidebar-primary > .new-message svg { color: inherit; }
 .drafts-mark { width: 16px; height: 16px; flex-shrink: 0; background: currentColor; mask: center / contain no-repeat; -webkit-mask: center / contain no-repeat; }
@@ -44,7 +44,7 @@
    chevron shows on hover, on focus and while folded. */
 .sidebar-heading button { min-height: calc(28px * var(--text-scale, 1)); padding: 0 10px; color: var(--text-3); }
 .sidebar-heading button:hover { color: var(--text-2); }
-.sidebar-group > button { min-height: calc(30px * var(--text-scale, 1)); padding-inline: 10px; gap: 10px; border-radius: var(--radius-control); font-size: calc(13px * var(--text-scale, 1)); }
+.sidebar-group > button { min-height: calc(30px * var(--text-scale, 1)); padding-inline: 10px; gap: 10px; border-radius: var(--radius-mark-sm); font-size: calc(13px * var(--text-scale, 1)); }
 /* Disabled rows take --disabled-ink alone, like Settings, instead of also
    inheriting the global :disabled opacity. */
 .sidebar-group > button:disabled:not(.active) { opacity: 1; color: var(--disabled-ink, var(--text-4)); }
@@ -75,9 +75,9 @@
 .sidebar-account-footer { flex-shrink: 0; width: var(--sidebar); padding: 8px 12px 4px; border-top: 1px solid var(--line); }
 /* The account card's icon aligns to the first text line so a wrapped second
    line doesn't drop it mid-cell. */
-.sidebar-account-card { display: flex; align-items: flex-start; width: 100%; min-height: 44px; gap: 10px; padding: 4px; border-radius: 8px; }
+.sidebar-account-card { display: flex; align-items: flex-start; width: 100%; min-height: 44px; gap: 10px; padding: 4px; border-radius: var(--radius-mark-sm); }
 .sidebar-account-card:hover { background: var(--hover); }
-.sidebar-account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text-3); }
+.sidebar-account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px; border: 1px solid var(--line); border-radius: var(--radius-mark-sm); background: var(--surface); color: var(--text-3); }
 .sidebar-account-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sidebar-account-text > strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 /* The connected-accounts line may wrap to two lines; the card grows to fit. */
@@ -113,7 +113,7 @@
 .mail-category-bar { padding-inline: var(--select-gutter) 24px; column-gap: 12px; container-type: inline-size; container-name: category-bar; }
 .mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs { gap: 6px; }
 :is(.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs) button {
-  min-height: 32px; align-self: center; padding-inline: 9px; border-radius: var(--radius-control); font-size: calc(12px * var(--text-scale, 1)); font-weight: 500;
+  min-height: 32px; height: auto; align-self: center; padding-inline: 9px; border-radius: var(--radius-mark-sm); font-size: calc(12px * var(--text-scale, 1)); font-weight: 500;
 }
 :is(.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs) button:hover:not(:disabled) { background: var(--hover); }
 :is(.mail-category-bar .inbox-tabs, .draft-account-tabs, .head-tools .work-view-tabs) :is(button.active, button[aria-pressed="true"]) {
@@ -121,6 +121,15 @@
 }
 .mail-category-bar .inbox-tabs .sliding-wash { display: none; }
 .mail-category-bar .tab-icon { display: inline-flex; }
+/* Each Inbox category keeps one hue on its icon in every theme; Primary
+   takes the accent. Only the icon is tinted; the label, count and active
+   pill keep their ink. */
+.inbox-tabs button[data-tab="primary"] > svg { color: var(--accent); }
+.inbox-tabs button[data-tab="social"] > svg { color: var(--tab-social); }
+.inbox-tabs button[data-tab="promotions"] > svg { color: var(--tab-promotions); }
+.inbox-tabs button[data-tab="newsletters"] > svg { color: var(--tab-newsletters); }
+.inbox-tabs button[data-tab="transactions"] > svg { color: var(--tab-transactions); }
+.inbox-tabs button[data-tab="updates"] > svg { color: var(--tab-updates); }
 .tab-count { border-radius: 6px; }
 
 /* Rows stay flush with the edges of the list and retain their measured slots. */
@@ -128,7 +137,9 @@
 /* Rows run edge to edge: hover and selection fills meet both pane edges, and
    only text keeps an inset. */
 .workspace .list { padding-inline: 0; }
-.mail-window-date .group { padding-inline: var(--row-inset, 16px); border-bottom: 1px solid var(--line); }
+/* A date heading closes with a heavier rule than the row hairlines, so a new
+   period reads as a section break. */
+.mail-window-date .group { padding-inline: var(--row-inset, 16px); border-bottom: 2px solid var(--line-2); }
 /* The sticky date header must cover the row band fully while rows slide
    under it, so it keeps an opaque canvas. */
 :root:not([data-glass]) .mail-window-date { background: var(--rebuild-canvas); }
@@ -167,7 +178,7 @@
 /* The status label is plain text here: as an inline-block with hidden
    overflow its baseline would come from its bottom margin edge, which lifts
    the status text and its middot off the shared baseline. Inline keeps it on
-   the strut; the status itself caps and ellipsizes, and the attention chip's
+   the strut; the status itself caps and ellipsizes, and the status chips'
    padding still paints on inline display. */
 .row.card :is(.row-preview, .row-subject-line) .row-label { display: inline; }
 /* An 8px space separates the meta parts from the quieter preview text. */
@@ -265,6 +276,11 @@
 /* Saved drafts use the same flush rows and type hierarchy as mail. */
 .draft-tab-bar { height: 44px; }
 .draft-account-tabs { padding-inline: 16px; background: transparent; }
+/* Draft account tabs carry the same leading mark as the Inbox tabs: the
+   mail-stack icon on All and the account's provider mark on each account. */
+.draft-account-tabs button { gap: 7px; }
+.draft-account-tabs button > svg, .draft-account-tabs .provider-icon { width: calc(15px * var(--text-scale, 1)); height: calc(15px * var(--text-scale, 1)); flex-shrink: 0; }
+.draft-account-tabs button > svg { color: var(--accent); }
 .draft-list { padding: 0 0 24px; }
 .draft-list-heading { padding: 10px 24px; color: var(--text-3); }
 .draft-list > ul { gap: 0; }

@@ -4,7 +4,8 @@ import type { Account, Draft, DraftSummary } from "../../shared/types";
 import type { Api } from "../api";
 import { accountLabel } from "../mail-ui";
 import { PrivacyContext } from "../ui/Privacy";
-import { Trash } from "../ui/icons";
+import { MailStack, Trash } from "../ui/icons";
+import { ProviderIcon } from "../mail/Avatar";
 import { useMailSearch } from "../use-mail-search";
 import { relative } from "../mail/format";
 
@@ -119,9 +120,10 @@ export function DraftList({ accounts, api, accountFilter, query, refreshKey, act
   return <>
     <div className="draft-tab-bar">
     {onAccount && <nav className="draft-account-tabs" aria-label="Draft accounts">
-      {[{ id: "all", label: "All" }, ...accounts.map((account, index) => ({ id: account.id, label: accountLabel(account, index, privateText, accounts) }))].map(({ id, label }) => (
+      {[{ id: "all", label: "All", account: undefined }, ...accounts.map((account, index) => ({ id: account.id, label: accountLabel(account, index, privateText, accounts), account }))].map(({ id, label, account }) => (
         <button type="button" key={id} aria-pressed={accountFilter === id} disabled={!active || opening}
           onClick={() => onAccount(id)}>
+          {account ? <ProviderIcon provider={account.provider} email={account.email} /> : <MailStack size={15} />}
           <span className="draft-account-label">{label}</span>
           {(searching ? !pending && !search.error : loaded && !unavailable) && <span className="tab-count" data-zero={(id === "all" ? available.length : available.filter((draft) => draft.accountId === id).length) === 0 ? "" : undefined}>{id === "all" ? available.length : available.filter((draft) => draft.accountId === id).length}</span>}
         </button>

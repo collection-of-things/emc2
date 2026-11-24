@@ -32,10 +32,26 @@ const discardError = "Draft could not be discarded. Your changes are still here.
 const same = (left: Compose, right: Compose) =>
   JSON.stringify(composeContent(left)) === JSON.stringify(composeContent(right));
 
+// An untouched signature prefill: every field empty except a body made only
+// of the signature suffix (the "\n\n-- \n" prefix written by signatureSuffix
+// in ComposePreferences). Typing inserts before the suffix, so authored
+// content never matches this shape.
+const signaturePrefill = (value: Compose): boolean =>
+  value.body.startsWith("\n\n-- \n") && !value.to.some(Boolean) && !value.subject &&
+  !value.inReplyTo && !value.threadId && !value.references?.length && !value.cc?.length &&
+  !value.bcc?.length && !value.attachments?.length && !value.sendUnknown && !value.html && !value.invitation;
+
 export class DraftSession {
   public content: Compose;
   public stored: Draft | undefined;
   private readonly accountId: string;
+  // The content the composer opened with, so prefilled text such as a
+  // signature alone never creates a draft. It is only set when the initial
+  // content is exactly a signature prefill; a composer opened with authored
+  // content (a separate copy or an account switch) must still save. Stored
+  // drafts leave it unset: their needsSave check compares against the
+  // stored record instead.
+  private readonly opened: Compose | undefined;
   private running: Promise<void> | undefined;
   private failure: Error | undefined;
   private inFlight: Compose | undefined;
@@ -58,13 +74,20 @@ export class DraftSession {
         ...this.content, id: initial.id, revision: initial.revision,
         updatedAt: initial.updatedAt, sendUnknown: Boolean(initial.sendUnknown),
       };
+    } else {
+      this.opened = signaturePrefill(this.content) ? this.content : undefined;
     }
   }
 
+  // An unstored draft needs saving once it holds something the composer did
+  // not open with: a recipient, subject or thread tie counts, and the body
+  // counts only once the content differs from the opened text, so a
+  // signature alone does not create a draft.
   private get needsSave(): boolean {
     if (this.stored) return !same(this.content, this.stored);
     const value = this.content;
-    return Boolean(value.to.some(Boolean) || value.subject || value.body || value.inReplyTo ||
+    return Boolean(value.to.some(Boolean) || value.subject ||
+      (value.body && !(this.opened && same(value, this.opened))) || value.inReplyTo ||
       value.threadId || value.references?.length || value.cc?.length || value.bcc?.length || value.attachments?.length || value.sendUnknown);
   }
 

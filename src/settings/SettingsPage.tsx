@@ -158,7 +158,7 @@ export function SettingsPage({
           {state.accounts.length ? (
             <div className="settings-group">{state.accounts.map((a, index) => (
               <Fragment key={a.id}><div className="account-row" id={`settings-account-${a.id}`} tabIndex={-1} role="group" aria-label={accountLabel(a, index, privacy, state.accounts)}>
-                <ProviderIcon provider={a.provider} />
+                <ProviderIcon provider={a.provider} email={a.email} />
                 <strong>
                   {accountLabel(a, index, privacy, state.accounts)}
                 </strong>
