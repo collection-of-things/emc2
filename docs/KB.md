@@ -76,7 +76,12 @@ be public; the connector can try the validated addresses without another DNS
 lookup. Provider requests use Undici's fetch with its matching Agent, HTTP/1.1
 only, normal TLS certificate verification, no proxy dispatcher and no redirects.
 IMAP searches retain the newest bounded UIDs and report incomplete
-results when truncated. An unbound archived destructive move requires an exact
+results when truncated. ImapFlow 2 catches a search-budget error and returns
+`false`; the guard must still close the connection before range expansion and
+log the safe-result limit. Its FETCH exhaustion makes four attempts and four
+backoff waits (1, 2, 4 and 8 seconds); recovery tests retain the cached-mail and
+no-outer-retry checks alongside that pinned-library behavior.
+An unbound archived destructive move requires an exact
 Message-ID and subject, and an envelope date must match when present; a missing
 envelope date is accepted. Privacy mode hides the entire text when there are
 more than 100 distinct names (compared case-insensitively) or any name is longer
