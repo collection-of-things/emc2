@@ -331,3 +331,22 @@ test("a registry match never reaches the BIMI lookup", async (t) => {
     restore();
   }
 });
+
+test("a failed BIMI lookup is retried, but a domain without a BIMI logo is remembered", async (t) => {
+  use(freshDataDir());
+  respond(t, (url) => url.endsWith("/registry.json") ? asRegistry() : new Response("not an image"));
+  let calls = 0;
+  let answer: "failed" | null = "failed";
+  const restore = setBimiSource(async () => { calls++; return answer; });
+  try {
+    assert.equal(await companySvg("sender@flaky-bimi.example"), null);
+    assert.equal(await companySvg("sender@flaky-bimi.example"), null);
+    assert.equal(calls, 2, "a failure is not remembered as a miss");
+    answer = null;
+    assert.equal(await companySvg("sender@flaky-bimi.example"), null);
+    assert.equal(await companySvg("sender@flaky-bimi.example"), null);
+    assert.equal(calls, 3, "no logo is remembered");
+  } finally {
+    restore();
+  }
+});

@@ -7,7 +7,7 @@ import path from "node:path";
 import { ByteCache, readCacheFile, readResponseBytes, trimImageCache, prepareImageCache, workLimit } from "./resource-limits.js";
 import { personalMailDomains } from "../shared/types.js";
 import type { LogoSummary } from "../shared/types.js";
-import { bimiService } from "./bimi.js";
+import { bimiService, type BimiResult } from "./bimi.js";
 import { registrableDomain } from "./registrable.js";
 
 export { registrableDomain };
@@ -306,8 +306,8 @@ type Outcome =
 // The domain's own BIMI record ranks below the curated registry: it is the
 // sender's published mark, trusted no more than the favicon fallback. Tests
 // swap the source so no test does real DNS.
-let bimiSource: (domain: string) => Promise<LogoImage | null> = bimiService();
-export function setBimiSource(source: (domain: string) => Promise<LogoImage | null>): () => void {
+let bimiSource: (domain: string) => Promise<BimiResult> = bimiService();
+export function setBimiSource(source: (domain: string) => Promise<BimiResult>): () => void {
   const restore = bimiSource;
   bimiSource = source;
   return () => { bimiSource = restore; };
@@ -344,14 +344,15 @@ async function resolveLogoIn(dir: string, value: string): Promise<Outcome> {
   // Asked even when a stale copy exists, so a logo that came from BIMI is
   // refreshed like a registry icon; the stale copy still answers on failure.
   const bimi = await bimiSource(domain);
-  if (bimi) {
+  if (bimi && bimi !== "failed") {
     cache(bimi);
     return { status: "found", image: bimi };
   }
-  if (!index) return previous || { status: "failed" };
+  if (!index || bimi === "failed") return previous || { status: "failed" };
   if (!entry) {
     // Cache unknown domains briefly with a fixed entry budget, only once the
-    // registry answered and BIMI had no record either.
+    // registry answered and BIMI answered that it has no logo; a failed BIMI
+    // lookup is retried on the next request.
     state.misses.set(domain, true);
     return previous || { status: "missing" };
   }
