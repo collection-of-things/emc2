@@ -21,6 +21,7 @@ unversioned history without treating it as a release record.
 ### Fixed
 
 - With Glass on macOS, mail rows, date captions and sidebar section labels no longer sit on darker or lighter bands in every theme, and Reduce transparency now gives an opaque window.
+- Disabled sidebar rows are no longer dimmed twice, and with Glass and Reduce transparency the sidebar section labels stay pinned while their rows scroll.
 
 - The mailbox puts Drafts next to Inbox and gives search, Compose, and the sidebar toggle clearer positions. The list distinguishes unread mail, the keyboard cursor, bulk selection, and the message open beside it. The reader, composer, work views, and Settings use clearer headings and consistent selection styles.
 - On phones, search and Commands share a row and the Inbox category picker keeps its full touch area.
