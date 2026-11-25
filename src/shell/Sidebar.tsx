@@ -5,7 +5,7 @@ import { accountLabel } from "../mail-ui";
 import { ProviderIcon } from "../mail/Avatar";
 import { relative, sidebarViews, viewNames, type View } from "../mail/format";
 import { SlidingNav } from "../ui/SlidingNav";
-import { ChevronDown, Compose, Mail as MailIcon, Plus, Settings } from "../ui/icons";
+import { ChevronDown, Compose, Mail as MailIcon, MailStack, Plus, Settings } from "../ui/icons";
 import { captionDoubleClick, type Corner } from "./PaneHeader";
 import { TrafficLights } from "../ui/TrafficLights";
 
@@ -104,7 +104,7 @@ export function Sidebar({
               New message
             </button>
           </div>
-          {(["mail", "workspace"] as const).map((group) => <SlidingNav key={group} activeKey={settings ? null : mail.view} label={group === "workspace" ? "Workspace views" : "Mail views"} className="sidebar-group">
+          {(["workspace", "mail"] as const).map((group) => <SlidingNav key={group} activeKey={settings ? null : mail.view} label={group === "workspace" ? "Workspace views" : "Mail views"} className="sidebar-group">
             <Heading id={group} folded={folded.has(group)} onFold={fold}>{group === "workspace" ? "Workspace" : "Mail"}</Heading>
             {!folded.has(group) && sidebarViews.filter(({ view }) => ["actions", "calendar", "projects", "agents", "contacts"].includes(view) === (group === "workspace")).map(({ view, Icon }) => {
               const total = view === "actions" ? mail.dueCount ?? null : view === "snoozed" ? mail.snoozedCount : view === "inbox" ? mail.inboxCount : null;
@@ -137,7 +137,7 @@ export function Sidebar({
                 disabled={mail.blocked}
                 onClick={() => mail.onAccount("all")}
               >
-                <kbd>0</kbd><span className="sidebar-name">All accounts</span>
+                <kbd>0</kbd><MailStack color="currentColor" size={16} /><span className="sidebar-name">All accounts</span>
               </button>
             )}
             {!folded.has("accounts") && mail.accounts.map((account, index) => (

@@ -16,6 +16,12 @@ unversioned history without treating it as a release record.
 
 ### Changed
 
+- The sidebar lists Workspace above Mail and has quieter section labels, tighter rows, a rounded account marker and an icon for All accounts; the Drafts icon matches the other icons. On macOS 26 the app name no longer crowds the larger window buttons.
+
+### Fixed
+
+- With Glass on macOS, mail rows, date captions and sidebar section labels no longer sit on darker or lighter bands in every theme, and Reduce transparency now gives an opaque window.
+
 - The mailbox puts Drafts next to Inbox and gives search, Compose, and the sidebar toggle clearer positions. The list distinguishes unread mail, the keyboard cursor, bulk selection, and the message open beside it. The reader, composer, work views, and Settings use clearer headings and consistent selection styles.
 - On phones, search and Commands share a row and the Inbox category picker keeps its full touch area.
 

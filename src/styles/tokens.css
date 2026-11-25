@@ -329,7 +329,27 @@
 }
 /* Sticky surfaces get a stronger tint plus a blur so scrolled text does not
    show through illegibly. */
-:root[data-glass] :is(.group, .agent-navigation, .today-mail > .mail-actions, .sidebar-heading) {
-  background: color-mix(in srgb, var(--surface) 60%, transparent);
-  backdrop-filter: blur(12px);
+/* Sticky surfaces blur what scrolls beneath them instead of adding a second
+   tint. Chromium composites the filtered backdrop over the translucent one, so
+   even a clear blur reads as a band; the sidebar's section labels therefore
+   scroll with their rows under glass rather than pinning over them. */
+:root[data-glass] {
+  --glass-cover: transparent;
+  --glass-cover-blur: blur(14px);
+}
+:root[data-glass] :is(.group, .agent-navigation, .today-mail > .mail-actions) {
+  background: var(--glass-cover);
+  backdrop-filter: var(--glass-cover-blur);
+}
+:root[data-glass] .sidebar-heading {
+  position: static;
+  background: transparent;
+}
+/* With Reduce transparency on, the tint becomes the opaque surface. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-glass] {
+    --pane-glass: var(--surface);
+    --glass-cover: var(--surface);
+    --glass-cover-blur: none;
+  }
 }
