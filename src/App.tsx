@@ -15,7 +15,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { inboxTab, inboxTabs, type InboxTab } from "../shared/inbox-tabs";
+import { correspondents, inboxTab, inboxTabs, protectCorrespondent, type InboxTab } from "../shared/inbox-tabs";
 import type { Commitment, SentCoverage } from "../shared/workspace";
 import type { Draft, OutboxStatus, RendererMail as Mail, RendererState as State, StateResponse, BootstrapResponse } from "../shared/types";
 import { emptyComposePreferences, type ComposePreferences } from "../shared/mail-features";
@@ -685,9 +685,11 @@ export function App() {
   const now = Date.now();
   const isSnoozed = (m: Mail) =>
     m.snoozedUntil !== null && m.snoozedUntil > now;
-  const tabs = useMemo(() => new Map(state.messages.map((mail) => [mail.id, "inboxTab" in mail ? mail.inboxTab : inboxTab(mail, state.rules)])),
-    [state.messages, state.rules]);
-  const tabOf = (mail: Mail) => "inboxTab" in mail ? mail.inboxTab : tabs.get(mail.id) ?? inboxTab(mail, state.rules);
+  const known = useMemo(() => correspondents(state.messages), [state.messages]);
+  const sortedTab = (mail: Mail) => protectCorrespondent("inboxTab" in mail ? mail.inboxTab : inboxTab(mail, state.rules), mail, known, state.rules);
+  const tabs = useMemo(() => new Map(state.messages.map((mail) => [mail.id, sortedTab(mail)])),
+    [state.messages, state.rules, known]);
+  const tabOf = (mail: Mail) => tabs.get(mail.id) ?? sortedTab(mail);
   const search = useMailSearch(query, state.accounts, state.messages, api, state.draftToken);
   const searchAccount = accountFilter === "all" ? undefined : state.accounts.find((a) => a.id === accountFilter);
   const showSearchDrafts = !!query.trim() && (view === "all" || view === "drafts") &&
@@ -732,12 +734,15 @@ export function App() {
     mail.accountId === replyContext.accountId && mail.messageId === compose.inReplyTo) : replySource(state.messages, compose) : undefined;
   const hydratedReply = useMailBody(currentReplySource || undefined, api);
   // Inbox total for the sidebar and unread counts for each category tab.
-  const inboxMail = state.messages.filter((m) => m.direction !== "sent" && !m.archived && !isSnoozed(m) &&
+  const inboxMail = state.messages.filter((m) => m.direction !== "sent" && !m.archived && !isSnoozed(m) && !m.handled &&
     matchesLabel(m, activeLabel) && (accountFilter === "all" || accountFilter === m.accountId));
   const tabUnread = new Map<InboxTab, number>();
   for (const m of inboxMail) if (m.unread) tabUnread.set(tabOf(m), (tabUnread.get(tabOf(m)) ?? 0) + 1);
   const snoozedCount = state.messages.filter(
     (m) => m.direction !== "sent" && !m.archived && isSnoozed(m) && matchesLabel(m, activeLabel),
+  ).length;
+  const handledCount = state.messages.filter(
+    (m) => m.direction !== "sent" && !m.archived && m.handled && matchesLabel(m, activeLabel),
   ).length;
   const executeAction = async <T,>(task: () => Promise<T>, success?: string, localUndo?: (result: T) => LocalMailUndo | undefined) => {
     try {
@@ -767,7 +772,7 @@ export function App() {
   };
   const changeMessage = (
     mail: Mail,
-    action: "read" | "unread" | "inbox" | "archive" | "snooze" | "unsnooze" | "pin" | "unpin",
+    action: "read" | "unread" | "inbox" | "archive" | "snooze" | "unsnooze" | "pin" | "unpin" | "handle" | "unhandle",
     until?: number,
   ) =>
     performMail(mail, () =>
@@ -777,7 +782,8 @@ export function App() {
       }),
       action === "archive" ? "Email archived." : action === "unsnooze" ? "Email returned to inbox." :
         action === "pin" ? "Email pinned." : action === "unpin" ? "Email unpinned." :
-        action === "snooze" ? "Email snoozed." : undefined,
+        action === "snooze" ? "Email snoozed." : action === "handle" ? "Marked handled. It stays in your provider's Inbox." :
+        action === "unhandle" ? "Email returned to inbox." : undefined,
       result => result.undo,
     );
   const undoLocalAction = async (receipt: LocalMailUndo) => {
@@ -837,7 +843,7 @@ export function App() {
   };
   const jumpTo = (mail: Mail) => {
     openMail(mail, {
-      view: mail.direction === "sent" ? "sent" : mail.archived ? "archive" : isSnoozed(mail) ? "snoozed" : "inbox", tab: tabOf(mail),
+      view: mail.direction === "sent" ? "sent" : mail.archived ? "archive" : isSnoozed(mail) ? "snoozed" : mail.handled ? "handled" : "inbox", tab: tabOf(mail),
       accountFilter: "all", labelFilter: "all", query: "", readFilter: "all", relevanceFilter: "all",
     });
   };
@@ -854,7 +860,7 @@ export function App() {
     setNotificationTargets((ids) => ids.slice(1));
     const mail = state.messages.find((mail) => mail.id === id && state.accounts.some((account) => account.id === mail.accountId));
     if (!mail) { setNotice("The notified email is no longer available on this device."); return; }
-    navigation.visit({ page: "mail", view: mail.archived ? "archive" : isSnoozed(mail) ? "snoozed" : "inbox",
+    navigation.visit({ page: "mail", view: mail.archived ? "archive" : isSnoozed(mail) ? "snoozed" : mail.handled ? "handled" : "inbox",
       tab: tabOf(mail), accountFilter: "all", labelFilter: "all", query: "", readFilter: "all", relevanceFilter: "all",
       selectedId: mail.id, opened: true });
     setSearching(false);
@@ -934,7 +940,7 @@ export function App() {
   const neighbourIndex = neighbours.findIndex((mail) => mail.id === selected?.id);
   const previousMail = neighbours[neighbourIndex - 1];
   const nextMail = neighbours[neighbourIndex + 1];
-  type MailMenuId = "open" | "read" | "unread" | "inbox" | "pin" | "reply" | "reply-all" | "forward-mail" | "archive" | "snooze" | "unsnooze" | "trash" | "track" | "meeting" | "teach";
+  type MailMenuId = "open" | "read" | "unread" | "inbox" | "pin" | "handle" | "unhandle" | "reply" | "reply-all" | "forward-mail" | "archive" | "snooze" | "unsnooze" | "trash" | "track" | "meeting" | "teach";
   const busyReason = composeBusy ? "Another action is in progress" : syncing ? "Mail is syncing" : undefined;
   // Why a mailbox-state action is unavailable; undefined while it can run.
   const mailActionReason = (mail: Mail) =>
@@ -953,6 +959,9 @@ export function App() {
     { id: "reply-all", key: shortcut("replyAll"), label: "Reply all", disabled: composeBusy, description: composeBusy ? "Another action is in progress" : undefined, run: () => startCompose(mail, true) },
     { id: "forward-mail", label: "Forward message", key: shortcut("forwardMail"), disabled: mailBusy(mail) || !!forwardRequest.current, run: () => void forwardMail(mail) },
     { id: "archive", label: "Archive", key: shortcut("done"), disabled: mailBusy(mail) || syncing || mail.archived || mail.direction === "sent", description: mailActionReason(mail), separator: true, run: () => archive(mail) },
+    mail.handled
+      ? { id: "unhandle" as const, label: "Return to inbox (undo Handled)", disabled: mailBusy(mail), description: mailBusy(mail) ? "An action is pending for this email" : undefined, run: () => void changeMessage(mail, "unhandle") }
+      : { id: "handle" as const, label: "Mark handled", disabled: mailBusy(mail) || mail.archived || mail.direction === "sent", description: mailActionReason(mail) ?? "Leaves the Inbox in this app only", run: () => void changeMessage(mail, "handle") },
     { id: "snooze", label: "Snooze", key: shortcut("snooze"), disabled: mailBusy(mail) || syncing || mail.archived || mail.direction === "sent", description: mailActionReason(mail), run: () => showSnooze(mail) },
     ...(isSnoozed(mail) ? [{ id: "unsnooze" as const, label: "Return to inbox", disabled: mailBusy(mail) || syncing, description: busyReason, run: () => void changeMessage(mail, "unsnooze") }] : []),
     { id: "trash", label: "Move to Trash", disabled: mailBusy(mail) || syncing || !!trashUnavailable(mail), description: trashUnavailable(mail) ?? (mailBusy(mail) ? "An action is pending for this email" : busyReason), run: () => setTrashMail(mail) },
@@ -1326,6 +1335,8 @@ export function App() {
       onSnooze={(event) => showSnooze(selected, event)}
       onUnsnooze={() => void changeMessage(selected, "unsnooze")}
       onPin={() => void changeMessage(selected, selected.pinned ? "unpin" : "pin")}
+      onHandle={() => void changeMessage(selected, "handle")}
+      onUnhandle={() => void changeMessage(selected, "unhandle")}
       onTrack={() => openTracking(selected)}
       onSchedule={() => openMeeting(selected)}
       onClose={closeReader}
@@ -1353,6 +1364,7 @@ export function App() {
       paper={paper}
       onLabels={() => setLabelMail(selected)}
       onUnsnooze={() => void changeMessage(selected, "unsnooze")}
+      onUnhandle={() => void changeMessage(selected, "unhandle")}
       onChangeTime={(event) => showSnooze(selected, event)}
       onMenu={(event, mail) => showMailMenu(event, mail, false)}
       onMenuKey={(event, mail) => mailMenuKey(event, mail, false)}
@@ -1455,6 +1467,7 @@ export function App() {
     { id: "drafts", label: "Open Drafts", group: "navigation", disabled: !state.accounts.length,
       disabledReason: !state.accounts.length ? "Add an account first" : undefined, run: () => switchView("drafts") },
     { id: "archive-view", label: "Show Archive", group: "navigation", aliases: commandAliases["archive-view"], run: () => switchView("archive") },
+    { id: "handled-view", label: "Show Handled", group: "navigation", run: () => switchView("handled") },
     { id: "snoozed-view", label: "Show Snoozed", group: "navigation", aliases: commandAliases["snoozed-view"], run: () => switchView("snoozed") },
     { id: "pinned-view", label: "Find pinned mail in this view", group: "navigation", run: () => findPinned("view") },
     { id: "pinned-all", label: "Find pinned mail in All cached", group: "navigation", run: () => findPinned("all") },
@@ -1500,6 +1513,7 @@ export function App() {
               onView: (next) => fromSidebar(() => switchView(next)),
               inboxCount: loaded ? inboxMail.length : undefined,
               snoozedCount: loaded ? snoozedCount : undefined,
+              handledCount: loaded ? handledCount : undefined,
               dueCount,
               accounts: state.accounts,
               accountFilter,
@@ -1672,7 +1686,7 @@ export function App() {
                     onRetry={() => { void reload().catch(error => setNotice(error.message)); }}
                     hasAccounts={state.accounts.length > 0}
                     filtered={hasListControls}
-                    title={view === "sent" ? "No cached Sent mail" : view === "all" ? "No cached mail" : view === "snoozed" ? "No snoozed mail" : view === "archive" ? "No archived mail" : `Nothing in ${tabName(tab)}`}
+                    title={view === "sent" ? "No cached Sent mail" : view === "all" ? "No cached mail" : view === "snoozed" ? "No snoozed mail" : view === "handled" ? "No handled mail" : view === "archive" ? "No archived mail" : `Nothing in ${tabName(tab)}`}
                     clearName={view === "inbox" ? tabName(tab) : undefined}
                     viewName={viewNames[view]}
                     syncing={syncing}

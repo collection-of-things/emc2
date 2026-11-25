@@ -5,7 +5,7 @@ import { updateLocalMail, restoreLocalMail } from "./local-mail-undo.js";
 import { MAX_MAIL_BATCH, type MailBatchResponse } from "../shared/bulk-mail.js";
 import { all, get, account, put, remove, holdAttachments, releaseAttachmentHold, cleanupUploads } from "./store.js";
 import { providers, sendSchema, SentCopyError, updateGmailLabels, type SendInput } from "./providers.js";
-import type { Mail } from "../shared/types.js";
+import type { Mail, MailHandled } from "../shared/types.js";
 import { recordRecentRecipients } from "./contacts.js";
 
 let mailWork = Promise.resolve();
@@ -56,6 +56,8 @@ export function runMailWork<T>(task: () => Promise<T>): Promise<T> {
 
 export const messageActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.enum(["pin", "unpin"]) }).strict(),
+  z.object({ action: z.literal("handle"), reason: z.string().trim().min(1).max(500).optional() }).strict(),
+  z.object({ action: z.literal("unhandle") }).strict(),
   z.object({
     action: z.enum(["read", "unread", "inbox", "archive", "snooze", "unsnooze", "trash"]),
     until: z
@@ -85,6 +87,7 @@ export async function updateMessage(
   beforeExecution?: () => void,
   providerStarted?: () => void,
   captureUndo?: (receipt: LocalMailUndo) => void,
+  handledBy?: Omit<MailHandled, "at" | "reason">,
 ) {
   // Pinning is one local transaction, so it need not wait behind a long sync.
   // Sync writers re-read each record before writing, which keeps the pin.
@@ -93,6 +96,15 @@ export async function updateMessage(
       beforeExecution?.();
       findMail(id);
       return updateLocalMail(id, input.action, undefined, captureUndo);
+    });
+  // Handled is local, like a pin: it hides mail from the Inbox without a provider change.
+  if (input.action === "handle" || input.action === "unhandle")
+    return trackMailWork(async () => {
+      beforeExecution?.();
+      const mail = findMail(id);
+      if (input.action === "handle" && mail.direction === "sent") throw new Error("Sent mail cannot be marked handled.");
+      return updateLocalMail(id, input.action, undefined, captureUndo,
+        input.action === "handle" ? { ...(handledBy ?? { by: "you" }), ...(input.reason ? { reason: input.reason } : {}) } : undefined);
     });
   return runMailWork(async () => {
     beforeExecution?.();
@@ -180,7 +192,7 @@ function rememberRecipients(input: SendInput) {
 export const mailBatchSchema = z.object({
   items: z.array(z.object({ id: z.string().min(1).max(500), accountId: z.string().min(1).max(500) }).strict())
     .min(1).max(MAX_MAIL_BATCH).refine(items => new Set(items.map(item => item.id)).size === items.length, "Choose each message once."),
-  operation: messageActionSchema.refine(input => ["read", "unread", "archive", "inbox", "snooze", "pin", "unpin", "trash"].includes(input.action), "Unsupported batch action."),
+  operation: messageActionSchema.refine(input => ["read", "unread", "archive", "inbox", "snooze", "pin", "unpin", "trash", "handle", "unhandle"].includes(input.action), "Unsupported batch action."),
 }).strict();
 
 export function updateMessages(value: unknown, beforeExecution?: () => void): Promise<MailBatchResponse> {

@@ -775,6 +775,7 @@ async function syncAccount(
         const savedSummary = {
           ...incoming, category: summary.category, relevance: summary.relevance, reason: summary.reason,
           archived: false, snoozedUntil: summary.snoozedUntil || null,
+          ...(summary.handled ? { handled: summary.handled } : {}),
           ...(summary.pinned ? { pinned: true } : {}),
         };
         // The summary projection is what a save would leave visible; identical
@@ -793,9 +794,11 @@ async function syncAccount(
         archived: false,
         snoozedUntil: previous?.snoozedUntil || null,
         ...(previous?.pinned ? { pinned: true } : {}),
+        ...(previous?.handled ? { handled: previous.handled } : {}),
       };
       // A provider batch may contain a pre-Unpin copy of the cached message.
       if (!previous?.pinned) delete saved.pinned;
+      if (!previous?.handled) delete saved.handled;
       if (!isDeepStrictEqual(previous, saved)) changed.push([m.id, saved]);
     }
     putBatch("mail", changed);

@@ -41,12 +41,13 @@ const schemas = {
   commitment: z.object({ id, accountId: id, sourceMailId: id, text, reason: text, status, ...deadline, evidenceMailIds: ids, projectId: id.optional(), revision: time, updatedAt: time, history: z.array(history), sourceUnavailable: z.boolean().optional() }),
   project: z.object({ id, name: text, sourceMailIds: ids, accountIds: ids, crossAccountConfirmed: z.boolean(), revision: time, updatedAt: time }),
   decision: z.object({ id, projectId: id, text, sourceMailIds: ids, createdAt: time }),
-  rule: ruleSchema.omit({ accountId: true }).extend({ id, accountId: id.optional(), createdAt: time.optional(), excludedMailIds: ids.optional() }),
+  rule: ruleSchema.omit({ accountId: true }).extend({ id, accountId: id.optional(), createdAt: time.optional(), excludedMailIds: ids.optional(), agentId: id.optional() }),
   draft: backupContentSchema.safeExtend({ id, accountId: id, revision: time, updatedAt: time, sendUnknown: z.boolean(), calendarContext: z.object({ eventId: id, revision: time, sourceMailId: id.optional(), sourceFingerprint: text.optional() }).optional() }),
   proposal: z.object({ id, agentId: id, accountId: id, action: z.enum(["send", "draft", "archive", "read"]), payload: z.union([backupContentSchema.safeExtend({ accountId: id }), z.object({ mailId: id })]), sourceMailId: id.optional(), sourceFingerprint: text.optional(), sourceChanged: z.boolean().optional(), origin: z.literal("app").optional(), digest: text, createdAt: time, status: z.enum(["pending", "executing", "succeeded", "failed", "unknown", "rejected"]), receipt: z.object({ at: time, message: text, draftId: id.optional() }).optional() }),
   template: z.object({ id, name: text, subject: text, body: text }),
   signature: z.object({ accountId: id, body: text }),
-  workspaceMailState: z.object({ id, accountId: id, pinned: z.boolean().optional(), snoozedUntil: time.nullable() }),
+  workspaceMailState: z.object({ id, accountId: id, pinned: z.boolean().optional(), snoozedUntil: time.nullable(),
+    handled: z.object({ at: time, by: z.enum(["you", "agent"]), agentId: id.optional(), agentName: z.string().max(2000).optional(), reason: z.string().max(500).optional() }).strict().optional() }),
 };
 type Kind = keyof typeof schemas;
 type Entry = { kind: Kind; id: string; value: unknown };
@@ -237,7 +238,7 @@ export function mergeBackup(payload: Payload, commit = false): BackupPreview {
       else if (row.kind === "signature") exists = Object.hasOwn(compose.signatures, row.id);
       else if (row.kind === "workspaceMailState") {
         const mail = get("mail", row.id);
-        exists = !!get("workspaceMailState", row.id) || !!(mail && (mail.pinned || mail.snoozedUntil !== null));
+        exists = !!get("workspaceMailState", row.id) || !!(mail && (mail.pinned || mail.snoozedUntil !== null || mail.handled));
       } else exists = !!get(row.kind, row.id);
       result[exists ? "skipped" : "added"][row.kind]++;
       if (exists) continue;
@@ -246,7 +247,7 @@ export function mergeBackup(payload: Payload, commit = false): BackupPreview {
       else if (commit) {
         if (row.kind === "workspaceMailState") {
           const mail = get("mail", row.id);
-          if (mail && mail.accountId === row.value.accountId) put("mail", row.id, { ...mail, pinned: row.value.pinned, snoozedUntil: row.value.snoozedUntil });
+          if (mail && mail.accountId === row.value.accountId) put("mail", row.id, { ...mail, pinned: row.value.pinned, snoozedUntil: row.value.snoozedUntil, ...(row.value.handled ? { handled: row.value.handled } : {}) });
           else put("workspaceMailState", row.id, row.value as Records["workspaceMailState"]);
         } else {
           if (row.kind === "draft" || row.kind === "proposal") {

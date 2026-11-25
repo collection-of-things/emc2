@@ -790,7 +790,7 @@ message IDs, including after later sync. Scoped rules take precedence over
 legacy sender rules. The question condition checks punctuation, not intent.
 
 MCP remains off by default. The legacy global token grants no account access.
-Each agent needs explicit account and tool grants. Mail-action tools prepare proposals; separately granted `create_project` and `track_commitment` save local single-account work immediately without per-item approval.
+Each agent needs explicit account and tool grants. Mail-action tools prepare proposals; separately granted `create_project` and `track_commitment` save local single-account work immediately without per-item approval. Separately granted `mark_handled` (with `unmark_handled`) and `manage_inbox_rules` (`list_inbox_rules`, `set_inbox_rule`, `remove_inbox_rule`) also apply immediately: Handled is a local, undoable `handled` field on cached mail that removes it from the Inbox and MCP `view: "inbox"` without contacting the provider, and assistant rules carry `agentId`, may set an explicit `tab`, cannot change user Teach rules and are refused when they would move a sender the account wrote to (cached Sent `to`/`cc`) out of Primary. Correspondent protection also applies to automatic sorting in `shared/inbox-tabs.ts` (ADR 0137).
 Approval rechecks the digest, current conversation, current grant and the MCP
 switch at execution. Approving a reply proposal saves an encrypted local draft
 and opens it in the composer; agents never send ([ADR 0053](adr/0053-agent-replies-open-as-drafts.md)).

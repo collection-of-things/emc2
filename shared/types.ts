@@ -139,6 +139,8 @@ export function logoDomain(value: string) {
   return personalMailDomains.has(domain) ? null : domain;
 }
 export type MailImage = { src: string; alt: string };
+// Local-only: handled mail leaves the Inbox without changing the provider mailbox.
+export type MailHandled = { at: number; by: "you" | "agent"; agentId?: string; agentName?: string; reason?: string };
 export type Mail = {
   unsubscribe?: import("./unsubscribe").Unsubscribe;
   bodyUnavailable?: boolean;
@@ -168,6 +170,7 @@ export type Mail = {
   reason: string;
   archived: boolean;
   snoozedUntil: number | null;
+  handled?: MailHandled;
   messageId?: string;
   threadId?: string;
   cc?: string;
@@ -178,7 +181,7 @@ export type Mail = {
 export type MailSummary = Pick<Mail,
   "id" | "accountId" | "remoteId" | "sender" | "address" | "to" | "cc" | "replyTo" |
   "subject" | "preview" | "date" | "unread" | "pinned" | "labelIds" | "category" |
-  "relevance" | "reason" | "archived" | "snoozedUntil" | "messageId" | "threadId" |
+  "relevance" | "reason" | "archived" | "snoozedUntil" | "handled" | "messageId" | "threadId" |
   "references" | "direction" | "inReplyTo" | "mailbox" | "attachments"
 > & { contentVersion: string; inboxTab: import("./inbox-tabs").InboxTab };
 // Full values remain accepted by isolated renderer fixtures and internal views.
@@ -220,6 +223,10 @@ export type Rule = {
   instruction: string;
   category: Category;
   relevance: 1 | 2 | 3;
+  // An explicit Inbox tab; without it, "other" mail is sorted by type.
+  tab?: import("./inbox-tabs").InboxTab;
+  // Set when an assistant created the rule; such rules never demote correspondents.
+  agentId?: string;
 };
 export type MailChanges<T = MailSummary> = {
   mailCursor: string;

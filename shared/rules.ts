@@ -19,6 +19,7 @@ export function matchesRule(mail: RuleMail, rule: RuleMatch): boolean {
   return value.toLowerCase().includes(("contains" in condition ? condition.contains : "").toLowerCase());
 }
 export function matchingRule<T extends RuleMatch>(mail: RuleMail, rules: T[]): T | undefined {
-  const priority = (rule: RuleMatch) => (rule.accountId ? 2 : 0) + (rule.condition ? 1 : 0);
+  // A user's Teach rule always outranks an assistant's rule.
+  const priority = (rule: RuleMatch) => (rule.agentId ? 0 : 4) + (rule.accountId ? 2 : 0) + (rule.condition ? 1 : 0);
   return rules.filter((rule) => matchesRule(mail, rule)).sort((a, b) => priority(b) - priority(a) || (b.createdAt || 0) - (a.createdAt || 0) || (a.id || "").localeCompare(b.id || ""))[0];
 }

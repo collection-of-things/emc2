@@ -89,9 +89,38 @@ const updates = /notification|alert|reminder|update|status|activity|job alert|ne
  * sender important, personal mail (codes, security, support, replies), Gmail's
  * own category, the AI sorter's reason, then sender and subject patterns.
  */
+const addressPattern = /[^\s<>,;"'()]+@[^\s<>,;"'()]+\.[^\s<>,;"'()]+/g;
+type SentMail = Pick<Mail, "accountId" | "to"> & Partial<Pick<Mail, "cc" | "direction">>;
+/** Addresses each account has written to, from cached Sent mail. */
+export function correspondents(messages: Iterable<SentMail>): Map<string, Set<string>> {
+  const known = new Map<string, Set<string>>();
+  for (const mail of messages) {
+    if (mail.direction !== "sent") continue;
+    const addresses = known.get(mail.accountId) ?? new Set<string>();
+    for (const value of `${mail.to || ""}, ${mail.cc || ""}`.slice(0, 20000).match(addressPattern) ?? []) addresses.add(value.toLowerCase());
+    known.set(mail.accountId, addresses);
+  }
+  return known;
+}
+export function isCorrespondent(known: Map<string, Set<string>>, mail: Pick<Mail, "accountId" | "address">) {
+  return !!known.get(mail.accountId)?.has(mail.address.toLowerCase());
+}
+/**
+ * People you have written to stay in Primary whatever their category looks
+ * like. Only your own Teach rule can move them; assistant rules cannot.
+ */
+export function protectCorrespondent(tab: InboxTab, mail: RuleMail & Pick<Mail, "accountId"> & Partial<Pick<Mail, "direction">>,
+  known: Map<string, Set<string>>, rules: (RuleMatch & Pick<Rule, "category">)[] = []): InboxTab {
+  if (tab === "primary" || mail.direction === "sent" || !isCorrespondent(known, { accountId: mail.accountId ?? "", address: mail.address })) return tab;
+  const rule = matchingRule(mail, rules);
+  return rule && !rule.agentId ? tab : "primary";
+}
+
 export function inboxTab(mail: Classified, rules: (RuleMatch & Pick<Rule, "category">)[] = []): InboxTab {
   const address = mail.address.toLowerCase();
-  if (matchingRule(mail, rules)?.category === "important") return "primary";
+  const rule = matchingRule(mail, rules);
+  if (rule?.tab && inboxTabs.some(tab => tab.id === rule.tab)) return rule.tab;
+  if (rule?.category === "important") return "primary";
   const subject = mail.subject.slice(0, classifyTextLimit);
   const text = `${subject} ${mail.preview}`.slice(0, classifyTextLimit);
   if (personal.test(subject) || personal.test(text) || passwordNotice(subject) || passwordNotice(text) || codeNearDigits(subject) || codeNearDigits(text)) return "primary";

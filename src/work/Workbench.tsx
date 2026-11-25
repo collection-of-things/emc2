@@ -28,8 +28,8 @@ import { commitmentMails } from "./commitment-privacy";
 import { openCodeConfig, openCodeConfigPreview, type OpenCodeSetupResult } from "../../shared/opencode";
 
 const statusNames: Record<CommitmentStatus, string> = { "needs-reply": "Needs reply", "needs-work": "Needs work", waiting: "Waiting", done: "Completed", cancelled: "Cancelled" };
-const tools: AgentTool[] = ["list_accounts", "list_emails", "search_emails", "read_email", "get_thread", "propose_draft", "reply_to_email", "archive_email", "mark_read", "list_projects", "list_commitments", "create_project", "track_commitment"];
-const toolNames: Record<AgentTool, string> = { list_accounts: "List allowed accounts", list_emails: "List cached emails", search_emails: "Search cached emails", read_email: "Read a selected email", get_thread: "Read a conversation", propose_draft: "Propose a reply draft", reply_to_email: "Propose a reply (opens in Drafts)", archive_email: "Propose archiving an email", mark_read: "Propose marking an email read", list_projects: "List single-account projects", list_commitments: "List single-account commitments", create_project: "Create projects immediately without review", track_commitment: "Track open commitments immediately without review" };
+const tools: AgentTool[] = ["list_accounts", "list_emails", "search_emails", "read_email", "get_thread", "propose_draft", "reply_to_email", "archive_email", "mark_read", "list_projects", "list_commitments", "create_project", "track_commitment", "mark_handled", "manage_inbox_rules"];
+const toolNames: Record<AgentTool, string> = { mark_handled: "Mark email handled (local, undoable, no review)", manage_inbox_rules: "Route senders to Inbox tabs (no review)", list_accounts: "List allowed accounts", list_emails: "List cached emails", search_emails: "Search cached emails", read_email: "Read a selected email", get_thread: "Read a conversation", propose_draft: "Propose a reply draft", reply_to_email: "Propose a reply (opens in Drafts)", archive_email: "Propose archiving an email", mark_read: "Propose marking an email read", list_projects: "List single-account projects", list_commitments: "List single-account commitments", create_project: "Create projects immediately without review", track_commitment: "Track open commitments immediately without review" };
 
 function Source({ id, state, onOpen }: { id: string; state: State; onOpen: (mail: Mail, trigger: HTMLButtonElement) => void }) {
   const mail = state.messages.find((item) => item.id === id && state.accounts.some((account) => account.id === item.accountId));
@@ -545,6 +545,7 @@ export function Workbench({ mode, state, api, work, accountFilter, initialSource
               grant.tools.some((tool) => ["list_accounts", "list_emails", "search_emails", "read_email", "get_thread", "list_projects", "list_commitments"].includes(tool)) && "Read cached data",
               grant.tools.some((tool) => tool === "propose_draft" || tool === "reply_to_email") && "Reply drafts for review",
               grant.tools.some((tool) => tool === "archive_email" || tool === "mark_read") && "Mail changes for review",
+              grant.tools.some((tool) => tool === "mark_handled" || tool === "manage_inbox_rules") && "Manages your Inbox",
               grant.tools.includes("create_project") && "Create projects without review",
               grant.tools.includes("track_commitment") && "Track work without review",
             ].filter(Boolean).join(" · ")}</p>

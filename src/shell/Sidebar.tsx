@@ -51,6 +51,7 @@ export function Sidebar({
     onView: (view: View) => void;
     inboxCount?: number;
     snoozedCount?: number;
+    handledCount?: number;
     dueCount?: number;
     accounts: Account[];
     accountFilter: string;
@@ -108,8 +109,8 @@ export function Sidebar({
           {(["workspace", "mail"] as const).map((group) => <SlidingNav key={group} activeKey={settings ? null : mail.view} label={group === "workspace" ? "Workspace views" : "Mail views"} className="sidebar-group">
             <Heading id={group} folded={folded.has(group)} onFold={fold}>{group === "workspace" ? "Workspace" : "Mail"}</Heading>
             {!folded.has(group) && sidebarViews.filter(({ view }) => ["actions", "calendar", "projects", "agents", "contacts"].includes(view) === (group === "workspace")).map(({ view, Icon }) => {
-              const total = view === "actions" ? mail.dueCount ?? null : view === "snoozed" ? mail.snoozedCount : view === "inbox" ? mail.inboxCount : null;
-              if (view === "snoozed" && total === 0 && mail.view !== "snoozed") return null;
+              const total = view === "actions" ? mail.dueCount ?? null : view === "snoozed" ? mail.snoozedCount : view === "handled" ? mail.handledCount : view === "inbox" ? mail.inboxCount : null;
+              if ((view === "snoozed" || view === "handled") && total === 0 && mail.view !== view) return null;
               return (
                 <Fragment key={view}><button
                   aria-label={view === "actions" ? mail.dueCount === undefined ? "Today, due follow-ups unavailable" : `Today, ${mail.dueCount} due follow-ups` : undefined}

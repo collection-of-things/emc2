@@ -14,7 +14,9 @@ import { all, get, readConversationMail, put, remove, transaction, account } fro
 import { findMail, updateMessage, runMailWork } from "./mail-actions.js";
 import { createDraft, plainContentSchema } from "./drafts.js";
 import { providers, plainSendSchema } from "./providers.js";
-import { matchingRule } from "../shared/rules.js";
+import { matchesRule, matchingRule } from "../shared/rules.js";
+import { sortMail } from "./sorting.js";
+import { correspondents, inboxTabs, isCorrespondent } from "../shared/inbox-tabs.js";
 import { validDate } from "../shared/commitment-dates.js";
 class WorkspaceError extends Error {
   constructor(readonly status: number, message: string) {
@@ -49,7 +51,10 @@ function deadlineFields(input: { dueAt?: number | null; dueDate?: string | null 
     return { dueAt: input.dueAt ?? undefined, dueDate: input.dueAt === null ? undefined : new Date(input.dueAt).toISOString().slice(0, 10) };
   return {};
 }
-export const ruleSchema = z.object({ sender: z.email().max(320), instruction: z.string().trim().min(1).max(500), category: z.enum(["important", "other"]), relevance: z.union([z.literal(1), z.literal(2), z.literal(3)]), accountId: text, condition: z.union([z.object({ field: z.enum(["subject", "body", "recipient"]), contains: z.string().trim().min(1).max(300) }).strict(), z.object({ field: z.enum(["hasAttachment", "directQuestion"]) }).strict()]).optional() }).strict();
+const tabIds = inboxTabs.map((tab) => tab.id) as [InboxTabId, ...InboxTabId[]];
+type InboxTabId = (typeof inboxTabs)[number]["id"];
+const ruleCondition = z.union([z.object({ field: z.enum(["subject", "body", "recipient"]), contains: z.string().trim().min(1).max(300) }).strict(), z.object({ field: z.enum(["hasAttachment", "directQuestion"]) }).strict()]);
+export const ruleSchema = z.object({ tab: z.enum(tabIds).optional(), sender: z.email().max(320), instruction: z.string().trim().min(1).max(500), category: z.enum(["important", "other"]), relevance: z.union([z.literal(1), z.literal(2), z.literal(3)]), accountId: text, condition: z.union([z.object({ field: z.enum(["subject", "body", "recipient"]), contains: z.string().trim().min(1).max(300) }).strict(), z.object({ field: z.enum(["hasAttachment", "directQuestion"]) }).strict()]).optional() }).strict();
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export function conversation(id: string, view?: Map<string, Mail>): Conversation {
   const source = view ? view.get(id) : findMail(id);
@@ -187,6 +192,56 @@ export function previewRule(value: unknown): RulePreview {
   const competing = existing.filter((r) => !(r.accountId === rule.accountId && r.sender.toLowerCase() === rule.sender.toLowerCase() && JSON.stringify(r.condition) === JSON.stringify(rule.condition)));
   const matches = all("mail").filter((m) => matchingRule(m, [...competing, candidate])?.id === candidate.id);
   return { rule, digest: digest({ rule, existing, examples: matches.map((m) => [m.id, m.subject, m.body, m.to, m.attachments]) }), count: matches.length, examples: matches.slice(0, 10).map((m) => ({ id: m.id, subject: m.subject, reason: rule.condition?.field === "directQuestion" ? "Contains a question mark (deterministic heuristic)." : `Matches sender${rule.condition ? ` and ${rule.condition.field}` : ""}.` })) };
+}
+const sameRule = (a: Pick<Rule, "accountId" | "sender" | "condition">, b: Pick<Rule, "accountId" | "sender" | "condition">) =>
+  a.accountId === b.accountId && a.sender.toLowerCase() === b.sender.toLowerCase() && JSON.stringify(a.condition) === JSON.stringify(b.condition);
+export function saveRule(input: z.infer<typeof ruleSchema>, applyExisting: boolean, agentId?: string): Rule {
+  const old = all("rule").find((r) => sameRule(r, input));
+  const rule: Rule = {
+    ...input, id: old?.id || randomUUID(), createdAt: Math.max(Date.now(), ...all("rule").map((r) => (r.createdAt || 0) + 1)), // Cached IDs preserve future-only semantics across later syncs and live tab matching.
+    ...(agentId ? { agentId } : {}),
+    ...(!applyExisting ? { excludedMailIds: all("mail").filter((m) => m.accountId === input.accountId).map((m) => m.id) } : {})
+  };
+  put("rule", rule.id, rule);
+  const rules = all("rule");
+  if (applyExisting)
+    for (const m of all("mail"))
+      if (matchingRule(m, rules)?.id === rule.id)
+        put("mail", m.id, { ...m, category: rule.category, relevance: rule.relevance, reason: rule.instruction });
+  return rule;
+}
+export class AgentRuleRefused extends Error {}
+export const agentRuleSchema = z.object({
+  accountId: text, sender: z.email().max(320), tab: z.enum(tabIds), reason: z.string().trim().min(1).max(500),
+  condition: ruleCondition.optional(),
+}).strict();
+const agentRuleView = (rule: Rule) => ({ id: rule.id, accountId: rule.accountId!, sender: rule.sender, tab: rule.tab ?? (rule.category === "important" ? "primary" : "sorted"),
+  reason: rule.instruction, ...(rule.condition ? { condition: rule.condition } : {}), createdBy: rule.agentId ? "assistant" : "you", createdAt: rule.createdAt ?? null });
+export function listAgentRules(agentId: string, accountId: string) {
+  assertAgent(agentId, "manage_inbox_rules", accountId);
+  return all("rule").filter((rule) => rule.accountId === accountId).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(agentRuleView);
+}
+export function setAgentRule(agentId: string, value: unknown) {
+  const input = agentRuleSchema.parse(value);
+  assertAgent(agentId, "manage_inbox_rules", input.accountId);
+  const old = all("rule").find((r) => sameRule(r, input));
+  if (old && !old.agentId) throw new AgentRuleRefused("You set this rule in Teach. Assistants cannot change your rules.");
+  if (input.tab !== "primary" && isCorrespondent(correspondents(all("mail")), { accountId: input.accountId, address: input.sender }))
+    throw new AgentRuleRefused("This sender is someone the user has written to. Their mail stays in Primary; only the user can move it.");
+  const rule = saveRule({ accountId: input.accountId, sender: input.sender, tab: input.tab, condition: input.condition,
+    category: input.tab === "primary" ? "important" : "other", relevance: input.tab === "primary" ? 2 : 1, instruction: input.reason }, true, agentId);
+  return agentRuleView(rule);
+}
+export function removeAgentRule(agentId: string, id: string) {
+  const rule = get("rule", id);
+  if (!rule?.accountId) throw new AgentRuleRefused("Rule not found.");
+  assertAgent(agentId, "manage_inbox_rules", rule.accountId);
+  if (!rule.agentId) throw new AgentRuleRefused("You set this rule in Teach. Assistants cannot remove your rules.");
+  remove("rule", id);
+  const rules = all("rule");
+  for (const m of all("mail"))
+    if (matchesRule(m, rule)) put("mail", m.id, { ...m, ...sortMail(m, rules) });
+  return rule;
 }
 const toolFor = (action: AgentAction): AgentTool => ({ send: "reply_to_email", draft: "propose_draft", archive: "archive_email", read: "mark_read" } as const)[action];
 export function assertAgent(agentId: string, tool: AgentTool, accountId?: string) {
@@ -382,7 +437,7 @@ export function mountWorkspace(app: express.Express) {
         return fail(409, "Account changed during expansion.");
       for (const m of messages) {
         const old = get("mail", m.id);
-        put("mail", m.id, { ...m, category: old?.category || "important", relevance: old?.relevance || 2, reason: old?.reason || "Conversation evidence", archived: old?.archived ?? !m.labelIds?.includes("INBOX"), snoozedUntil: old?.snoozedUntil || null, ...(old?.pinned ? { pinned: true } : {}) });
+        put("mail", m.id, { ...m, category: old?.category || "important", relevance: old?.relevance || 2, reason: old?.reason || "Conversation evidence", archived: old?.archived ?? !m.labelIds?.includes("INBOX"), snoozedUntil: old?.snoozedUntil || null, ...(old?.pinned ? { pinned: true } : {}), ...(old?.handled ? { handled: old.handled } : {}) });
       }
     });
     res.json(conversation(mail.id));
@@ -412,20 +467,10 @@ export function mountWorkspace(app: express.Express) {
     const preview = previewRule(input);
     if (preview.digest !== previewDigest)
       return fail(409, "Rule inputs or matching evidence changed. Preview again.");
-    const old = all("rule").find((r) => r.accountId === input.accountId && r.sender.toLowerCase() === input.sender.toLowerCase() && JSON.stringify(r.condition) === JSON.stringify(input.condition));
-    const rule: Rule = {
-      ...input, id: old?.id || randomUUID(), createdAt: Math.max(Date.now(), ...all("rule").map((r) => (r.createdAt || 0) + 1)), // Cached IDs preserve future-only semantics across later syncs and live tab matching.
-      ...(!applyExisting ? { excludedMailIds: all("mail").filter((m) => m.accountId === input.accountId).map((m) => m.id) } : {})
-    };
-    put("rule", rule.id, rule);
-    const rules = all("rule");
-    if (applyExisting)
-      for (const m of all("mail"))
-        if (matchingRule(m, rules)?.id === rule.id)
-          put("mail", m.id, { ...m, category: rule.category, relevance: rule.relevance, reason: rule.instruction });
+    saveRule(input, applyExisting);
     res.json({ ok: true });
   });
-  const agentTools = z.enum(["list_accounts", "list_emails", "search_emails", "read_email", "get_thread", "reply_to_email", "archive_email", "mark_read", "propose_draft", "list_projects", "list_commitments", "create_project", "track_commitment"]);
+  const agentTools = z.enum(["list_accounts", "list_emails", "search_emails", "read_email", "get_thread", "reply_to_email", "archive_email", "mark_read", "propose_draft", "list_projects", "list_commitments", "create_project", "track_commitment", "mark_handled", "manage_inbox_rules"]);
   router.get("/agent/grants", (_req, res) => res.json(all("agent")));
   router.post("/agent/grants", (req, res) => {
     const input = z.object({ name: text, accountIds: ids.default([]), tools: z.array(agentTools).max(20).default(["list_accounts", "list_emails", "search_emails", "read_email", "get_thread"]) }).strict().parse(req.body);
