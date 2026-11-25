@@ -14,43 +14,41 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+## 0.2.43 - 2026-11-25
+
 ### Added
 
-- Mark handled takes an email out of the Inbox in Emc² only; the provider mailbox is unchanged. Handled mail is listed in the Handled view, shows who handled it and why, and Undo or Return to inbox brings it back. A new reply arrives in the Inbox as usual.
-- People you have written to stay in Primary even when their mail looks like a newsletter or promotion. Only your own Teach rule can move them.
-- Assistants can be granted two new permissions: Mark email handled (for example, a CI failure they already fixed) and Route senders to Inbox tabs. Both apply immediately without review, stay within the assistant's accounts, cannot demote people you have written to and cannot change your Teach rules. An assistant can change or remove only its own rules and return to the Inbox only mail it marked handled itself, and archived mail cannot be marked handled. Rules an assistant set are labelled in Settings, where you can delete them.
+- Mark handled takes an email out of the Inbox in Emc² only; the provider mailbox is unchanged. Handled mail is listed in the Handled view, shows who handled it and why, and Undo or Return to inbox brings it back. A new reply arrives in the Inbox as usual. ([#275](https://github.com/collection-of-things/emc2/pull/275), [#285](https://github.com/collection-of-things/emc2/pull/285))
+- People you have written to stay in Primary even when their mail looks like a newsletter or promotion. Only your own Teach rule can move them. ([#275](https://github.com/collection-of-things/emc2/pull/275))
+- Assistants can be granted two new permissions: Mark email handled (for example, a CI failure they already fixed) and Route senders to Inbox tabs. Both apply immediately without review, stay within the assistant's accounts, cannot demote people you have written to and cannot change your Teach rules. An assistant can change or remove only its own rules and return to the Inbox only mail it marked handled itself, and archived mail cannot be marked handled. Rules an assistant set are labelled in Settings, where you can delete them. ([#275](https://github.com/collection-of-things/emc2/pull/275), [#285](https://github.com/collection-of-things/emc2/pull/285))
+- Fastmail and Yahoo show their real marks, and custom IMAP accounts with Outlook, Proton, Zoho, AOL, GMX, Yandex, Tuta, mailbox.org, HEY or Posteo addresses show that provider's mark. ([#287](https://github.com/collection-of-things/emc2/pull/287))
+- Sender logos can come from the domain's own BIMI record when the brand library has no entry. ([#287](https://github.com/collection-of-things/emc2/pull/287))
 
 ### Changed
 
-- The sidebar lists Workspace above Mail and has quieter section labels, tighter rows, a rounded account marker and an icon for All accounts; the Drafts icon matches the other icons. On macOS 26 the app name no longer crowds the larger window buttons.
+- The sidebar lists Workspace above Mail, then Accounts, with quieter section labels, tighter rows, a rounded account marker and an icon for All accounts; the Drafts icon matches the other icons. On macOS 26 the app name no longer crowds the larger window buttons. ([#276](https://github.com/collection-of-things/emc2/pull/276), [#287](https://github.com/collection-of-things/emc2/pull/287))
+- Provider marks show their brand colors again, sender avatars and signature controls take the brand's asymmetric corner shape, each Inbox category tints its tab icon, and sorting reasons read as quiet chips. ([#287](https://github.com/collection-of-things/emc2/pull/287))
+- Mail row dividers run the full width of the list, and date headings close with a heavier rule. ([#287](https://github.com/collection-of-things/emc2/pull/287))
+- Drafts account tabs match the Inbox tabs and show each account's mark, and draft account labels sit under the recipient. ([#287](https://github.com/collection-of-things/emc2/pull/287))
 
 ### Fixed
 
-- With Glass on macOS, mail rows, date captions and sidebar section labels no longer sit on darker or lighter bands in every theme, and Reduce transparency now gives an opaque window.
-- Disabled sidebar rows are no longer dimmed twice, and with Glass and Reduce transparency the sidebar section labels stay pinned while their rows scroll.
+- With Glass on macOS, mail rows, date captions and sidebar section labels no longer sit on darker or lighter bands in every theme, and Reduce transparency now gives an opaque window. ([#276](https://github.com/collection-of-things/emc2/pull/276))
+- Disabled sidebar rows are no longer dimmed twice, and with Glass and Reduce transparency the sidebar section labels stay pinned while their rows scroll. ([#284](https://github.com/collection-of-things/emc2/pull/284))
+- Opening and closing a new message no longer leaves a signature-only draft. ([#287](https://github.com/collection-of-things/emc2/pull/287))
+- Mail row dividers stay visible while another row is hovered. ([#287](https://github.com/collection-of-things/emc2/pull/287))
 
-- The mailbox puts Drafts next to Inbox and gives search, Compose, and the sidebar toggle clearer positions. The list distinguishes unread mail, the keyboard cursor, bulk selection, and the message open beside it. The reader, composer, work views, and Settings use clearer headings and consistent selection styles.
-- On phones, search and Commands share a row and the Inbox category picker keeps its full touch area.
+## 0.2.42 - 2026-11-22
 
-- New installs open on a neutral dark Graphite theme with a blue accent, app text uses the system font, compact mail rows grow to 28px and email bodies read at 15px with roomier spacing. Sender text that is too low-contrast to read is now recolored at the stricter small-text minimum. In dark mode, the email toolbar can draw the open message body on a light background, and the compose editor writes on the same light surface. The Mass theme stays available in Settings, Appearance, and existing choices are untouched.
-- Sidebar sizing and spacing stay aligned with [#276](https://github.com/collection-of-things/emc2/pull/276) and [#284](https://github.com/collection-of-things/emc2/pull/284), while provider marks show their brand colors again, sender avatars and signature controls take the brand's asymmetric corner shape, each Inbox category tints its tab icon, and sorting reasons read as quiet chips.
+### Changed
 
-### Added
-
-- Fastmail and Yahoo show their real marks, and custom IMAP accounts with Outlook, Proton, Zoho, AOL, GMX, Yandex, Tuta, mailbox.org, HEY or Posteo addresses show that provider's mark.
-- Sender logos can come from the domain's own BIMI record when the brand library has no entry.
-
-### Fixed
-
-- The sidebar lists Workspace above Mail again, then Accounts.
-- Mail row dividers run the full width of the list, and date headings close with a heavier rule.
-- Drafts account tabs match the Inbox tabs and show each account's mark, and draft account labels sit under the recipient.
-- Opening and closing a new message no longer leaves a signature-only draft.
-- Mail row dividers stay visible while another row is hovered.
+- The mailbox puts Drafts next to Inbox and gives search, Compose, and the sidebar toggle clearer positions. The list distinguishes unread mail, the keyboard cursor, bulk selection, and the message open beside it. The reader, composer, work views, and Settings use clearer headings and consistent selection styles. ([#273](https://github.com/collection-of-things/emc2/pull/273))
+- On phones, search and Commands share a row and the Inbox category picker keeps its full touch area. ([#273](https://github.com/collection-of-things/emc2/pull/273))
+- New installs open on a neutral dark Graphite theme with a blue accent, app text uses the system font, compact mail rows grow to 28px and email bodies read at 15px with roomier spacing. Sender text that is too low-contrast to read is now recolored at the stricter small-text minimum. In dark mode, the email toolbar can draw the open message body on a light background, and the compose editor writes on the same light surface. The Mass theme stays available in Settings, Appearance, and existing choices are untouched. ([#272](https://github.com/collection-of-things/emc2/pull/272))
 
 ### Documentation
 
-- Point the README and marketing website metadata to [the Cloudflare-hosted website](https://emc2.collection-of-devs.workers.dev/).
+- Point the README and marketing website metadata to [the Cloudflare-hosted website](https://emc2.collection-of-devs.workers.dev/). ([#270](https://github.com/collection-of-things/emc2/pull/270))
 
 ## 0.2.41 - 2026-11-22
 

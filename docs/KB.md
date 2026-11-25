@@ -229,16 +229,17 @@ The architecture is recorded in [ADR 0079](adr/0079-standalone-android-client.md
 
 ## Source release version
 
-The source package and both lockfile version fields are 0.2.41. This release
+The source package and both lockfile version fields are 0.2.43. This release
 preparation changes no dependencies or release workflows. The automatic main-push
 lane chooses the next unused patch above both source and stable tags, so this
-source selects 0.2.42 unless a higher stable tag exists. Merge the release
+source selects 0.2.44 unless a higher stable tag exists. Merge the release
 preparation with `[skip release]` in the merge commit subject to keep publication
-separate. After approval and merge, manual publication of 0.2.41 requires an
-immutable `v0.2.41` tag at that exact merged commit and dispatching `release.yml`
-on that tag. The 0.2.41 changelog consolidates changes since published 0.2.39;
-0.2.40 was prepared but not published. Source version metadata does not establish
-installer acceptance.
+separate. After approval and merge, manual publication of 0.2.43 requires an
+immutable `v0.2.43` tag at that exact merged commit and dispatching `release.yml`
+on that tag. The 0.2.43 changelog covers changes merged since published v0.2.42;
+v0.2.42 was published automatically from `106f945` and is now recorded under its
+own dated section. Source version metadata does not establish installer
+acceptance.
 
 ## Responsiveness and composition
 
