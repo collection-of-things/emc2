@@ -140,14 +140,16 @@ test("Handled mail leaves every Inbox tab and search, and only the Handled view 
     { ...mail, id: "handled", archived: false, handled },
     { ...mail, id: "promo-handled", archived: false, category: "other", labelIds: ["CATEGORY_PROMOTIONS"], handled },
     { ...mail, id: "archived-handled", archived: true, handled },
+    { ...mail, id: "snoozed-handled", archived: false, snoozedUntil: 1000, handled },
   ];
-  const ids = (view: "inbox" | "handled" | "archive", tab: "primary" | "promotions" = "primary", query = "") =>
+  const ids = (view: "inbox" | "handled" | "archive" | "snoozed", tab: "primary" | "promotions" = "primary", query = "") =>
     filterMail(messages, { ...location, view, tab, query }, undefined, 100).map(mail => mail.id).sort();
   assert.deepEqual(ids("inbox"), ["inbox"]);
   assert.deepEqual(ids("inbox", "promotions"), []);
   assert.deepEqual(ids("inbox", "primary", "sender@example.com"), ["inbox"]);
   assert.deepEqual(ids("handled"), ["handled", "promo-handled"]);
   assert.deepEqual(ids("archive"), ["archived-handled"]);
+  assert.deepEqual(ids("snoozed"), ["snoozed-handled"], "snoozed handled mail shows only in Snoozed until it wakes");
 });
 
 test("Newest, Oldest and Relevance sorts have deterministic date and ID ties across accounts", () => {

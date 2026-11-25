@@ -103,6 +103,8 @@ export async function updateMessage(
       beforeExecution?.();
       const mail = findMail(id);
       if (input.action === "handle" && mail.direction === "sent") throw new Error("Sent mail cannot be marked handled.");
+      // The Handled view lists only Inbox mail, so handled archived mail would vanish from every view.
+      if (input.action === "handle" && mail.archived) throw new Error("Archived mail cannot be marked handled. Move it to Inbox first.");
       return updateLocalMail(id, input.action, undefined, captureUndo,
         input.action === "handle" ? { ...(handledBy ?? { by: "you" }), ...(input.reason ? { reason: input.reason } : {}) } : undefined);
     });
@@ -192,7 +194,7 @@ function rememberRecipients(input: SendInput) {
 export const mailBatchSchema = z.object({
   items: z.array(z.object({ id: z.string().min(1).max(500), accountId: z.string().min(1).max(500) }).strict())
     .min(1).max(MAX_MAIL_BATCH).refine(items => new Set(items.map(item => item.id)).size === items.length, "Choose each message once."),
-  operation: messageActionSchema.refine(input => ["read", "unread", "archive", "inbox", "snooze", "pin", "unpin", "trash", "handle", "unhandle"].includes(input.action), "Unsupported batch action."),
+  operation: messageActionSchema.refine(input => ["read", "unread", "archive", "inbox", "snooze", "pin", "unpin", "trash"].includes(input.action), "Unsupported batch action."),
 }).strict();
 
 export function updateMessages(value: unknown, beforeExecution?: () => void): Promise<MailBatchResponse> {

@@ -64,7 +64,7 @@ export function filterMail<T extends Mail>(messages: T[], location: Pick<MailLoc
     if (location.view === "sent") { if (mail.direction !== "sent") return false; }
     else if (location.view !== "all") {
       if (mail.direction === "sent") return false;
-      if (location.view === "archive" ? !mail.archived : location.view === "handled" ? mail.archived || !mail.handled : location.view === "snoozed"
+      if (location.view === "archive" ? !mail.archived : location.view === "handled" ? mail.archived || snoozed || !mail.handled : location.view === "snoozed"
         ? mail.archived || !snoozed : mail.archived || snoozed || !!mail.handled || (!query && tabOf(mail) !== location.tab)) return false;
     }
     return matches(mail);

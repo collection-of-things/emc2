@@ -12,7 +12,7 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
   process.env.MAIL_DATA_KEY = Buffer.alloc(32, 13).toString("base64");
   process.env.MAIL_CONFIG_PATH = path.join(directory, "synthetic-settings.env");
   process.env.MAIL_DESKTOP_TOKEN = "synthetic-inbox-session";
-  const { put, get, all, closeStore } = await import("./store.js");
+  const { put, get, all, remove, closeStore } = await import("./store.js");
   const { providers } = await import("./providers.js");
   for (const provider of [providers.imap, providers.gmail])
     t.mock.method(provider, "update", async () => { assert.fail("Handled and inbox rules must not contact a provider"); });
@@ -33,6 +33,7 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
   put("mail", "a:sent", { ...base_mail, id: "a:sent", remoteId: "sent", direction: "sent", address: "me@example.test", to: "Friend <friend@example.test>" });
   put("mail", "a:friend", { ...base_mail, id: "a:friend", remoteId: "friend", address: "friend@example.test", subject: "Weekend" });
   put("mail", "b:ci", { ...base_mail, id: "b:ci", accountId: "b" });
+  put("mail", "a:old", { ...base_mail, id: "a:old", remoteId: "old", archived: true, subject: "Old build" });
 
   await t.test("the user's Handled leaves the provider alone and Undo restores the exact row", async () => {
     const response = await fetch(`${base}/api/messages/a:ci`, { method: "PATCH", headers: authorized, body: JSON.stringify({ action: "handle" }) });
@@ -44,6 +45,17 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     assert.equal((await fetch(`${base}/api/messages/a:ci/undo`, { method: "POST", headers: authorized, body: JSON.stringify({ accountId: undo.accountId, token: undo.token }) })).status, 200);
     assert.deepEqual(get("mail", "a:ci"), base_mail);
     assert.equal((await fetch(`${base}/api/messages/a:sent`, { method: "PATCH", headers: authorized, body: JSON.stringify({ action: "handle" }) })).status, 400, "sent mail cannot be handled");
+    assert.equal((await fetch(`${base}/api/messages/a:old`, { method: "PATCH", headers: authorized, body: JSON.stringify({ action: "handle" }) })).status, 400, "archived mail cannot be handled");
+    assert.equal(get("mail", "a:old")!.handled, undefined);
+  });
+
+  await t.test("the batch API does not accept Handled, which has no bulk undo", async () => {
+    for (const action of ["handle", "unhandle"]) {
+      const response = await fetch(`${base}/api/messages/batch`, { method: "POST", headers: authorized,
+        body: JSON.stringify({ items: [{ id: "a:ci", accountId: "a" }], operation: { action } }) });
+      assert.equal(response.status, 400, action);
+    }
+    assert.equal(get("mail", "a:ci")!.handled, undefined);
   });
 
   const configured = await fetch(`${base}/api/mcp`, { method: "PATCH", headers: authorized, body: JSON.stringify({ enabled: true }) });
@@ -75,7 +87,31 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     assert.equal(all("proposal").length, 0, "no review proposal is created");
     const inbox = await call(agent, "list_emails", { view: "inbox" });
     assert.ok(!inbox.value.emails.some((m: { id: string }) => m.id === "a:ci"), "handled mail leaves the MCP Inbox view");
+    const other = await grant(["mark_handled"]);
+    assert.equal((await call(other, "unmark_handled", { id: "a:ci" })).value.code, "MCP_HANDLED_REFUSED", "another assistant cannot clear this mark");
+    assert.equal((await call(other, "mark_handled", { id: "a:ci", reason: "Synthetic takeover" })).value.code, "MCP_HANDLED_REFUSED", "another assistant cannot take this mark over");
+    assert.equal(get("mail", "a:ci")!.handled?.reason, "CI fix pushed in synthetic PR");
+    assert.equal((await call(agent, "mark_handled", { id: "a:ci", reason: "Updated synthetic reason" })).error, false, "the owner can update its own mark");
+    assert.equal(get("mail", "a:ci")!.handled?.reason, "Updated synthetic reason");
     assert.equal((await call(agent, "unmark_handled", { id: "a:ci" })).error, false);
+    assert.equal(get("mail", "a:ci")!.handled, undefined);
+    const archived = await call(agent, "mark_handled", { id: "a:old", reason: "Fixed" });
+    assert.equal(archived.value.code, "MCP_HANDLED_REFUSED");
+    assert.equal(get("mail", "a:old")!.handled, undefined, "archived mail is never marked handled");
+  });
+
+  await t.test("assistants clear only their own handled marks, never the user's", async () => {
+    const agent = await grant(["mark_handled"]);
+    assert.equal((await fetch(`${base}/api/messages/a:ci`, { method: "PATCH", headers: authorized, body: JSON.stringify({ action: "handle" }) })).status, 200);
+    const refused = await call(agent, "unmark_handled", { id: "a:ci" });
+    assert.equal(refused.value.code, "MCP_HANDLED_REFUSED");
+    assert.equal(get("mail", "a:ci")!.handled?.by, "you");
+    // Re-marking first would make the mark the assistant's, which it could then clear.
+    const takeover = await call(agent, "mark_handled", { id: "a:ci", reason: "Synthetic takeover" });
+    assert.equal(takeover.value.code, "MCP_HANDLED_REFUSED");
+    assert.equal(get("mail", "a:ci")!.handled?.by, "you", "the user's mark is not replaced");
+    assert.equal((await call(agent, "unmark_handled", { id: "a:ci" })).value.code, "MCP_HANDLED_REFUSED");
+    assert.equal((await fetch(`${base}/api/messages/a:ci`, { method: "PATCH", headers: authorized, body: JSON.stringify({ action: "unhandle" }) })).status, 200);
     assert.equal(get("mail", "a:ci")!.handled, undefined);
   });
 
@@ -96,6 +132,24 @@ test("Handled is local and undoable, and assistants manage the Inbox only within
     const listed = await call(agent, "list_inbox_rules", { accountId: "a" });
     assert.deepEqual(listed.value.rules.map((r: { sender: string; createdBy: string }) => `${r.sender}:${r.createdBy}`).sort(),
       ["boss@example.test:you", "ci@forge.example.test:assistant", "friend@example.test:assistant"]);
+    assert.equal(listed.value.rules.find((r: { sender: string }) => r.sender === "boss@example.test").tab, "primary");
+    put("rule", "teach-other", { id: "teach-other", accountId: "a", sender: "digest@example.test", instruction: "Less important", category: "other", relevance: 1 });
+    const untabbed = (await call(agent, "list_inbox_rules", { accountId: "a" })).value.rules.find((r: { id: string }) => r.id === "teach-other");
+    assert.equal("tab" in untabbed, false, "a Teach rule without a tab reports none instead of an invalid tab id");
+    const { inboxTabs } = await import("../shared/inbox-tabs.js");
+    for (const listedRule of (await call(agent, "list_inbox_rules", { accountId: "a" })).value.rules as { tab?: string }[])
+      assert.ok(listedRule.tab === undefined || inboxTabs.some(tab => tab.id === listedRule.tab), `${listedRule.tab} is a valid tab id`);
+    remove("rule", "teach-other");
+    const rival = await grant(["manage_inbox_rules"]);
+    const takeover = await call(rival, "set_inbox_rule", { accountId: "a", sender: "ci@forge.example.test", tab: "promotions", reason: "Mine now" });
+    assert.equal(takeover.value.code, "MCP_RULE_REFUSED", "another assistant cannot take over the rule");
+    assert.equal(get("rule", rule.id)!.agentId, rule.agentId);
+    assert.equal(get("rule", rule.id)!.tab, "updates");
+    assert.equal((await call(rival, "remove_inbox_rule", { id: rule.id })).value.code, "MCP_RULE_REFUSED", "another assistant cannot remove the rule");
+    assert.ok(get("rule", rule.id));
+    const echoed = await call(agent, "set_inbox_rule", { accountId: "a", sender: "ci@forge.example.test", tab: set.value.rule.tab, reason: "Updated reason" });
+    assert.equal(echoed.error, false, "the owning assistant can update its rule with the listed tab");
+    assert.equal(get("rule", rule.id)!.instruction, "Updated reason");
     const { matchingRule } = await import("../shared/rules.js");
     const bossMail = { ...base_mail, address: "boss@example.test", subject: "Weekly report" };
     const overlapping = { id: "overlap", accountId: "a", sender: "boss@example.test", instruction: "x", category: "other" as const, relevance: 1 as const,

@@ -215,8 +215,12 @@ export const agentRuleSchema = z.object({
   accountId: text, sender: z.email().max(320), tab: z.enum(tabIds), reason: z.string().trim().min(1).max(500),
   condition: ruleCondition.optional(),
 }).strict();
-const agentRuleView = (rule: Rule) => ({ id: rule.id, accountId: rule.accountId!, sender: rule.sender, tab: rule.tab ?? (rule.category === "important" ? "primary" : "sorted"),
-  reason: rule.instruction, ...(rule.condition ? { condition: rule.condition } : {}), createdBy: rule.agentId ? "assistant" : "you", createdAt: rule.createdAt ?? null });
+// Teach rules without a tab leave it to automatic sorting, so they report no tab rather than an id set_inbox_rule rejects.
+const agentRuleView = (rule: Rule) => {
+  const tab = rule.tab ?? (rule.category === "important" ? "primary" : undefined);
+  return { id: rule.id, accountId: rule.accountId!, sender: rule.sender, ...(tab ? { tab } : {}),
+    reason: rule.instruction, ...(rule.condition ? { condition: rule.condition } : {}), createdBy: rule.agentId ? "assistant" : "you", createdAt: rule.createdAt ?? null };
+};
 export function listAgentRules(agentId: string, accountId: string) {
   assertAgent(agentId, "manage_inbox_rules", accountId);
   return all("rule").filter((rule) => rule.accountId === accountId).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(agentRuleView);
@@ -226,6 +230,7 @@ export function setAgentRule(agentId: string, value: unknown) {
   assertAgent(agentId, "manage_inbox_rules", input.accountId);
   const old = all("rule").find((r) => sameRule(r, input));
   if (old && !old.agentId) throw new AgentRuleRefused("You set this rule in Teach. Assistants cannot change your rules.");
+  if (old && old.agentId !== agentId) throw new AgentRuleRefused("Another assistant set this rule. Assistants can change only their own rules.");
   if (input.tab !== "primary" && isCorrespondent(correspondents(all("mail")), { accountId: input.accountId, address: input.sender }))
     throw new AgentRuleRefused("This sender is someone the user has written to. Their mail stays in Primary; only the user can move it.");
   const rule = saveRule({ accountId: input.accountId, sender: input.sender, tab: input.tab, condition: input.condition,
@@ -237,6 +242,7 @@ export function removeAgentRule(agentId: string, id: string) {
   if (!rule?.accountId) throw new AgentRuleRefused("Rule not found.");
   assertAgent(agentId, "manage_inbox_rules", rule.accountId);
   if (!rule.agentId) throw new AgentRuleRefused("You set this rule in Teach. Assistants cannot remove your rules.");
+  if (rule.agentId !== agentId) throw new AgentRuleRefused("Another assistant set this rule. Assistants can remove only their own rules.");
   remove("rule", id);
   const rules = all("rule");
   for (const m of all("mail"))
