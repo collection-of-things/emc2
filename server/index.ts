@@ -402,8 +402,9 @@ app.post("/api/storage/compact", async (req, res) => {
   res.json(result);
 });
 app.get("/api/logo/:domain", async (req, res) => {
-  // theSVG first, then the favicon service: a brand the library knows gets a
-  // proper logo, and everything else keeps the mark its mail host publishes.
+  // theSVG first, then the domain's own BIMI record, then the favicon
+  // service: a brand the library knows gets a proper logo, a domain that
+  // publishes BIMI keeps its own mark, and the rest get the favicon.
   const image =
     (await companySvg(req.params.domain)) ||
     (await companyLogo(req.params.domain));

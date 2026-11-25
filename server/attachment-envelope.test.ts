@@ -268,8 +268,11 @@ test("practical encrypted attachment envelope", { timeout: 110000 }, async t => 
     await t.test("IMAP metadata accepts Date, raw date strings and missing dates", async () => {
       const expected = Date.UTC(2023, 10, 14, 22, 13, 20);
       for (const date of [new Date(expected), new Date(expected).toUTCString(), undefined, "invalid date"]) {
+        const envelope = { messageId: "<synthetic@example.test>" };
+        // Raw provider values deliberately exceed ImapFlow's Date-only type.
+        Reflect.set(envelope, "date", date);
         const message = await providers.recoverImapMetadata(a, "123:7", {
-          uid: 7, seq: 1, envelope: { date, messageId: "<synthetic@example.test>" },
+          uid: 7, seq: 1, envelope,
         });
         if (date && date !== "invalid date") assert.equal(message.date, expected);
         else assert.ok(Number.isFinite(message.date));

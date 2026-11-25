@@ -8,6 +8,7 @@ import { compileMailSearch } from "./mail-search";
 import { savedViewSchema, type SavedView } from "../shared/saved-views";
 import type { Draft, Mail, State } from "../shared/types";
 import { generatePalette, parseThemeFile, serializeThemeFile, type CustomTheme } from "./themes";
+import { inboxTabs } from "../shared/inbox-tabs";
 
 let closeMountedApp: (() => Promise<void>) | undefined;
 afterEach(async () => { await closeMountedApp?.(); });
@@ -1451,6 +1452,10 @@ test("desktop mail rows use a native context menu and run the chosen action", as
 test("sidebar sections fold away and stay folded after a restart", async () => {
   const app = await mount();
   try {
+    assert.deepEqual(
+      [...app.container.querySelectorAll(".sidebar-heading button")].map((button) => button.textContent?.trim()),
+      ["Workspace", "Mail", "Accounts"],
+      "sidebar group order is a maintainer decision (ADR 0139); do not reorder");
     await app.click(app.button("Accounts"));
     assert.equal(app.accountButtons().length, 0);
     assert.equal(app.button("Accounts").getAttribute("aria-expanded"), "false");
@@ -2020,6 +2025,8 @@ test('pane tools live in the persistent toolbar and section controls share the t
     assert.equal(update.closest(".frame"), null, "the update control stays usable while the frame is inert");
     const tabs = ui.container.querySelector(".inbox-tabs")!;
     assert.ok(tabs.parentElement?.classList.contains("mail-category-bar"), "categories span the working area");
+    assert.deepEqual([...tabs.querySelectorAll("button")].map((button) => button.getAttribute("data-tab")),
+      inboxTabs.map(({ id }) => id), "each tab button carries its category id for the icon hue rules");
     assert.equal(ui.container.querySelector(".mail-view-head"), null, "Inbox has no duplicated title row");
     assert.ok(ui.container.querySelector(".mail-view > h1")?.classList.contains("visually-hidden"), "Inbox keeps its accessible heading");
     assert.equal(ui.container.querySelectorAll(".inbox-tabs").length, 1, "one category strip");
@@ -2250,9 +2257,12 @@ test("compose keyboard cycle reaches sidebar and toolbar without stealing editin
     await act(async () => app.button("New message").focus());
     await app.key("Tab");
     assert.equal(doc.activeElement === app.button("Workspace"), true, "New message leads into the Workspace section toggle");
-    await app.key("Tab");
-    assert.equal(doc.activeElement === app.button("Today"), true, "Today is the first destination in Workspace");
-    await act(async () => app.button("Mail").focus());
+    // The composer implements Tab traversal explicitly; check the full
+    // sidebar order while that cycle is active.
+    for (const name of ["Today", "Calendar", "Projects", "Agent review", "Contacts", "Mail"]) {
+      await app.key("Tab");
+      assert.equal(doc.activeElement === app.button(name), true, `Workspace precedes Mail: ${name}`);
+    }
     await app.key("Tab");
     assert.equal(doc.activeElement === app.button("Inbox"), true, "Inbox is the first destination in Mail");
     await app.key("Tab");

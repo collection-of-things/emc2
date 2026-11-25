@@ -7,11 +7,16 @@ import path from "node:path";
 import { ByteCache, readCacheFile, readResponseBytes, trimImageCache, prepareImageCache, workLimit } from "./resource-limits.js";
 import { personalMailDomains } from "../shared/types.js";
 import type { LogoSummary } from "../shared/types.js";
+import { bimiService, type BimiResult } from "./bimi.js";
+import { registrableDomain } from "./registrable.js";
+
+export { registrableDomain };
 
 // Company logos come from theSVG, an open brand icon library. Its registry
 // lists every icon next to the brand's own website, so a sender domain is
 // matched on the host of that website rather than on a guessed filename. A
-// domain the library does not know falls through to the favicon service.
+// domain the library does not know falls through to the domain's own BIMI
+// record, then to the favicon service.
 const registryUrl = "https://thesvg.org/api/registry.json";
 const iconUrl = "https://thesvg.org/icons";
 const registryMaxAge = 3 * 24 * 60 * 60 * 1000;
@@ -41,15 +46,6 @@ export type RegistryIndex = {
   names: Map<string, LogoEntry>;
 };
 
-// Brand sites use two-part public suffixes often enough that ignoring them
-// would resolve mail.bbc.co.uk to a registrable domain of co.uk.
-const multiPartSuffixes = new Set([
-  "ac.uk", "co.id", "co.il", "co.in", "co.jp", "co.ke", "co.kr", "co.nz",
-  "co.th", "co.uk", "co.za", "com.ar", "com.au", "com.br", "com.cn",
-  "com.hk", "com.mx", "com.my", "com.ng", "com.ph", "com.pl", "com.sg",
-  "com.tr", "com.tw", "com.ua", "com.vn", "gov.uk", "ne.jp", "net.au",
-  "org.au", "org.uk", "or.jp",
-]);
 const hostPattern =
   /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/;
 const bodyPattern = /^\s*(?:<\?xml|<svg|<!doctype svg)/i;
@@ -70,13 +66,6 @@ export function normalizeDomain(value: string): string | null {
 // sender. The shared list covers the common ones and gmx is a family of hosts.
 export function isFreeMail(domain: string): boolean {
   return personalMailDomains.has(domain) || domain.startsWith("gmx.");
-}
-
-export function registrableDomain(host: string): string {
-  const labels = host.split(".");
-  if (labels.length <= 2) return host;
-  const width = multiPartSuffixes.has(labels.slice(-2).join(".")) ? 3 : 2;
-  return labels.slice(-width).join(".");
 }
 
 // Punctuation is not a reliable part of a brand name: theSVG writes
@@ -314,6 +303,16 @@ type Outcome =
   | { status: "found"; image: LogoImage }
   | { status: "missing" | "failed" };
 
+// The domain's own BIMI record ranks below the curated registry: it is the
+// sender's published mark, trusted no more than the favicon fallback. Tests
+// swap the source so no test does real DNS.
+let bimiSource: (domain: string) => Promise<BimiResult> = bimiService();
+export function setBimiSource(source: (domain: string) => Promise<BimiResult>): () => void {
+  const restore = bimiSource;
+  bimiSource = source;
+  return () => { bimiSource = restore; };
+}
+
 async function resolveLogoIn(dir: string, value: string): Promise<Outcome> {
   const domain = normalizeDomain(value);
   if (!domain || isFreeMail(domain)) return { status: "missing" };
@@ -326,26 +325,40 @@ async function resolveLogoIn(dir: string, value: string): Promise<Outcome> {
   const state = stateFor(dir);
   if (state.misses.get(domain)) return previous || { status: "missing" };
   const index = await registry(dir);
-  if (!index) return previous || { status: "failed" };
-  const entry = matchDomain(index, domain);
+  const entry = index ? matchDomain(index, domain) : null;
+  const image = entry ? await downloadIcon(entry) : null;
+  const cache = (found: LogoImage) => {
+    try {
+      mkdirSync(cacheDir(dir), { recursive: true, mode: 0o700 });
+      writeFileSync(`${file}.tmp`, found.body, { mode: 0o600 });
+      renameSync(`${file}.tmp`, file);
+      trimImageCache(cacheDir(dir));
+    } catch {
+      // A logo is decorative: a cache that cannot be written is not an error.
+    }
+  };
+  if (image) {
+    cache(image);
+    return { status: "found", image };
+  }
+  // Asked even when a stale copy exists, so a logo that came from BIMI is
+  // refreshed like a registry icon; the stale copy still answers on failure.
+  const bimi = await bimiSource(domain);
+  if (bimi && bimi !== "failed") {
+    cache(bimi);
+    return { status: "found", image: bimi };
+  }
+  if (!index || bimi === "failed") return previous || { status: "failed" };
   if (!entry) {
-    // Cache unknown domains briefly with a fixed entry budget.
+    // Cache unknown domains briefly with a fixed entry budget, only once the
+    // registry answered and BIMI answered that it has no logo; a failed BIMI
+    // lookup is retried on the next request.
     state.misses.set(domain, true);
     return previous || { status: "missing" };
   }
-  const image = await downloadIcon(entry);
   // A download failure is left unremembered: it is usually the network, and
   // the route's 404 is still cached by the renderer.
-  if (!image) return previous || { status: "failed" };
-  try {
-    mkdirSync(cacheDir(dir), { recursive: true, mode: 0o700 });
-    writeFileSync(`${file}.tmp`, image.body, { mode: 0o600 });
-    renameSync(`${file}.tmp`, file);
-    trimImageCache(cacheDir(dir));
-  } catch {
-    // A logo is decorative: a cache that cannot be written is not an error.
-  }
-  return { status: "found", image };
+  return previous || { status: "failed" };
 }
 
 const pending = new Map<string, Promise<Outcome>>();

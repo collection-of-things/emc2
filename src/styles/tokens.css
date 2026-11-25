@@ -7,6 +7,8 @@
   --radius-mark-sm: 3px 10px 3px 10px;
   --radius-mark: 4px 14px 4px 14px;
   --radius-mark-lg: 6px 22px 6px 22px;
+  /* The mark's corner shape in percentages so it scales with avatar size. */
+  --radius-avatar: 18% 46% 18% 46%;
   --radius-pane: 14px;
   --sidebar: 208px;
   --list-width: clamp(320px, calc(31vw * var(--text-scale, 1)), min(560px, calc(448px * var(--text-scale, 1))));
@@ -36,6 +38,13 @@
   --avatar-2-ink: #f2a9ba;
   --avatar-3: #352430;
   --avatar-3-ink: #d7c2cb;
+  /* Each Inbox category keeps one hue on its icon in every theme; Primary
+     takes the accent. */
+  --tab-social: #6cb6ff;
+  --tab-promotions: #f0a45d;
+  --tab-newsletters: #b79cff;
+  --tab-transactions: #5fd08f;
+  --tab-updates: #f08fb0;
   --selected-card: color-mix(in oklab, var(--accent) 22%, var(--surface));
   --mail-group-height: 30px;
   --subhead-height: 48px;
@@ -156,6 +165,16 @@
   --skeleton-peak: color-mix(in srgb, var(--skeleton) 80%, var(--text-4));
   --avatar: #26262a;
   --avatar-text: #a1a1aa;
+  /* Neutral Graphite uses four distinct hues so senders are told apart by
+     color. */
+  --avatar-0: #1d2f4f;
+  --avatar-0-ink: #9cc0ff;
+  --avatar-1: #33264f;
+  --avatar-1-ink: #c9b5ff;
+  --avatar-2: #4a3216;
+  --avatar-2-ink: #f3c184;
+  --avatar-3: #17392f;
+  --avatar-3-ink: #8fdcbd;
   --backdrop: rgba(0, 0, 0, 0.6);
   --edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
@@ -232,6 +251,13 @@
   --avatar-2-ink: #8a5212;
   --avatar-3: #f1dde3;
   --avatar-3-ink: #5e4552;
+  /* Each Inbox category keeps one hue on its icon in every theme; Primary
+     takes the accent. */
+  --tab-social: #1f6fd0;
+  --tab-promotions: #b8610e;
+  --tab-newsletters: #6d43c9;
+  --tab-transactions: #1c8a4c;
+  --tab-updates: #c2376b;
   --lights-off: #ded2d5;
   --backdrop: rgba(21, 5, 16, 0.22);
   --edge: inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -260,6 +286,16 @@
   --skeleton: var(--veil-hover);
   --avatar: #ececef;
   --avatar-text: #5c5c64;
+  /* Neutral Graphite uses four distinct hues so senders are told apart by
+     color. */
+  --avatar-0: #dce8ff;
+  --avatar-0-ink: #1f4fb0;
+  --avatar-1: #e9e0fb;
+  --avatar-1-ink: #5a3a9a;
+  --avatar-2: #fbe6c8;
+  --avatar-2-ink: #8a5212;
+  --avatar-3: #d5f0e4;
+  --avatar-3-ink: #17694a;
   --lights-off: #d8d8dc;
   --backdrop: rgba(0, 0, 0, 0.22);
   --edge: inset 0 1px 0 rgba(255, 255, 255, 0.7);

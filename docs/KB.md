@@ -378,6 +378,24 @@ the list column. Card
 heights and the list virtualizer share the tokens in `styles/tokens.css`;
 account metadata stays inside those measured rows.
 
+Provider marks keep their brand colors: Gmail and iCloud use drawn icons,
+Fastmail, Yahoo and ten more mail hosts come as bundled SVGs in
+`src/ui/provider-marks.ts`, and an unrecognised custom IMAP account stays
+neutral. Custom IMAP branding is read from the account's email domain only;
+the IMAP host is not sent to the renderer, so a custom domain hosted at a
+known provider keeps the generic envelope. Signature controls, tabs and
+avatars use the mark's asymmetric corner radius (`--radius-mark-sm`,
+`--radius-avatar`). Each Inbox category tints its tab icon with a fixed
+`--tab-*` hue; Primary uses the accent. Sidebar rows retain the 30px height,
+28px heading tracks, 16px group gaps and 10px horizontal padding from the
+sidebar/glass changes; the mark radius changes their corners only.
+
+Sender logos resolve in `server/logos.ts` from the theSVG registry, then the
+domain's own BIMI record (an HTTPS SVG fetch pinned to public addresses,
+refused on redirects, encodings and non-200 responses), then the DuckDuckGo
+favicon service in `server/avatars.ts`. All are served through the inert
+`/api/logo` route; no renderer request reaches a remote host.
+
 `emc2.appearance.v1.readerToolbar` saves `compact`, `actions` or `separate`.
 Missing or invalid values use `compact`. Settings > Appearance exposes all
 three full-width reader arrangements; narrow windows use the same preference.
@@ -899,7 +917,7 @@ Windows offers Off, Subtle (Mica) and Glass (Acrylic); macOS offers Off and Glas
 
 The renderer uses macOS-style chrome in light or dark on every desktop platform: a themed window frame and sidebar, near-neutral mail and reader panes, grouped Settings controls and rounded menus/dialogs. `src/styles/tokens.css` defines every color, surface and radius token for both schemes. Pane and menu transitions are brief opacity/transform animations; there are no looping effects or wheel-event handlers. Scroll containers use native smooth programmatic scrolling and contained overscroll. New panes reset instantly, and reduced-motion preferences disable smooth scrolling and shorten animations.
 
-The Mail group leads the sidebar and places Drafts below Inbox. The toolbar keeps a show/hide toggle on desktop and opens the navigation drawer at phone widths. A Settings gear and sync status share one fixed footer row. The theme picker grows with its previews and labels; the fixed mail-row height applies only to mail rows, so accent swatches stay below the theme choices.
+The sidebar lists Workspace above Mail, then Accounts; Mail places Drafts below Inbox. The toolbar keeps a show/hide toggle on desktop and opens the navigation drawer at phone widths. A Settings gear and sync status share one fixed footer row. The theme picker grows with its previews and labels; the fixed mail-row height applies only to mail rows, so accent swatches stay below the theme choices.
 
 The mailbox list uses a neutral cursor, an accent edge and a selection fill for the message open in split view, and a separate accent fill for bulk-selected rows. Keyboard focus keeps its own outline. Inbox categories, draft account tabs, and workspace tabs use filled active states. Compose and Reply have a visible header above the envelope and formatting toolbar.
 

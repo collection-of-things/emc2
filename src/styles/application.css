@@ -589,7 +589,7 @@ section.work-calendar[data-layout="month"] > .calendar-backlog { grid-column: 2;
 .draft-list .draft-row:hover:not(:disabled) { background: var(--hover); }
 .draft-row-identity { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .draft-list .draft-row-recipient { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.draft-list .draft-row-account { grid-column: auto; grid-row: auto; margin: 0; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: calc(11px * var(--text-scale, 1)); }
+.draft-list .draft-row-account { grid-column: auto; grid-row: auto; align-self: auto; margin: 0; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: calc(11px * var(--text-scale, 1)); }
 .draft-list .draft-row-account .provider-icon, .draft-list .draft-row-account .provider-icon svg { width: 12px; height: 12px; flex-shrink: 0; }
 .draft-list .draft-row-content { grid-column: 2; grid-row: 1; gap: 3px; min-width: 0; }
 .draft-list .draft-row-content > strong, .draft-list .draft-row-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -285,3 +285,24 @@ test("selected mail rail grows around wrapping counts and actions without a scro
     assert.notEqual(style(".rail-count").whiteSpace, "nowrap");
   } finally { dom.window.close(); }
 });
+
+test("provider marks keep brand colors and Inbox tab buttons carry their category ids", () => {
+  const css = stylesheet();
+  // No bare .provider-icon path fill: Gmail's SVG carries its own colors, so a
+  // generic currentColor rule would flatten it back to grayscale.
+  // The literal ".provider-icon svg path" (with a space) does not match the
+  // iCloud-specific rule ".provider-icon.icloud svg path".
+  assert.doesNotMatch(css, /\.provider-icon svg path/s);
+  assert.match(css, /\.provider-icon\.icloud\s*\{[^}]*color:\s*#3d9bff/s);
+  assert.match(css, /:root\[data-scheme="light"\] \.provider-icon\.icloud\s*\{[^}]*color:\s*#1877d6/s);
+  assert.match(css, /\.provider-icon\.icloud svg path\s*\{[^}]*fill:\s*currentColor/s);
+  // Bundled marks render as a full-tile image over a transparent tile, so
+  // Fastmail, Yahoo and recognized IMAP domains keep their own brand colors.
+  assert.match(css, /\.provider-icon\[data-brand\]\s*\{[^}]*background:\s*transparent/s);
+  assert.match(css, /\.provider-icon img\s*\{[^}]*width:\s*100%[^}]*height:\s*100%/s);
+  for (const { id } of inboxTabs) {
+    const token = id === "primary" ? "var(--accent)" : `var(--tab-${id})`;
+    assert.match(css, new RegExp(`\\.inbox-tabs button\\[data-tab="${id}"\\] > svg\\s*\\{[^}]*color:\\s*${token.replace(/[()]/g, "\\$&")}`, "s"),
+      `tab ${id} tints its icon`);
+  }
+});

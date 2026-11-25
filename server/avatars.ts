@@ -5,7 +5,9 @@ import { canonicalBase64Size } from "./mime-limits.js";
 import { ByteCache, readCacheFile, readResponseBytes, trimImageCache, prepareImageCache, workLimit } from "./resource-limits.js";
 
 // Company logos are fetched on the server and served from localhost, so the
-// renderer never loads a remote image and no mailbox host is contacted for one.
+// renderer never loads a remote image. The order is theSVG registry, then the
+// domain's own BIMI record (which contacts its chosen logo host once per
+// domain), then this favicon service.
 const service = "https://icons.duckduckgo.com/ip3";
 type Image = { body: Buffer; type: string };
 const maxBytes = 512 * 1024;

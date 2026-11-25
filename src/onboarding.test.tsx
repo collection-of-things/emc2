@@ -217,6 +217,12 @@ test("Google callback dismisses the normal provider chooser", async () => withDO
   await act(async () => { const inbox = [...container.querySelectorAll<HTMLButtonElement>(".sidebar button")].find((button) => button.textContent?.trim().startsWith("Inbox")); inbox?.click(); });
   await openChooser(container);
   assert.ok([...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Continue with Google")));
+  // Fastmail and Yahoo carry bundled SVG marks now, not letter tiles.
+  for (const provider of ["fastmail", "yahoo"]) {
+    const icon = container.querySelector(`.provider-icon.${provider}`);
+    assert.ok(icon?.querySelector("img"), `${provider} mark is a bundled image`);
+    assert.equal(icon?.querySelector("b"), null, `${provider} shows no letter tile`);
+  }
   await api.googleConnected();
   assert.equal(container.querySelector('[role="dialog"]'), null);
 }));

@@ -24,7 +24,7 @@ export function InboxTabs({ tab, unread, onTab, compact = false }: {
         const Icon = tabIcons[id];
         const count = unread.get(id) ?? 0;
         return (
-          <button key={id} className={tab === id ? "active" : undefined} title={label}
+          <button key={id} className={tab === id ? "active" : undefined} title={label} data-tab={id}
             aria-current={tab === id ? "page" : undefined} onClick={() => onTab(id)}>
             <Icon color="currentColor" size={15} />
             <span className="tab-label">{label}</span>

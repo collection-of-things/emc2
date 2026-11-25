@@ -38,6 +38,7 @@ function Heading({ id, folded, onFold, children }: {
 /**
  * Persistent mail navigation, account filters and bottom Settings action.
  */
+// Show Workspace, Mail and Accounts in the maintainer's order (ADR 0139).
 export function Sidebar({
   open, corner, maximized, settings, mail, sections,
 }: {
@@ -150,7 +151,7 @@ export function Sidebar({
                 onClick={() => mail.onAccount(account.id)}
               >
                 {index < 9 && <kbd>{index + 1}</kbd>}
-                <ProviderIcon provider={account.provider} />
+                <ProviderIcon provider={account.provider} email={account.email} />
                 <span className="sidebar-name">
                   <i className="account-dot" data-tone={index % 4} aria-hidden="true" />
                   {accountLabel(account, index, mail.privacy, mail.accounts)}
@@ -178,7 +179,7 @@ export function Sidebar({
             <button type="button" className="sidebar-account-card" disabled={mail.blocked}
               aria-label={`Manage accounts, ${footerLabel}${mail.accounts.length ? "" : ", Connect an account"}`} onClick={() => mail.onAccountSettings(selectedAccount?.id)}>
               <span className="sidebar-account-avatar" aria-hidden="true">
-                {selectedAccount ? <ProviderIcon provider={selectedAccount.provider} /> : <MailIcon size={18} />}
+                {selectedAccount ? <ProviderIcon provider={selectedAccount.provider} email={selectedAccount.email} /> : <MailIcon size={18} />}
               </span>
               <span className="sidebar-account-text">
                 <strong>{footerLabel}</strong>

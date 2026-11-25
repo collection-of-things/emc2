@@ -237,8 +237,13 @@ test("mounted drafts use encrypted HTTP persistence, recover edits and guard unc
     });
     dom.window.localStorage.setItem("privacy", "off");
     await remount();
+    const draftsBeforeNew = store.all("draft").length;
     await click(button("New message"));
     assert.equal(container.querySelector<HTMLTextAreaElement>("textarea")!.value, "\n\n-- \nSignature A");
+    // An untouched composer holds only the signature, so nothing is saved;
+    // the pause gives any wrongful in-flight save time to land first.
+    await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 50)); });
+    assert.equal(store.all("draft").length, draftsBeforeNew);
     await fill("textarea", "SYNTHETIC account-switch draft\n\n-- \nSignature A");
     const templateSearch = container.querySelector<HTMLElement>('.compose-template-picker input')!;
     await act(async () => templateSearch.focus());

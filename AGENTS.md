@@ -57,6 +57,7 @@ encrypted SQLite. The installed app needs no separate browser, terminal or Node.
 - Preserve Inbox categories, Snoozed, Archive, Done and Teach semantics
   ([ADR 0024](docs/adr/0024-inbox-category-tabs.md)). Done archives, never deletes.
   Snooze is local to this client.
+- Sidebar groups stay in the order Workspace, Mail, Accounts ([ADR 0139](docs/adr/0139-brand-shape-and-color-in-neutral-interface.md)). Reorder or regroup navigation only when a maintainer asks for that change.
 - Follow DESIGN.md for the compact interface, keyboard navigation, focus styles,
   address hiding and reduced motion.
 - Out of scope unless requested: attachments, rich-text composition, tray

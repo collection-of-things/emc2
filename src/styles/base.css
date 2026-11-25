@@ -280,7 +280,7 @@ input[type="checkbox"][role="switch"]:disabled {
   align-self: center;
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: var(--radius-avatar);
 }
 .empty-skeleton-card > i:nth-child(2) { grid-row: 1; grid-column: 2; width: 85%; }
 /* The preview bar runs to where the real preview text ends, under the stub. */
