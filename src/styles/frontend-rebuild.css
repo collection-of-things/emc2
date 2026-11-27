@@ -468,3 +468,26 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
 }
+
+/* Gmail list. No sender avatars: a checkbox column leads each row (the avatar
+   slot stays as its anchor). Unread rows sit on a lighter bed in bold, read
+   rows on the canvas. Full-width rows are one line: sender, subject - snippet,
+   date. Side-by-side rows keep sender and date, subject, snippet. */
+.list .mail-row, .compact .list .mail-row, .list .mail-row:has(> .row.card) { --avatar-size: calc(18px * var(--text-scale, 1)); --avatar-gap: 12px; }
+.list .row > .avatar { background: none; box-shadow: none; }
+.list .row > .avatar > * { visibility: hidden; }
+.list .mail-select { opacity: 1; }
+.list { --row-unread-bed: color-mix(in oklab, var(--text) 3%, var(--mail-row-bed));
+  --row-hover-bed: color-mix(in oklab, var(--text) 7%, var(--mail-row-bed)); }
+.list .row.unread:not(.selected) { background-color: var(--row-unread-bed); }
+.list .row:is(.card, :not(.card)) :is(.row-line strong, .row-subject) { color: var(--text); font-weight: 400; }
+.list .row.unread:is(.card, :not(.card)) :is(.row-line strong, .row-subject, time) { color: var(--text); font-weight: 700; }
+.list .row.card .row-line strong, .list .row.card .row-subject { font-size: calc(14px * var(--text-scale, 1)); }
+.list .row:not(.card) { gap: var(--avatar-gap); padding-left: var(--row-gutter, 16px); }
+.list .row:not(.card) .row-line { gap: 0; align-items: baseline; }
+.list .row:not(.card) .row-line strong { width: 200px; max-width: 28%; margin-right: 24px; font-size: calc(14px * var(--text-scale, 1)); }
+.list .row:not(.card) .row-subject { flex: 0 1 auto; font-size: calc(14px * var(--text-scale, 1)); }
+.list .row:not(.card) .row-line .row-preview { font-size: calc(14px * var(--text-scale, 1)); color: var(--text-3); }
+.list .row:not(.card) .row-line .row-preview:not(:empty)::before { content: "\00a0-\00a0"; }
+.list .row time { color: var(--text-2); font-size: calc(12px * var(--text-scale, 1)); }
+.list .row:not(.card) time { min-width: 56px; }

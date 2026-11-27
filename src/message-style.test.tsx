@@ -101,7 +101,7 @@ test("unread dots badge the avatar corner in every layout and the account dot st
     assert.match(rules, /\.mail-category-bar[^}]*var\(--select-gutter\)/);
     // A narrow list column reuses the compact avatar so sender text keeps room.
     assert.match(rules, /@container \(max-width: 400px\) \{\s*\.list \.mail-row:has\(> \.row\.card\) \{[^}]*--avatar-size:\s*24px/s);
-    for (const [density, narrow, isCard] of [["compact", false, false], ["compact", true, true], ["comfortable", false, true]] as const) {
+    for (const [density, narrow, isCard] of [["compact", false, false], ["compact", true, true], ["comfortable", false, false]] as const) {
       const context = `${density}, narrow=${narrow}`;
       dom.window.document.body.innerHTML = renderToStaticMarkup(<div className={`list ${density}`}>
         <MailList messages={[mail]} selectedId={undefined} density={density} narrow={narrow} sort="newest"

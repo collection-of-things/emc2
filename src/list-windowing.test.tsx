@@ -61,7 +61,7 @@ async function mount(count = 3000, pageOffset = 0) {
     if (pageOffset && this.classList.contains("row")) {
       const top = pageOffset + offset + parseFloat(this.closest<HTMLElement>(".mail-window-row")!.style.top) -
         (document.querySelector<HTMLElement>(".list")?.scrollTop || 0);
-      const rowHeight = props.narrow ? (props.density === "compact" ? 48 : 100) : props.density === "compact" ? 28 : 34;
+      const rowHeight = props.narrow ? (props.density === "compact" ? 48 : 100) : props.density === "compact" ? 32 : 40;
       const scale = parseFloat(dom.window.getComputedStyle(document.querySelector(".list")!).getPropertyValue("--text-scale")) || 1;
       return { top, bottom: top + rowHeight * scale, height: rowHeight * scale } as DOMRect;
     }
@@ -187,11 +187,11 @@ test("25624-message first, middle and last selections restore focus and retain a
 test("density, date groups, offsets, resize, filtering, sort, shrink and empty arrays preserve reachability", async () => {
   const app = await mount(180);
   try {
-    assert.equal(app.windowHeight(), 180 * 34);
+    assert.equal(app.windowHeight(), 180 * 40);
     app.props.sort = "newest"; await app.render();
     const groups = app.document.querySelectorAll<HTMLElement>(".mail-window-date");
     assert.ok(groups.length >= 3);
-    assert.ok(Math.abs(app.windowHeight() - (180 * 34 + groups.length * 30)) < 0.01);
+    assert.ok(Math.abs(app.windowHeight() - (180 * 40 + groups.length * 30)) < 0.01);
     assert.ok([...groups].every(group => parseFloat(group.style.height) > 30));
     await app.scroll(3000);
     const before = app.scrolls.length;
@@ -199,7 +199,7 @@ test("density, date groups, offsets, resize, filtering, sort, shrink and empty a
     assert.equal(app.list().scrollTop, 3000);
     assert.equal(app.scrolls.length, before);
     app.props.density = "compact"; await app.render();
-    assert.ok(Math.abs(app.windowHeight() - (180 * 28 + groups.length * 30)) < 0.01);
+    assert.ok(Math.abs(app.windowHeight() - (180 * 32 + groups.length * 30)) < 0.01);
     await app.scroll(app.list().scrollHeight);
     assert.ok(app.row(179));
     app.props.messages = [...app.all].reverse(); app.props.sort = "oldest"; await app.render();
@@ -256,7 +256,7 @@ test("selection remains visible when the list sits inside an offset page ancesto
       `selected row top ${selected.top} must be inside viewport starting at ${viewport.top}`);
     assert.ok(selected.bottom <= viewport.bottom,
       `selected row bottom ${selected.bottom} must be inside viewport ending at ${viewport.bottom}`);
-    assert.equal(app.list().scrollTop, 646, "selection scrolling excludes the page ancestor offset");
+    assert.equal(app.list().scrollTop, 760, "selection scrolling excludes the page ancestor offset");
   } finally { await app.close(); }
 });
 
@@ -278,7 +278,7 @@ test("split cards retain every message across density and pane layout changes", 
     await app.select(2999);
     assert.equal(app.document.activeElement, app.row(2999));
     app.props.narrow = false; await app.render();
-    assert.equal(app.windowHeight(), 3000 * 28);
+    assert.equal(app.windowHeight(), 3000 * 32);
     await app.scroll(app.list().scrollHeight);
     assert.ok(app.row(2999), "returning to the wide list retains the tail");
   } finally { await app.close(); }

@@ -16,7 +16,7 @@ unversioned history without treating it as a release record.
 
 ### Changed
 
-- The mail list and reading pane follow Gmail more closely. Pointing at a row lifts it above the dividers with the actions in its own wash instead of a floating box, date headings are a single hairline, and the reader uses a regular-weight subject, a larger sender avatar, a body aligned with the sender name and outlined Reply all and Forward buttons.
+- The mail list and reading pane follow Gmail more closely. At full width each email is one line, with the sender, the subject and snippet, and the date. Rows show a checkbox instead of a sender avatar, and unread mail sits on a lighter row in bold. Pointing at a row lifts it above the dividers with the actions in its own wash instead of a floating box, date headings are a single hairline, and the reader uses a regular-weight subject, a larger sender avatar, a body aligned with the sender name and outlined Reply all and Forward buttons.
 
 ### Fixed
 

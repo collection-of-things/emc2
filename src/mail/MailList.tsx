@@ -64,7 +64,7 @@ export function MailList<T extends Mail>({
   mailGestures?: boolean;
   onSwipe?: (mail: T, direction: "left" | "right") => void;
 }) {
-  const cardLayout = narrow || density === "comfortable";
+  const cardLayout = narrow;
   const cardContent = useCallback((mail: T) => {
     const preview = density === "comfortable" && !!previewText(mail.preview).trim();
     // Compact cards are two lines: metadata trails the subject. Comfortable
