@@ -88,8 +88,10 @@ test("bulk read changes use one provider round trip per account and do not repor
 
   // A lost provider response is uncertain for every message in that round trip and is never retried.
   t.mock.method(ImapFlow.prototype, "messageFlagsAdd", async () => { throw new Error("Synthetic lost response"); });
-  const uncertain = await updateMessages({ items: items.slice(0, 2), operation: { action: "read" } });
-  assert.deepEqual(uncertain.results.map((item) => item.status), ["unknown", "unknown"]);
+  connections = 0;
+  const uncertain = await updateMessages({ items: [...items.slice(0, 2), { id: "a:2:7", accountId: "a" }], operation: { action: "read" } });
+  assert.deepEqual(uncertain.results.map((item) => item.status), ["unknown", "unknown", "unknown"]);
+  assert.equal(connections, 2, "mail left out of the failed round trip still takes the single-message path");
   assert.equal(get("mail", imapMail[0].id)?.unread, true);
 
   // A sync waiting behind mail work does not report "syncing", so mail actions stay available.

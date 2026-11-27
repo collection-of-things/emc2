@@ -1045,6 +1045,7 @@ function imapProvider() {
       });
       const untouched = new Set(mails.map((m) => m.id));
       if (!batched.length) return [...untouched];
+      let attempted = new Set(batched.map((item) => item.m.id));
       const client = imap(a);
       try {
         await client.connect();
@@ -1052,6 +1053,7 @@ function imapProvider() {
         try {
           const validity = client.mailbox && client.mailbox.path.toUpperCase() === "INBOX" ? String(client.mailbox.uidValidity) : undefined;
           const matching = batched.filter((item) => item.validity === validity);
+          attempted = new Set(matching.map((item) => item.m.id));
           if (matching.length) {
             const uids = matching.map((item) => item.uid).join(",");
             const changed = action === "read"
@@ -1063,6 +1065,9 @@ function imapProvider() {
         } finally {
           lock.release();
         }
+      } catch (error) {
+        // Mail the server never received can still take the single-message path.
+        throw Object.assign(error instanceof Error ? error : new Error(String(error)), { untouched: mails.filter((m) => !attempted.has(m.id)).map((m) => m.id) });
       } finally {
         if (client.usable) await client.logout();
         else client.close();

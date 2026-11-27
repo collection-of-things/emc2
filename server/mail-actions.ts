@@ -258,8 +258,12 @@ async function updateFlags(items: BatchItem[], action: "read" | "unread", check:
       let untouched: Set<string>;
       try {
         untouched = new Set(await providers[a.provider].updateFlags(a, pending, action));
-      } catch {
-        for (const mail of pending) statuses.set(mail.id, "unknown");
+      } catch (error) {
+        const skipped = new Set((error as { untouched?: string[] }).untouched ?? []);
+        for (const mail of pending) {
+          if (skipped.has(mail.id)) single.push(group.find((item) => item.id === mail.id)!);
+          else statuses.set(mail.id, "unknown");
+        }
         return;
       }
       for (const mail of pending) {
