@@ -111,11 +111,14 @@ fill: accent text with a 2px accent tick at the left edge, so the mailbox
 keeps the full fill.
 
 As in Gmail, full-width mail is one line per message at both densities: a
-checkbox, the sender in a 200px column, the subject with its snippet after a
-dash in quieter ink, then the date. Comfortable rows are 40px and compact rows
+24px sender avatar, the sender in a 200px column, any tags, the subject with
+its snippet after a dash in quieter ink, the date, then the checkbox at the
+far right. Comfortable rows are 40px and compact rows
 32px. Unread messages sit on a slightly lighter bed with bold sender, subject
-and date; read messages are regular weight on the canvas. Rows carry no sender
-avatar: its slot is the checkbox column, and the checkbox shows on every row.
+and date; read messages are regular weight on the canvas. The checkbox shows on every
+row. Rows do not print the account address; a multi-account list keeps only
+the account's colour dot, and the account name stays in the row's accessible
+label. Tags lead the subject in every layout.
 Side by side and below 1200px, comfortable mail uses content-sized cards. The sender and subject
 use a 54px base. A nonempty comfortable preview adds 20px and leads with the
 account — its color dot centered before the name — and status inline in
@@ -181,9 +184,10 @@ The importance marker follows the sender name in flow, so names and subjects
 start at one x. Unread dots badge the avatar's lower-right corner in every
 layout. Read senders use weight 500 and unread senders 600; date groups,
 sidebar headings and counts are sentence-case or tabular numerals in the
-interface face, not uppercase mono. The reader footer is a single row:
-Reply all and Forward message are Gmail-style outlined pill buttons, the rest
-are quiet secondary links that turn accent on hover or focus. Attachment actions are quiet compact buttons in the link
+interface face, not uppercase mono. The reader header puts star (pin), reply and more icons beside the date.
+Under the message, Reply, Reply all (only with other recipients) and Forward
+are Gmail-style outlined pill buttons; a reply opens inline in their place.
+The remaining footer tools are quiet secondary links that turn accent on hover or focus. Attachment actions are quiet compact buttons in the link
 colour, keeping each row near 36px and ending on the reader's right inset.
 While the list loads, skeleton cards draw on the real row grid — the same
 avatar and text gutters, the longest bar at the preview's reach and a short
@@ -519,7 +523,7 @@ Details and reminders stay available through an explicit edit action. Several
 deliverables require a choice, and closed work still needs the full editor to
 reopen. Privacy never automatically focuses a hidden text field.
 
-Above 760px the composer is a window docked to the bottom-right corner, as in Gmail: up to 560px wide and 600px tall (720px with the original email above a reply), with a tinted 40px title strip, an icon-only Delete draft and close at its right, and a pill Send button. The list and reader stay visible behind it; phones keep the full-screen composer. The composer groups From, To and optional Cc above the subject and body on a shared label column; envelope header rows are 36px with the 12px muted labels inset 12px on the value's baseline, its Delete draft and close controls fit the row at 28px behind a 1px divider, the attach, format, body and Undo delay rows line up on the same inset, the saved status sits beside Keep draft at 12px muted after a 20px gap, and the File limits and About undo notes are 12px muted disclosures that share the icon set's chevron glyph with the conversation coverage note. The send bar keeps its divider inside the compose column so the mail list runs the window's full height.
+Above 760px a new message opens in a compact window docked to the bottom-right corner, as in Gmail: up to 540px wide and 520px tall, with a tinted 40px title strip holding minimize, expand and close. Minimize folds it to a 280px title bar; expand centres it over a dimmed app. The bottom bar holds the split Send and Send later pill, the save status and an icon-only Delete draft; closing keeps the draft. Formatting and file tools sit just above that bar. Replies open inline under the email they answer and do not repeat it; Pop out moves the reply to the corner window. While composing, notices sit at the bottom left, clear of Send later. The list and reader stay visible behind it; phones keep the full-screen composer. The composer groups From, To and optional Cc above the subject and body on a shared label column; envelope header rows are 36px with the 12px muted labels inset 12px on the value's baseline, its Delete draft and close controls fit the row at 28px behind a 1px divider, the attach, format, body and Undo delay rows line up on the same inset, the saved status sits beside Keep draft at 12px muted after a 20px gap, and the File limits and About undo notes are 12px muted disclosures that share the icon set's chevron glyph with the conversation coverage note. The send bar keeps its divider inside the compose column so the mail list runs the window's full height.
 Attachments and save/recovery status remain visible above a sticky action
 footer. Keep draft, Discard draft and Send retain their existing safeguards.
 In dark mode the writing surface is a light paper card with near-black ink.

@@ -78,8 +78,8 @@ test("reply retains original context and file drops reuse attachment validation 
   const {createRoot}=await import("react-dom/client");const root=createRoot(document.getElementById("root")!);
   const draft:Compose={accountId:"a",to: ["client@example.test"],subject:"Reply",body:"My reply",inReplyTo:"<message>"};
   const source = {id:"mail",accountId:"a",sender:"Client",address:"client@example.test",to:"me@example.test",subject:"Original subject",body:"Please confirm the delivery date.",date:1} as import("../shared/types").Mail;
-  let changed:Compose|undefined,task:Promise<void>|undefined,sends=0;
-  const render=(busy=false)=>act(async()=>root.render(<ComposePanel draft={draft} source={source} setDraft={value=>{changed=value;}} accounts={[{id:"a",email:"me@example.test",provider:"imap"},{id:"b",email:"selected@example.test",provider:"imap"}]} busy={busy} onClose={()=>{}} onDiscard={()=>{}} onRetry={()=>{}} onSaveCopy={()=>{}} progress={{phase:"saved",message:"Saved"}} onSend={()=>{sends++;}} onAttachmentTask={value=>{task=value;}}/>));
+  let changed:Compose|undefined,task:Promise<void>|undefined,sends=0,poppedOut=false;
+  const render=(busy=false,inline=false)=>act(async()=>root.render(<ComposePanel draft={draft} source={source} inline={inline} onPopOut={()=>{poppedOut=true;}} setDraft={value=>{changed=value;}} accounts={[{id:"a",email:"me@example.test",provider:"imap"},{id:"b",email:"selected@example.test",provider:"imap"}]} busy={busy} onClose={()=>{}} onDiscard={()=>{}} onRetry={()=>{}} onSaveCopy={()=>{}} progress={{phase:"saved",message:"Saved"}} onSend={()=>{sends++;}} onAttachmentTask={value=>{task=value;}}/>));
   const drop=async(files:File[])=>{const event=new dom.window.Event("drop",{bubbles:true,cancelable:true});Object.defineProperty(event,"dataTransfer",{value:{files,types:["Files"]}});await act(async()=>{document.querySelector('form')!.dispatchEvent(event);await task;});assert.equal(event.defaultPrevented,true);};
   try{
     await render(); assert.match(document.querySelector('[aria-label="Original email"]')!.textContent!,/Please confirm the delivery date/);
@@ -96,6 +96,20 @@ test("reply retains original context and file drops reuse attachment validation 
     await render();
     assert.equal(document.querySelector('.compose-reply-layout')?.children.length, 2, 'RSVP replies keep exactly two working columns');
     assert.ok(document.querySelector('.compose-form .compose-invitation-note'));
+    delete draft.invitation; await render();
+    const button=(label:string)=>document.querySelector<HTMLButtonElement>(`.compose-dialog [aria-label="${label}"]`);
+    await act(async()=>button("Minimize message window")!.click());
+    assert.ok(document.querySelector('.compose-dialog.compose-minimized'), 'minimize folds the window to its title bar');
+    await act(async()=>button("Restore message window")!.click());
+    await act(async()=>button("Full screen")!.click());
+    assert.ok(document.querySelector('.compose-dialog.compose-expanded'), 'expand enlarges the window');
+    await act(async()=>button("Exit full screen")!.click());
+    assert.equal(document.querySelector('.compose-dialog.compose-expanded'), null);
+    await render(false,true);
+    assert.ok(document.querySelector('.compose-dialog.compose-inline'), 'an inline reply is marked inline');
+    assert.equal(document.querySelector('[aria-label="Original email"]'), null, 'an inline reply sits under the email and does not repeat it');
+    assert.equal(button("Minimize message window"), null, 'inline replies have no window controls');
+    await act(async()=>button("Pop out reply")!.click()); assert.equal(poppedOut, true);
   }finally{await act(async()=>root.unmount());dom.window.close();for(const[key,value]of previous)if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}
 });
 

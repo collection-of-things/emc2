@@ -58,15 +58,16 @@ test("rendered mail rows keep their gutter across checkbox states after the comp
         assert.ok(row, context);
         assert.equal(checkbox?.getAttribute("aria-checked"), state === "absent" ? undefined : String(state === "checked"), context);
         // Rows start one inset from the pane edge whether or not a checkbox
-        // exists; with a mouse the checkbox overlays the avatar instead of
-        // claiming a column, so text never moves.
+        // exists; the checkbox sits at the far right of the row, as the
+        // owner asked, so the sender avatar and text never move.
         assert.equal(dom.window.getComputedStyle(row).paddingLeft, "var(--row-gutter, 16px)", context);
         assert.equal(dom.window.getComputedStyle(dom.window.document.querySelector(".list")!)
           .getPropertyValue("--row-gutter"), "var(--row-inset)", context);
         if (checkbox) {
           const style = dom.window.getComputedStyle(checkbox);
           assert.equal(style.position, "absolute", context);
-          assert.match(style.left, /var\(--row-gutter, 16px\).*var\(--avatar-size\)/, context);
+          assert.equal(style.left, "auto", context);
+          assert.equal(style.right, "12px", context);
           assert.equal(style.top, "50%", context);
           assert.equal(style.transform, "translateY(-50%)", context);
         }

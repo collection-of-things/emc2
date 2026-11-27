@@ -1644,9 +1644,9 @@ export function App() {
                 {combinedReaderToolbar && actions}
               </div>}
           <main className={split ? "workspace split" : "workspace"} data-reader-open={split && reader ? "" : undefined}>
-            <section className="list-pane" inert={inlineReply}>
+            <section className="list-pane" inert={inlineReply && !fullReader}>
               {!settings && <CredentialFallbackNotice mode={window.desktop?.credentialFallback} />}
-              {fullReader && !combinedReaderToolbar && actions}
+              {fullReader && !combinedReaderToolbar && <div className="reader-actions-guard" inert={inlineReply}>{actions}</div>}
               <div
                 ref={listRef}
                 className={`list ${density}`}

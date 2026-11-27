@@ -288,7 +288,7 @@
 .message-from .reader-head-actions .icon:hover:not(:disabled) { background: var(--hover); color: var(--text); }
 .message-from .reader-head-actions .icon[aria-pressed="true"] { color: #f4b400; }
 .message-from .reader-head-actions .icon[aria-pressed="true"] svg path { fill: currentColor; }
-.reader-reply-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 8px; padding-left: var(--reader-indent, 52px); }
+.reader-reply-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 8px; }
 .reader-reply-actions button {
   display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 20px 0 16px;
   border: 1px solid var(--line-3); border-radius: 18px; background: transparent;
@@ -470,14 +470,22 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   color: var(--text-3);
 }
 
-/* Gmail list. No sender avatars: a checkbox column leads each row (the avatar
-   slot stays as its anchor). Unread rows sit on a lighter bed in bold, read
-   rows on the canvas. Full-width rows are one line: sender, subject - snippet,
-   date. Side-by-side rows keep sender and date, subject, snippet. */
-.list .mail-row, .compact .list .mail-row, .list .mail-row:has(> .row.card) { --avatar-size: calc(18px * var(--text-scale, 1)); --avatar-gap: 12px; }
-.list .row > .avatar { background: none; box-shadow: none; }
-.list .row > .avatar > * { visibility: hidden; }
+/* Gmail list with the sender avatar kept and the checkbox at the far right.
+   Unread rows sit on a lighter bed in bold, read rows on the canvas.
+   Full-width rows are one line: sender, tags, subject - snippet, date.
+   Side-by-side rows keep sender and date, tags and subject, snippet. The
+   account shows as its colour dot only. */
+.list .mail-row { --avatar-gap: 12px; --row-select-room: calc(16px * var(--text-scale, 1) + 16px); }
+.list .mail-row:not(:has(> .row.card)) { --avatar-size: calc(24px * var(--text-scale, 1)); }
 .list .mail-select { opacity: 1; }
+.list .mail-row > .mail-select, .list .mail-row:has(> .row.card) > .mail-select { left: auto; right: 12px; }
+.list .mail-row:has(> .mail-select) > .row { padding-right: calc(var(--row-gutter, 16px) + var(--row-select-room)); }
+.list .mail-row:has(> .mail-select) > .row-actions { right: var(--row-select-room); }
+.list .mail-row:has(> .mail-select) .avatar > :not(.unread-dot) { opacity: 1; }
+.list .row .row-account { display: inline-flex; align-items: center; }
+.list .row .row-account::after { content: none; }
+.list .row:not(.card) .row-line .row-meta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; margin: 0 8px 0 0; }
+.list .row.card .row-subject-line .row-meta { display: inline-flex; gap: 6px; margin-right: 6px; }
 .list { --row-unread-bed: color-mix(in oklab, var(--text) 3%, var(--mail-row-bed));
   --row-hover-bed: color-mix(in oklab, var(--text) 7%, var(--mail-row-bed)); }
 .list .row.unread:not(.selected) { background-color: var(--row-unread-bed); }
@@ -534,14 +542,15 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   /* Gmail's bottom bar: Send and Send later, formatting and files above it,
      the save state, then Delete draft at the far end. Close keeps the draft. */
   .compose-dialog .compose-scroll { display: flex; flex-direction: column; }
-  .compose-dialog .compose-scroll > :is(.compose-format-tools, .compose-link-controls) { order: 1; }
+  .compose-dialog .compose-body-scope { display: flex; flex-direction: column; }
+  .compose-dialog .compose-body-scope > :is(.compose-format-tools, .compose-link-controls) { order: 1; }
   .compose-dialog .compose-scroll > .compose-extras { order: 2; }
   .compose-dialog .compose-scroll > .compose-toolbar { order: 3; min-height: 32px; }
   .compose-dialog .compose-format-tools { border-bottom: 0; }
   .compose-dialog .compose-footer { padding: 8px 12px 8px 16px; border-top: 0; }
   .compose-dialog .compose-actions { display: flex; align-items: center; gap: 4px; }
   .compose-dialog .compose-send { border-radius: 18px 0 0 18px; padding-inline: 22px; }
-  .compose-dialog .compose-schedule { height: 34px; padding: 0 12px; border-radius: 0 18px 18px 0; background: var(--accent); color: var(--accent-ink, #fff); border: 0; border-left: 1px solid rgb(0 0 0 / 0.2); font-weight: 500; }
+  .compose-dialog .compose-actions > .compose-schedule { height: 34px; padding: 0 12px; border-radius: 0 18px 18px 0; background: var(--accent); color: var(--primary-ink); border: 0; border-left: 1px solid rgb(0 0 0 / 0.2); font-weight: 500; }
   .compose-dialog .compose-save-status { margin: 0 auto 0 12px; }
   .compose-dialog .compose-keep { display: none; }
   .compose-dialog .compose-discard { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-2); }
@@ -555,11 +564,11 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   .compose-dialog > .compose-reply-layout { display: flex; flex-direction: column; }
   /* Notices raised while composing sit at the bottom left, as Gmail's do,
      clear of Send and Send later. */
-  .compose-backdrop .toast-stack { right: auto; left: calc(var(--sidebar, 0px) + 16px); bottom: 16px; }
+  .compose-backdrop .toast-stack { right: auto; left: 16px; bottom: 16px; }
 }
 
 /* An inline reply sits in the reader under the email it answers. */
-.reader-reply-host { margin: 24px 0 8px; padding-left: var(--reader-indent, 52px); }
+.reader-reply-host { margin: 24px 0 8px; }
 .app .reader-reply-host .dialog-backdrop:has(> .compose-dialog) { position: static; inset: auto; display: block; padding: 0; background: none; }
 .app .reader-reply-host .dialog.compose-dialog {
   position: static; width: auto; height: auto; min-height: 260px; overflow: visible;
