@@ -737,7 +737,8 @@ export function App() {
   const hydratedReply = useMailBody(currentReplySource || undefined, api);
   const [replyHost, setReplyHost] = useState<HTMLElement | null>(null);
   const [replyPoppedOut, setReplyPoppedOut] = useState(false);
-  useEffect(() => { if (!compose) setReplyPoppedOut(false); }, [compose]);
+  const [poppedScheduleAt, setPoppedScheduleAt] = useState<number>();
+  useEffect(() => { if (!compose) { setReplyPoppedOut(false); setPoppedScheduleAt(undefined); } }, [compose]);
   // A reply opens inline under its email in the mail reader, as in Gmail.
   const inlineReply = !!(compose && hydratedReply.mail && !replyPoppedOut && replyHost?.closest(".mail-view"));
   const placeComposer = (panel: ReactNode) => inlineReply && replyHost ? createPortal(panel, replyHost) : panel;
@@ -1887,7 +1888,8 @@ export function App() {
         {compose && placeComposer(
           <ComposePanel
             inline={inlineReply}
-            onPopOut={() => setReplyPoppedOut(true)}
+            onPopOut={at => { setPoppedScheduleAt(at); setReplyPoppedOut(true); }}
+            initialScheduleAt={poppedScheduleAt}
             onAttachmentTask={(task) => { attachmentTask.current = task; const clear = () => { if (attachmentTask.current === task) attachmentTask.current = undefined; }; void task.then(clear, clear); }}
             draft={compose}
             source={hydratedReply.mail}

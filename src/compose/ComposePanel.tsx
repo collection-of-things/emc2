@@ -115,12 +115,14 @@ export function ComposePanel({
   api,
   inline = false,
   onPopOut,
+  initialScheduleAt,
 }: {
   draft: Compose;
   source?: Mail;
   /* Shown in the reading pane under the email it answers, as Gmail does. */
   inline?: boolean;
-  onPopOut?: () => void;
+  onPopOut?: (scheduleAt?: number) => void;
+  initialScheduleAt?: number;
   api?: Api;
   setDraft: (value: Compose) => void;
   accounts: Account[];
@@ -136,7 +138,7 @@ export function ComposePanel({
   onAttachmentTask?: (task: Promise<void>) => void;
 }) {
   const { on: privacy } = useContext(PrivacyContext);
-  const [scheduleAt, setScheduleAt] = useState<number | undefined>();
+  const [scheduleAt, setScheduleAt] = useState<number | undefined>(initialScheduleAt);
   const [windowSize, setWindowSize] = useState<"docked" | "minimized" | "expanded">("docked");
   const sourceKey = useMemo(() => mailBodyKey(source), [source]);
   const footerActions = useRef<HTMLDivElement>(null);
@@ -201,7 +203,7 @@ export function ComposePanel({
     <Dialog
       toolbarAccess
       actions={inline
-        ? onPopOut && <button type="button" className="icon compose-window-action" title="Pop out reply" aria-label="Pop out reply" onClick={onPopOut}><WindowGlyph kind="pop-out" /></button>
+        ? onPopOut && <button type="button" className="icon compose-window-action" title="Pop out reply" aria-label="Pop out reply" onClick={() => onPopOut(scheduleAt)}><WindowGlyph kind="pop-out" /></button>
         : <>
           <button type="button" className="icon compose-window-action" title={windowSize === "minimized" ? "Restore" : "Minimize"} aria-label={windowSize === "minimized" ? "Restore message window" : "Minimize message window"}
             onClick={() => setWindowSize(windowSize === "minimized" ? "docked" : "minimized")}><WindowGlyph kind="minimize" /></button>
