@@ -518,4 +518,10 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   .compose-dialog .dialog-title .compose-discard > span { display: none; }
   .compose-dialog .compose-send { border-radius: 18px; padding-inline: 22px; }
   .compose-dialog .compose-envelope { border-radius: 0; background: transparent; }
+  /* A docked reply keeps the mail visible behind it and stacks the original
+     above the form, since the window is too narrow for two columns. */
+  .app:has(.compose-with-context) .app-main > :is(.mail-view, .work-pane, .settings-pane, .search-help),
+  .app:has(.compose-with-context) .draft-list { visibility: visible; }
+  .compose-dialog > .compose-reply-layout { display: flex; flex-direction: column; }
+  .compose-reply-layout > .compose-context { padding: 12px 0; border-right: 0; border-bottom: 1px solid var(--line); }
 }
