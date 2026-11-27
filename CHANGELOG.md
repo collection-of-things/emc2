@@ -23,6 +23,7 @@ unversioned history without treating it as a release record.
 ### Fixed
 
 - Pointing at a date heading pinned at the top of the mail list no longer highlights, shows actions for or opens the email hidden beneath it.
+- Marking a large selection read or unread no longer locks the app while it runs. Each account's change goes to the provider in one request instead of one per message, and other mail actions are no longer shown as waiting for sync while the change finishes.
 
 ## 0.2.43 - 2026-11-25
 

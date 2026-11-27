@@ -383,6 +383,9 @@ export const providers: Record<
       m: Mail,
       action: "archive" | "read" | "unread" | "inbox" | "trash",
     ) => Promise<void | { remoteId?: string; mailbox?: Mail["mailbox"] }>;
+    // Changes read state for many messages in one provider round trip. Returns
+    // the ids it left untouched for the single-message path.
+    updateFlags: (a: StoredAccount, mails: Mail[], action: "read" | "unread") => Promise<string[]>;
     send: (a: StoredAccount, input: SendInput) => Promise<void>;
   }
 > & { gmail: { thread: (a: StoredAccount, threadId: string) => Promise<Incoming[]> } } = {
@@ -588,6 +591,17 @@ export const providers: Record<
             : { removeLabelIds: [action === "archive" ? "INBOX" : "UNREAD"] }),
         },
       });
+    },
+    async updateFlags(a, mails, action) {
+      if (!mails.length) return [];
+      await gmail(a).users.messages.batchModify({
+        userId: "me",
+        requestBody: {
+          ids: mails.map((m) => m.remoteId),
+          ...(action === "unread" ? { addLabelIds: ["UNREAD"] } : { removeLabelIds: ["UNREAD"] }),
+        },
+      });
+      return [];
     },
     async send(a, input) {
       input = sendSchema.parse(input);
@@ -1020,6 +1034,40 @@ function imapProvider() {
         }
       }
       return restoredIdentity;
+    },
+    async updateFlags(a: StoredAccount, mails: Mail[], action: "read" | "unread") {
+      // Only Inbox mail with plain identifiers is batched; archived and moved
+      // mail keeps its per-message identity checks.
+      const batched = mails.flatMap((m) => {
+        const identifiers = /^(\d+):([1-9]\d*)$/.exec(m.remoteId);
+        return identifiers && !m.archived && !m.mailbox && m.direction !== "sent" && Number(identifiers[2]) <= 4294967295
+          ? [{ m, validity: identifiers[1], uid: identifiers[2] }] : [];
+      });
+      const untouched = new Set(mails.map((m) => m.id));
+      if (!batched.length) return [...untouched];
+      const client = imap(a);
+      try {
+        await client.connect();
+        const lock = await client.getMailboxLock("INBOX");
+        try {
+          const validity = client.mailbox && client.mailbox.path.toUpperCase() === "INBOX" ? String(client.mailbox.uidValidity) : undefined;
+          const matching = batched.filter((item) => item.validity === validity);
+          if (matching.length) {
+            const uids = matching.map((item) => item.uid).join(",");
+            const changed = action === "read"
+              ? await client.messageFlagsAdd(uids, ["\\Seen"], { uid: true })
+              : await client.messageFlagsRemove(uids, ["\\Seen"], { uid: true });
+            if (!changed) throw new Error(`Could not mark these emails as ${action}. Sync and try again.`);
+            for (const item of matching) untouched.delete(item.m.id);
+          }
+        } finally {
+          lock.release();
+        }
+      } finally {
+        if (client.usable) await client.logout();
+        else client.close();
+      }
+      return [...untouched];
     },
     async send(a: StoredAccount, input: SendInput) {
       input = sendSchema.parse(input);

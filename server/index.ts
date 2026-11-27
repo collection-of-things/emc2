@@ -701,9 +701,11 @@ function requestSync(ids: string[], reconnect = false): Promise<string[]> {
     wakeSync?.();
     return syncRun;
   }
-  syncing = true;
   const newUnread: NotificationMail[] = [];
   syncRun = runMailWork(async () => {
+    // Report syncing only once the run holds the mail queue, so a sync queued
+    // behind other mail work does not disable mail actions while it waits.
+    syncing = true;
     const errors: string[] = [];
     const active = new Map<string, Promise<void>>();
     try {
