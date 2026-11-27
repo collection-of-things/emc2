@@ -18,6 +18,8 @@ unversioned history without treating it as a release record.
 
 - The mail list and reading pane follow Gmail more closely. At full width each email is one line, with the sender, the subject and snippet, and the date. Rows show a checkbox instead of a sender avatar, and unread mail sits on a lighter row in bold. Pointing at a row lifts it above the dividers with the actions in its own wash instead of a floating box, date headings are a single hairline, and the reader uses a regular-weight subject, a larger sender avatar, a body aligned with the sender name and outlined Reply all and Forward buttons.
 
+- New messages and replies open in a Gmail-style window docked to the bottom-right corner instead of taking over the reading pane, so the mail list and the open email stay visible and usable behind it. Phones keep the full-screen composer.
+
 ### Fixed
 
 - Pointing at a date heading pinned at the top of the mail list no longer highlights, shows actions for or opens the email hidden beneath it.
