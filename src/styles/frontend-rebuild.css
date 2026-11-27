@@ -559,6 +559,10 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   /* A floating window needs its own bed: under glass, mail would show
      through the composer where it overlaps the list or drafts. */
   :root[data-glass] .app :is(.dialog.compose-dialog, .compose-dialog .compose-footer) { background: var(--surface); }
+  /* The window floats over the mail, so Glass no longer clips or hides the
+     panes behind it; an inline reply lives inside the reader. */
+  :root[data-glass] .app:has(.compose-dialog) .app-main > :is(.mail-view, .work-pane, .settings-pane, .search-help) { clip-path: none; visibility: visible; }
+  :root[data-glass] .app:has(.compose-dialog) .draft-list { visibility: visible; }
   .app:has(.compose-with-context) .app-main > :is(.mail-view, .work-pane, .settings-pane, .search-help),
   .app:has(.compose-with-context) .draft-list { visibility: visible; }
   .compose-dialog > .compose-reply-layout { display: flex; flex-direction: column; }
