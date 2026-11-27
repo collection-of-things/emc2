@@ -14,6 +14,17 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+## 0.2.44 - 2026-11-27
+
+### Changed
+
+- The mail list and reader have a cleaner Gmail-style layout, with clearer unread state, in-row actions, a more readable message header and reply controls. New messages use a compact docked composer; replies open inline and can pop out, while phones keep the full-screen composer. ([#289](https://github.com/collection-of-things/emc2/pull/289))
+
+### Fixed
+
+- A pinned date heading no longer highlights, shows actions for or opens the email hidden beneath it. ([#289](https://github.com/collection-of-things/emc2/pull/289))
+- Marking a large selection read or unread no longer locks the app. Changes are sent to each account's provider in one request, and unrelated mail actions no longer appear to be waiting for sync. ([#290](https://github.com/collection-of-things/emc2/pull/290))
+
 ## 0.2.43 - 2026-11-25
 
 ### Added
