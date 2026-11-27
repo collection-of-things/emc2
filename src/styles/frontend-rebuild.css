@@ -518,6 +518,9 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
   .compose-dialog .dialog-title .compose-discard > span { display: none; }
   .compose-dialog .compose-send { border-radius: 18px; padding-inline: 22px; }
   .compose-dialog .compose-envelope { border-radius: 0; background: transparent; }
+  /* A floating window needs its own bed: under glass, mail would show
+     through the composer where it overlaps the list or drafts. */
+  :root[data-glass] .app :is(.dialog.compose-dialog, .compose-dialog .compose-footer) { background: var(--surface); }
   /* A docked reply keeps the mail visible behind it and stacks the original
      above the form, since the window is too narrow for two columns. */
   .app:has(.compose-with-context) .app-main > :is(.mail-view, .work-pane, .settings-pane, .search-help),
