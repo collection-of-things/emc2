@@ -15,8 +15,8 @@
   /* Toolbar, category rail and list rows share this left inset, so the view
      name, the select-all checkbox and every row's avatar start on one x. */
   --select-gutter: 16px;
-  --mail-row-medium: 34px;
-  --mail-row-compact: 28px;
+  --mail-row-medium: 40px;
+  --mail-row-compact: 32px;
   --mail-row-card-medium: 100px;
   --mail-row-card-compact: 48px;
   --mail-card-compact: 48px;

@@ -13,6 +13,16 @@ test('hover exposes row actions and removes the overlapping timestamp', () => {
  assert.match(css, /\.mail-row:hover \.row time\s*\{\s*opacity: 0;/);
  assert.doesNotMatch(css, /\.mail-row(?::focus-within|:has\(\.row\.selected\)) \.row-actions/);
 });
+test('a pinned date heading takes the pointer and the hovered row lifts beneath it', () => {
+ const css = ['./styles/mail-list.css', './styles/frontend-rebuild.css'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n');
+ assert.match(css, /\.mail-window-date\s*\{[^}]*pointer-events: none;/, 'the date container spanning its rows stays inert');
+ assert.match(css, /\.mail-window-date \.group\s*\{[^}]*pointer-events: auto;/, 'the visible heading never passes hover to the row hidden under it');
+ assert.match(css, /\.mail-window-row\s*\{[^}]*z-index: 0;/, 'each row is its own layer below the sticky heading');
+ assert.match(css, /\.mail-window-row:hover\s*\{\s*z-index: 1;/, 'the hovered row rises over neighbouring hairlines');
+ assert.match(css, /\.list \.mail-row:hover \.row:not\(\.selected\)\s*\{[^}]*box-shadow: var\(--row-hover-lift/, 'hover draws a lifted edge above the unread bed');
+ assert.doesNotMatch(css, /\.row-actions\s*\{[^}]*border: 1px solid/, 'hover actions sit in the row wash, not a floating box');
+ assert.match(css, /\.row-actions\s*\{\s*pointer-events: none;\s*\}\s*\.row-actions > \*\s*\{\s*pointer-events: auto;/, 'the fade and gaps pass clicks to the email row');
+});
 test('each row offers one More actions button that opens the message menu', () => {
  const html=renderToStaticMarkup(<MailList messages={[mail]} selectedId={undefined} density="comfortable" narrow={false} sort="newest" opening="double" accounts={[]} listRef={{current:null}} focusSelection={false} onOpen={()=>{}} onSelect={()=>{}} onMenu={()=>{}} onMenuKey={()=>{}} />);
  assert.ok(html.includes('class="row-more"'),'rows carry the overflow button');
@@ -138,7 +148,7 @@ test('touch and narrow lists do not reserve a persistent action strip', async ()
  for (const narrow of [false, true]) for (const density of ['comfortable', 'compact'] as const) {
   const ui = await mountRows([mail, {...mail, id: 'b:1'}], {touch: true, narrow, density});
   try {
-   const height = density === 'compact' ? (narrow ? 48 : 28) : 54;
+   const height = density === 'compact' ? (narrow ? 48 : 32) : (narrow ? 54 : 40);
    assert.equal(document.querySelectorAll('.with-action-strip').length, 0);
    assert.equal(parseFloat(ui.rows()[1].style.top), height);
    assert.equal(parseFloat(document.querySelector<HTMLElement>('.mail-window')!.style.height), height * 2);
@@ -150,8 +160,8 @@ test('the rendered row layout and the windowing height agree in every density an
   const ui=await mountRows(undefined,layouts({narrow,density}));try{
    const rows=ui.rows();
    const heights=rows.map((row,index)=>index+1<rows.length?parseFloat(ui.rows()[index+1].style.top)-parseFloat(row.style.top):0);
-   const expectedClass=narrow||density==='comfortable'?'card':'inline';
-   const expectedHeight=density==='compact'?(narrow?48:28):54;
+   const expectedClass=narrow?'card':'inline';
+   const expectedHeight=density==='compact'?(narrow?48:32):(narrow?54:40);
    for(const[index,row]of rows.entries()){
     const button=row.querySelector<HTMLElement>('.row')!;
     const relevance=index===0?2:index===1?3:1;
@@ -188,7 +198,7 @@ for (const archived of [false, true]) test(`row shows only applicable actions in
 
 
 test('card geometry follows enabled metadata, preview, density and text size', async () => {
- const ui = await mountRows([mail, {...mail, id: 'b:1', preview: 'A preview'}, {...mail, id: 'c:1', relevance: 3, reason: 'Needs reply'}]);
+ const ui = await mountRows([mail, {...mail, id: 'b:1', preview: 'A preview'}, {...mail, id: 'c:1', relevance: 3, reason: 'Needs reply'}], {narrow: true});
  const heights = () => ui.rows().map(row => parseFloat(row.style.height));
  try {
   assert.deepEqual(heights(), [54, 74, 72]);

@@ -56,8 +56,8 @@ export function MailListWindow<T extends Mail>({ messages, selectedId, focusSele
     const scale = parseFloat(style.getPropertyValue("--text-scale")) || 1;
     const token = (name: string, fallback: number) => (parseFloat(style.getPropertyValue(`--mail-row-${narrow ? "card-" : ""}${name}`)) || fallback) * scale;
     const nextSizes = {
-      medium: token("medium", narrow ? 100 : 34),
-      compact: token("compact", narrow ? 48 : 28),
+      medium: token("medium", narrow ? 100 : 40),
+      compact: token("compact", narrow ? 48 : 32),
       cardBase: (parseFloat(style.getPropertyValue("--mail-card-base")) || 54) * scale,
       cardCompact: (parseFloat(style.getPropertyValue("--mail-card-compact")) || 48) * scale,
       metadata: (parseFloat(style.getPropertyValue("--mail-card-meta")) || 18) * scale,

@@ -247,23 +247,25 @@ test("equal dates sort by id and an empty valid cache still retains the opened m
 
 test("Reader preserves selected snooze/reply/label callbacks and never applies them to another expanded message", async () => {
   const until = Date.now() + 86400000;
-  const base = message("a:2", { snoozedUntil: until });
+  const base = message("a:2", { snoozedUntil: until, cc: "team@example.test" });
   const older = message("a:1", { date: 1000, snoozedUntil: until });
   const api: Api = async <T,>(path: string) => (path.endsWith("/conversation") ? conversation([older, base]) : {}) as T;
   const ui = await fixture(api);
   const actions: string[] = [];
   try {
     await act(async () => ui.root.render(<Reader mail={base} provider="gmail" labels={[]} api={api} busy={false}
-      onLabels={() => actions.push("labels:a:2")} onReplyAll={() => actions.push("reply:a:2")}
+      onLabels={() => actions.push("labels:a:2")} onReply={() => actions.push("reply-one:a:2")} onReplyAll={() => actions.push("reply:a:2")}
       onForward={() => actions.push("forward:a:2")}
       onUnsnooze={() => actions.push("inbox:a:2")} onChangeTime={() => actions.push("snooze:a:2")}
       onOpen={item => actions.push(`open:${item.id}`)} onChanged={async () => {}}
       onMenu={(_, item) => actions.push(`menu:${item.id}`)} onMenuKey={() => {}} />));
     await ui.click(ui.container.querySelector('.conversation-toggle')!);
     const oldCard = ui.container.querySelector('[data-message-id="a:1"]')!;
-    assert.doesNotMatch(oldCard.textContent!, /Return to inbox|Change time|Reply all|Forward message|Edit labels/);
-    for (const label of ["Return to inbox", "Change time", "Reply all", "Forward message", "Edit labels"]) await ui.click(ui.button(label));
-    assert.deepEqual(actions, ["inbox:a:2", "snooze:a:2", "reply:a:2", "forward:a:2", "labels:a:2"]);
+    assert.doesNotMatch(oldCard.textContent!, /Return to inbox|Change time|Reply|Forward|Edit labels/);
+    assert.equal(oldCard.querySelector('[aria-label="Reply"]'), null, "header reply icon belongs to the selected message only");
+    for (const label of ["Return to inbox", "Change time", "Reply all", "Forward", "Edit labels"]) await ui.click(ui.button(label));
+    await ui.click(ui.container.querySelector<HTMLButtonElement>('[data-message-id="a:2"] [aria-label="Reply"]')!);
+    assert.deepEqual(actions, ["inbox:a:2", "snooze:a:2", "reply:a:2", "forward:a:2", "labels:a:2", "reply-one:a:2"]);
     await ui.click(ui.button("Select for actions")); assert.equal(actions.at(-1), "open:a:1");
   } finally { await ui.close(); }
 });

@@ -14,6 +14,16 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Changed
+
+- The mail list and reading pane follow Gmail more closely. At full width each email is one line, with the sender avatar and name, any tags, the subject and snippet, the date and a checkbox at the far right. Rows no longer repeat the account address, and unread mail sits on a lighter row in bold. Pointing at a row lifts it above the dividers with the actions in its own wash instead of a floating box, date headings are a single hairline, and the reader uses a regular-weight subject, a larger sender avatar, a body aligned with the sender name, star, reply and more icons beside the date, and outlined Reply, Reply all (when there are other recipients) and Forward buttons under the message. The empty attachments block is gone when an email has no known attachments.
+
+- New messages open in a compact Gmail-style window docked to the bottom-right corner, with minimize, expand and close in its title bar and Send, Send later and the formatting tools along the bottom. Replies open inline under the email they answer, without repeating it, and can pop out to the corner window. Notices raised while composing sit at the bottom left, clear of Send later. Phones keep the full-screen composer.
+
+### Fixed
+
+- Pointing at a date heading pinned at the top of the mail list no longer highlights, shows actions for or opens the email hidden beneath it.
+
 ## 0.2.43 - 2026-11-25
 
 ### Added

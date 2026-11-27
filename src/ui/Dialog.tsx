@@ -50,7 +50,7 @@ export function Dialog({
       const controls = [
         ...(toolbarAccess ? document.querySelectorAll<HTMLElement>('.sidebar:not(.closed) button:not(:disabled), .app-toolbar [data-compose-access]:not(:disabled)') : []),
         ...(ref.current?.querySelectorAll<HTMLElement>(selector) ?? []),
-      ].filter(control => !control.closest("[inert]"));
+      ].filter(control => !control.closest("[inert]") && control.checkVisibility?.() !== false);
       if (!controls?.length) return;
       if (toolbarAccess) {
         const index = controls.indexOf(document.activeElement as HTMLElement);

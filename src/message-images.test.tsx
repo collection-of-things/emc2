@@ -182,7 +182,7 @@ test("formatted reader recovery keeps text on failure, ignores late content and 
     assert.equal(container.querySelectorAll("img").length, 1);
     await render("empty-after-retry", false, undefined, []);
     await act(async () => reject(new Error("offline")));
-    assert.ok(container.querySelector('[aria-label="Attachments"]'), "unknown attachments stay explicit");
+    assert.equal(container.querySelector('[aria-label="Attachments"]'), null, "unknown attachments add no empty block");
     await act(async () => button("Retry formatted email").click());
     await act(async () => resolve({ html: null, images: [], attachments: [] }));
     assert.equal(container.querySelector('[aria-label="Attachments"]'), null);
@@ -315,6 +315,5 @@ test("reader content carries no in-message image control and keeps attachment st
   }
   const unknown = renderToStaticMarkup(<ReaderContent mail={{ id: "unknown", html: null }}
     loadContent={async () => { throw Error("synthetic"); }} loadImages={async () => ({ images: [] })} />);
-  assert.ok(unknown.includes('aria-label="Attachments"'));
-  assert.ok(unknown.includes("Attachment metadata is not yet available"));
+  assert.ok(!unknown.includes('aria-label="Attachments"'), "unknown attachments add no empty block");
 });

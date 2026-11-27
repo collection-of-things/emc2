@@ -10,6 +10,7 @@ import { InvitationPanel } from "../work/InvitationActions";
 import { ReaderContent } from "./MessageContent";
 import { mailBodyKey, useMailBody } from "../mail-body";
 import { UnsubscribeAction } from "./UnsubscribeAction";
+import { More, Reply, Star } from "../ui/icons";
 
 // Today's mail shows its time, this year's its day and time, older mail the full date.
 function readerDate(date: number) {
@@ -26,7 +27,7 @@ function readerDate(date: number) {
  * An opened email: subject, then one sender line with the recipient beneath
  * and the date at the right, Gmail labels, and the body with its image consent.
  */
-function SingleReader({ mail, provider, labels, busy, isMutationPending, api, onLabels, onMenu, onMenuKey, onOpen, onChanged, onReplyAll, onForward, onOpenDraft, onUnsnooze, onUnhandle, onChangeTime, onReviewingUnsubscribe, state, fromMeta, paper }: {
+function SingleReader({ mail, provider, labels, busy, isMutationPending, api, onLabels, onMenu, onMenuKey, onOpen, onChanged, onReply, onReplyAll, onForward, onPin, replyHostId, onReplyHost, onOpenDraft, onUnsnooze, onUnhandle, onChangeTime, onReviewingUnsubscribe, state, fromMeta, paper }: {
   mail: Mail;
   state?: State;
   provider?: Provider;
@@ -37,8 +38,13 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
   onLabels: () => void;
   onOpen?: (mail: Mail) => void;
   onChanged?: () => Promise<unknown>;
+  onReply?: () => void;
   onReplyAll?: () => void;
   onForward?: () => void;
+  onPin?: () => void;
+  /* The email an inline reply is open under; the reply window renders into the host. */
+  replyHostId?: string;
+  onReplyHost?: (host: HTMLElement | null) => void;
   onOpenDraft?: (draft: Draft) => void;
   onReviewingUnsubscribe?: (open: boolean) => void;
   onUnsnooze?: () => void;
@@ -73,6 +79,11 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
           <time dateTime={new Date(mail.date).toISOString()} title={new Date(mail.date).toLocaleString()}>
             {readerDate(mail.date)}
           </time>
+          {onReply && <span className="reader-head-actions">
+            {onPin && <button type="button" className="icon" aria-pressed={!!mail.pinned} aria-label={mail.pinned ? "Unpin email" : "Pin email"} title={mail.pinned ? "Unpin" : "Pin"} disabled={mutationBusy} onClick={onPin}><Star size={18} color="currentColor" /></button>}
+            <button type="button" className="icon" aria-label="Reply" title="Reply" disabled={busy} onClick={onReply}><Reply size={18} color="currentColor" /></button>
+            <button type="button" className="icon" aria-label="More email actions" title="More" disabled={busy} onClick={(event) => onMenu(event, mail)}><More size={18} color="currentColor" /></button>
+          </span>}
         </div>
         {mail.handled && <p className="message-return">
           Handled {mail.handled.by === "agent" ? <>by <Redact text={mail.handled.agentName || "an assistant"} /></> : "by you"} <time dateTime={new Date(mail.handled.at).toISOString()}>{new Date(mail.handled.at).toLocaleString()}</time>
@@ -91,8 +102,6 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
           loadImages={(id) => api(`/messages/${encodeURIComponent(id)}/images`, "POST")} />}
         <footer className="reader-secondary-tools">
         {hydrated && <UnsubscribeAction key={`unsubscribe:${mailBodyKey(mail)}`} mail={hydrated} api={api} busy={mutationBusy} onOpenDraft={onOpenDraft} onReviewing={onReviewingUnsubscribe} />}
-        {onReplyAll && <div className="message-labels reader-reply-all"><button type="button" className="link" disabled={busy} onClick={onReplyAll}>Reply all</button></div>}
-        {onForward && <div className="message-labels"><button type="button" className="link" disabled={busy} onClick={onForward}>Forward message</button></div>}
         {state && onOpenDraft && <OfferTimes key={`offers:${mail.id}`} mail={mail} state={state} api={api} onOpenDraft={onOpenDraft} />}
         {provider === "gmail" && (
           <div className="message-labels">
@@ -105,9 +114,22 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
           </div>
         )}
         </footer>
+        {replyHostId === mail.id
+          ? <div className="reader-reply-host" ref={onReplyHost} />
+          : (onReply || onForward) && <div className="reader-reply-actions">
+            {onReply && <button type="button" disabled={busy} onClick={onReply}><Reply size={16} color="currentColor" />Reply</button>}
+            {onReplyAll && (!!mail.cc || /[,;]/.test(mail.to || "")) && <button type="button" disabled={busy} onClick={onReplyAll}><ReplyAllGlyph />Reply all</button>}
+            {onForward && <button type="button" className="reader-forward" disabled={busy} onClick={onForward}><Reply size={16} color="currentColor" />Forward</button>}
+          </div>}
       </article>
     </MailPrivacy>
   );
+}
+
+function ReplyAllGlyph() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M7 14 2 9l5-5" /><path d="M12 14 7 9l5-5" /><path d="M7 9h8.5a5.5 5.5 0 0 1 0 11H13" />
+  </svg>;
 }
 
 // Only the selected message receives callbacks that close over the App action target.
@@ -118,7 +140,9 @@ export function Reader(props: Parameters<typeof SingleReader>[0]) {
     onChanged={props.onChanged} onSelect={props.onOpen} onMenu={props.onMenu} onMenuKey={props.onMenuKey}
     renderMessage={(mail, fromMeta) => <SingleReader {...props} mail={mail}
       provider={mail.id === props.mail.id ? props.provider : undefined}
+      onReply={mail.id === props.mail.id ? props.onReply : undefined}
       onReplyAll={mail.id === props.mail.id ? props.onReplyAll : undefined}
+      onPin={mail.id === props.mail.id ? props.onPin : undefined}
       onForward={mail.id === props.mail.id ? props.onForward : undefined}
       onUnsnooze={mail.id === props.mail.id ? props.onUnsnooze : undefined}
       onUnhandle={mail.id === props.mail.id ? props.onUnhandle : undefined}

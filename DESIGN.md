@@ -110,12 +110,21 @@ the connection. While a mailbox view is selected, the active account scope keeps
 fill: accent text with a 2px accent tick at the left edge, so the mailbox
 keeps the full fill.
 
-Comfortable mail uses content-sized cards at every width. The sender and subject
+As in Gmail, full-width mail is one line per message at both densities: a
+24px sender avatar, the sender in a 200px column, any tags, the subject with
+its snippet after a dash in quieter ink, the date, then the checkbox at the
+far right. Comfortable rows are 40px and compact rows
+32px. Unread messages sit on a slightly lighter bed with bold sender, subject
+and date; read messages are regular weight on the canvas. The checkbox shows on every
+row. Rows do not print the account address; a multi-account list keeps only
+the account's colour dot, and the account name stays in the row's accessible
+label. Tags lead the subject in every layout.
+Side by side and below 1200px, comfortable mail uses content-sized cards. The sender and subject
 use a 54px base. A nonempty comfortable preview adds 20px and leads with the
 account — its color dot centered before the name — and status inline in
 secondary text, an 8px space ahead of the quieter
 preview ink; without a preview, visible metadata
-keeps its own 18px line. Compact wide rows are 28px; compact cards are
+keeps its own 18px line. Compact cards are
 two lines and 48px: the sender line, then the subject with the account and
 status trailing inline in secondary text at a 6px gap, each capped at 40% of
 the line. Compact cards omit previews and the separate metadata line. Switching
@@ -124,16 +133,13 @@ focus; at full width, where rows change layout, focus moves to the message row. 
 windowing assigns the same calculated height to the rendered
 row, including text scaling. Rows run edge to edge with square corners, so
 hover and selection fills meet both pane edges; only text keeps the 16px inset
-shared with the toolbar and category rail. With a mouse, the selection checkbox
-appears over the avatar on hover, keyboard focus or selection, so no empty
-column sits left of the avatars and text never moves; touch keeps a visible
-checkbox column ahead of the avatar. The select-all checkbox centres over the
-avatar column. Hairlines divide rows across the full pane width, stay
-visible on hover and give way only around the selected row. Below 1200px, both densities use cards in
+shared with the toolbar and category rail. The select-all checkbox centres over the row checkbox column. Hairlines divide rows across the full pane width, stay
+visible on hover and give way only around the selected row. As in Gmail, the
+hovered row lifts above its neighbours with an opaque wash and a raised edge,
+and its actions replace the date inside that wash behind a short fade instead
+of a floating box. Below 1200px, both densities use cards in
 one reading column, and Inbox categories use a native picker with unread
-counts. Below 760px, the row inset is 12px; card avatars use 24px with an 8px
-text gap below 760px window width and when the list column is narrower than
-400px.
+counts. Below 760px, the row inset is 12px.
 Background message refreshes preserve the current scroll position. Explicit
 metadata, density and text-size changes keep the selected message in view.
 Checkboxes align with the vertical center of both cards and inline rows.
@@ -143,7 +149,11 @@ neutral 8% white wash in dark and a faint accent tint in light. The keyboard
 focus ring is unchanged; while no message is open (or the list sits without a
 reader at every width), the same card is the keyboard cursor — transparent
 fill with a 1px accent outline. Sticky date headings cover the cards beneath them
-when glass is off. Reader subjects use 20px text; the supported mail body uses
+when glass is off, close with one `--line-2` hairline and take the pointer, so
+pointing at a pinned heading never hovers or opens the row hidden beneath it.
+Reader subjects use 22px regular-weight text over a 40px sender avatar, and
+everything under the sender line is indented to the sender name (no indent
+below 720px); the supported mail body uses
 15px text at 1.5 line height.
 
 Letter avatars take the mark's corner shape in percentages so it scales with
@@ -174,9 +184,10 @@ The importance marker follows the sender name in flow, so names and subjects
 start at one x. Unread dots badge the avatar's lower-right corner in every
 layout. Read senders use weight 500 and unread senders 600; date groups,
 sidebar headings and counts are sentence-case or tabular numerals in the
-interface face, not uppercase mono. The reader footer is a single row
-of quiet links at one size: Reply all carries weight 500 in accent, the rest
-are secondary text that turn accent on hover or focus. Attachment actions are quiet compact buttons in the link
+interface face, not uppercase mono. The reader header puts star (pin), reply and more icons beside the date.
+Under the message, Reply, Reply all (only with other recipients) and Forward
+are Gmail-style outlined pill buttons; a reply opens inline in their place.
+The remaining footer tools are quiet secondary links that turn accent on hover or focus. Attachment actions are quiet compact buttons in the link
 colour, keeping each row near 36px and ending on the reader's right inset.
 While the list loads, skeleton cards draw on the real row grid — the same
 avatar and text gutters, the longest bar at the preview's reach and a short
@@ -465,7 +476,7 @@ Transparency uses the operating system's own material behind the window. On Wind
 - Sliding lists (sidebar groups and Settings sections) draw one hover wash that glides under the pointer on a 320ms spring and fades out when the pointer leaves, instead of a per-item hover background.
 - The mail list sits under its header and scrolls on its own. The Filters button, in the persistent toolbar, opens a 300px popover under it with labeled dropdowns for read status (Show), relevance, sort (Sort by) and Gmail label, plus Reset filters and sort. The popover stays open while choices change and closes on Escape (before Escape closes an email) or a click elsewhere. While any choice differs from its default, the button stays accent-colored with a small dot. Comfortable rows use content-sized document-preview cards at every width, before text scaling. Each card has 8px vertical padding and a sender avatar at 30px before text scaling, cut to the mark's corner shape, its initial scaling with it. Sender and subject stay visible; enabled metadata and nonempty previews add their own space. Unread mail uses bold sender and subject text and a small accent dot badge in the sender avatar's lower-right corner, ringed in the row's surface so it reads on hover and selected fills. The list cursor has a neutral wash and hairline. Opening mail in the split reader adds a stronger fill and an accent edge. Bulk-selected rows have their own fill, and keyboard focus adds an accent outline. Compact wide rows are 28px; narrow cards omit previews. High-relevance mail retains its importance marker and sorting reason. Bulk checkboxes keep their reserved space and outline themselves with `--control-edge`, muted text mixed toward the pane to hold a 3:1 contrast in every theme; custom palettes pick the stronger of their border or muted text and fall back to palette text. Headers and rows share one `--select-gutter` so the select-all checkbox aligns in every list header. In dark themes, read cards recede to `--row-read-ink` on sender and subject and `--row-read-preview` on the preview, each at 4.5:1 or better on the row and its selected fill; read senders use weight 500 and unread senders use full text at 650. The virtual window uses the same height tokens as the rendered rows.
 - Reading pane. Side by side (the default) keeps the list in a column (31vw, clamped to 320–448px, widening with text scale up to 560px; the clamp re-evaluates `--text-scale` on `.app`, where the preference lives) and opens mail in a reader pane beside it. The reader's header holds the email toolbar and, at its right, an `Esc` close control. While the list has mail or is loading and no message is open, the pane shows one placeholder: a 48px mark tile on the photon tint, No email open at 16px/600 and, once mail has loaded, one muted line of keyboard hints in the UI font — key names in small mono chips — including the open shortcut when an email is selected. A clear or failed list hides the reader pane so its state centres across the workspace. Rows in the column become cards: avatar, sender and time on the first line, then the subject, then a preview in comfortable density. Unread cards bold the sender and subject. Full width, and any window narrower than 1200px, opens mail in place of the list as before.
-- The opened email shows its subject at 25px semibold, then one sender line: a 36px avatar, the name with its address beside it and the recipient beneath, and a short date at the right (time for today, day and time this year, full date before; the full timestamp is the tooltip). Gmail labels follow as one muted line with Edit labels. Images load by default; the toolbar button beside Privacy hides them for every email and remembers the choice, so there is no strip above the body. The subject, sender line, labels and attachments span the reader width at an inset that grows with the window, left-aligned like Gmail; a plain-text body keeps a 65ch measure, and sender-formatted mail uses the full width so its own centered tables stay centered. Inside formatted mail, prose blocks outside tables — paragraphs, lists, quotes, headings and pre blocks — cap at 70ch, including in sender-styled mail. Formatted mail renders in the reader itself, so the reader is its only vertical scroller; sender-styled mail sits in a shadow tree that starts from 15px/1.5 system type, as a mail document would, and the app's own element styles do not reach it; mail wider than the reader zooms down to fit (to half size, then scrolls sideways without a visible bar), and hidden-image placeholders take a neutral grey box with a hairline outline at their image's shape, keeping the sender's display, float and margins; images 2px or smaller on a side draw nothing. In dark mode the email toolbar offers a per-message Light background toggle that draws the body as a light paper card and re-evaluates readable sender ink against it. Conversation subject, summary bar and collapsed rows share the message inset; collapsed rows are 36px tall and divide with the line color at a third of its strength, while the boundaries around the open message keep the full hairline. An unread dot sits absolutely in the row's left gutter so every collapsed sender starts at the same x.
+- The opened email shows its subject at 22px regular weight, then one sender line: a 40px avatar, the name with its address beside it and the recipient beneath, and a short date at the right (time for today, day and time this year, full date before; the full timestamp is the tooltip). Gmail labels follow as one muted line with Edit labels. Images load by default; the toolbar button beside Privacy hides them for every email and remembers the choice, so there is no strip above the body. The subject, sender line, labels and attachments span the reader width at an inset that grows with the window, left-aligned like Gmail; a plain-text body keeps a 65ch measure, and sender-formatted mail uses the full width so its own centered tables stay centered. Inside formatted mail, prose blocks outside tables — paragraphs, lists, quotes, headings and pre blocks — cap at 70ch, including in sender-styled mail. Formatted mail renders in the reader itself, so the reader is its only vertical scroller; sender-styled mail sits in a shadow tree that starts from 15px/1.5 system type, as a mail document would, and the app's own element styles do not reach it; mail wider than the reader zooms down to fit (to half size, then scrolls sideways without a visible bar), and hidden-image placeholders take a neutral grey box with a hairline outline at their image's shape, keeping the sender's display, float and margins; images 2px or smaller on a side draw nothing. In dark mode the email toolbar offers a per-message Light background toggle that draws the body as a light paper card and re-evaluates readable sender ink against it. Conversation subject, summary bar and collapsed rows share the message inset; collapsed rows are 36px tall and divide with the line color at a third of its strength, while the boundaries around the open message keep the full hairline. An unread dot sits absolutely in the row's left gutter so every collapsed sender starts at the same x.
 - Sticky date headers (Today, Yesterday, This week, This month, Earlier) in 11px faint text, pinned to the top of the list on an opaque pane canvas so scrolled cards never show through, with no history-toolbar offset. Their padding is 8px above, 4px below and 12px horizontally, aligned with the inset row content.
 - No sender panel. The window holds at most the sidebar, the mail list and the reader; sender details stay in the reader header ([ADR 0056](docs/adr/0056-remove-sender-panel.md)).
 - Gmail label filter follows account filters and applies within the current view. When all accounts are shown, label names include their account. Opened Gmail mail shows custom labels as plain text and offers Edit labels in a checkbox dialog. System labels are available for filtering but cannot be edited here.
@@ -512,7 +523,7 @@ Details and reminders stay available through an explicit edit action. Several
 deliverables require a choice, and closed work still needs the full editor to
 reopen. Privacy never automatically focuses a hidden text field.
 
-The composer groups From, To and optional Cc above the subject and body on a shared label column; envelope header rows are 36px with the 12px muted labels inset 12px on the value's baseline, its Delete draft and close controls fit the row at 28px behind a 1px divider, the attach, format, body and Undo delay rows line up on the same inset, the saved status sits beside Keep draft at 12px muted after a 20px gap, and the File limits and About undo notes are 12px muted disclosures that share the icon set's chevron glyph with the conversation coverage note. The send bar keeps its divider inside the compose column so the mail list runs the window's full height.
+Above 760px a new message opens in a compact window docked to the bottom-right corner, as in Gmail: up to 540px wide and 520px tall, with a tinted 40px title strip holding minimize, expand and close. Minimize folds it to a 280px title bar; expand centres it over a dimmed app. The bottom bar holds the split Send and Send later pill, the save status and an icon-only Delete draft; closing keeps the draft. Formatting and file tools sit just above that bar. Replies open inline under the email they answer and do not repeat it; Pop out moves the reply to the corner window. While composing, notices sit at the bottom left, clear of Send later. The list and reader stay visible behind it; phones keep the full-screen composer. The composer groups From, To and optional Cc above the subject and body on a shared label column; envelope header rows are 36px with the 12px muted labels inset 12px on the value's baseline, its Delete draft and close controls fit the row at 28px behind a 1px divider, the attach, format, body and Undo delay rows line up on the same inset, the saved status sits beside Keep draft at 12px muted after a 20px gap, and the File limits and About undo notes are 12px muted disclosures that share the icon set's chevron glyph with the conversation coverage note. The send bar keeps its divider inside the compose column so the mail list runs the window's full height.
 Attachments and save/recovery status remain visible above a sticky action
 footer. Keep draft, Discard draft and Send retain their existing safeguards.
 In dark mode the writing surface is a light paper card with near-black ink.

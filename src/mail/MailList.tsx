@@ -64,7 +64,7 @@ export function MailList<T extends Mail>({
   mailGestures?: boolean;
   onSwipe?: (mail: T, direction: "left" | "right") => void;
 }) {
-  const cardLayout = narrow || density === "comfortable";
+  const cardLayout = narrow;
   const cardContent = useCallback((mail: T) => {
     const preview = density === "comfortable" && !!previewText(mail.preview).trim();
     // Compact cards are two lines: metadata trails the subject. Comfortable
@@ -89,7 +89,6 @@ export function MailList<T extends Mail>({
     document.getElementById(`mail-${last.id}`)?.focus({ preventScroll: true });
   }, [density, cardLayout]);
   return <>
-    {showAccount && !cardLayout && <div className="mail-list-columns" aria-hidden="true"><span>Account</span><span>Status</span></div>}
     <MailListWindow messages={messages} selectedId={selectedId} focusSelection={focusSelection}
     density={density} sort={sort} listRef={listRef} narrow={cardLayout} cardContent={cardContent}>{(m, index) => {
     const relevance = m.relevance;
@@ -108,7 +107,7 @@ export function MailList<T extends Mail>({
     const metadata = (showAccount || reasonLabel) && <span className={`row-meta${showAccount ? "" : " row-meta-status"}`}>
       {showAccount && <span className="row-account" title={accountName}>
         {accountIndex >= 0 && <i className="account-dot" data-tone={accountIndex % 4} aria-hidden="true" />}
-        <span>{accountName}</span>
+        <span className="visually-hidden">{accountName}</span>
       </span>}
       <span className="row-status">{reasonLabel}</span>
     </span>;
@@ -150,8 +149,8 @@ export function MailList<T extends Mail>({
                     focused reveal control inside it survives the switch. */}
                 {density === "comfortable" && !cardContent(m).preview && metadata}
                 <span className={density === "compact" ? "row-subject-line" : "row-subject-slot"}>
-                  <span className="row-subject"><Redact text={m.subject || "(no subject)"} /></span>
                   {density === "compact" && metadata}
+                  <span className="row-subject"><Redact text={m.subject || "(no subject)"} /></span>
                 </span>
                 {density === "comfortable" && cardContent(m).preview && (
                   <span className="row-preview">{metadata}<span className="row-preview-text"><Redact text={previewText(m.preview)} /></span></span>
@@ -164,11 +163,11 @@ export function MailList<T extends Mail>({
                     {/* The marker sits inside the fixed sender column so
                         subjects stay aligned on important rows. */}
                     <strong>{relevance === 3 && <span className="row-important" aria-hidden="true"><Important size={12} /></span>}<Redact text={m.sender} /></strong>
+                    {metadata}
                     <span className="row-subject"><Redact text={m.subject} /></span>
                     <span className="row-preview"><Redact text={previewText(m.preview)} /></span>
                   </span>
                 </span>
-                {metadata}
                 {m.pinned && <span className="row-pin" aria-hidden="true"><Pin size={12} /></span>}
                 {time}
               </>

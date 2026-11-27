@@ -59,9 +59,14 @@
 .card .row-meta-status { grid-template-columns: minmax(0, 1fr); }
 .card .row-status { text-align: right; }
 .mail-window { position: relative; overflow-anchor: none; }
-.mail-window-row { position: absolute; left: 0; width: 100%; display: flow-root; }
+.mail-window-row { position: absolute; left: 0; width: 100%; display: flow-root; z-index: 0; }
+/* The hovered row lifts over its neighbours' hairlines, still under the
+   sticky date heading (z-index 2). */
+.mail-window-row:hover { z-index: 1; }
 .mail-window-date { position: absolute; left: 0; width: 100%; pointer-events: none; }
-.mail-window-date .group { top: 0; margin: 0; height: calc(var(--mail-group-height) * var(--text-scale, 1)); }
+/* The heading itself takes the pointer, so pointing at a pinned date never
+   hovers or opens the row hidden beneath it; its container stays inert. */
+.mail-window-date .group { top: 0; margin: 0; height: calc(var(--mail-group-height) * var(--text-scale, 1)); pointer-events: auto; }
 /* Rows run edge to edge so hover and selected washes meet both pane dividers;
    hairlines and text padding keep their insets. */
 .row {
@@ -74,8 +79,9 @@
   font-size: calc(14px * var(--text-scale, 1));
   transition: background-color 140ms var(--ease-out);
 }
-.mail-row:hover .row:not(.selected) {
-  background: var(--hover);
+.list .mail-row:hover .row:not(.selected) {
+  background: var(--row-hover-bed, var(--hover));
+  box-shadow: var(--row-hover-lift, none);
 }
 /* Flat controls share the current theme and stay separate from opening mail. */
 .row-actions {
@@ -471,12 +477,11 @@
 .rail-accounts { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rail-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
 .rail-triage .tool { height: 28px; min-width: 28px; padding: 0 8px; font-size: calc(12px * var(--text-scale, 1)); }
-/* Rows start one inset from the pane edge. With a mouse, the selection
-   checkbox takes the avatar's place on hover, keyboard focus or selection,
-   as in Outlook and Gmail, so no empty column sits left of the avatars and
-   text never moves. Touch keeps a visible checkbox column ahead of the
-   avatar. Declared on .list so --text-scale resolves where the preference
-   lives. */
+/* Rows start one inset from the pane edge. The Gmail-style list moves the
+   selection checkbox to the row's far right in frontend-rebuild.css, so the
+   sender avatar stays visible in every hover, focus and selection state.
+   Touch keeps a visible checkbox column ahead of the avatar. Declared on
+   .list so --text-scale resolves where the preference lives. */
 .list {
   --row-inset: 16px;
   --row-gutter: var(--row-inset);
@@ -489,7 +494,6 @@
 @media (hover: hover) and (pointer: fine) {
   .mail-select { opacity: 0; }
   .mail-row:is(:hover, :has(.mail-select:focus-visible, > .row:focus-visible)) .mail-select, .bulk-selected .mail-select { opacity: 1; }
-  .mail-row:has(> .mail-select):is(:hover, .bulk-selected, :has(.mail-select:focus-visible, > .row:focus-visible)) .avatar > :not(.unread-dot) { opacity: 0; }
 }
 @media not ((hover: hover) and (pointer: fine)) {
   .list { --row-gutter: calc(var(--row-inset) + 16px * var(--text-scale, 1) + 10px); }

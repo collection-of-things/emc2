@@ -77,7 +77,7 @@ test("compact split cards fold account and status into the subject line", () => 
   const line = compact.querySelector(".row-subject-line")!;
   assert.ok(line, "compact cards draw the subject and metadata on one line");
   assert.ok(line.querySelector(".row-subject"));
-  assert.ok(line.querySelector(".row-meta"), "metadata trails the subject inline");
+  assert.equal(line.querySelector(".row-meta")?.nextElementSibling, line.querySelector(".row-subject"), "tags lead the subject, as in Gmail");
   assert.equal(compact.querySelector(".row-preview"), null, "compact cards never show a preview line");
   assert.equal(compact.querySelector(".row-text > .row-meta"), null, "no separate metadata line in compact");
   const comfortable = render({ narrow: true, density: "comfortable" }).querySelector("button.row")!;

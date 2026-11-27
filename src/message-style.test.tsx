@@ -58,15 +58,16 @@ test("rendered mail rows keep their gutter across checkbox states after the comp
         assert.ok(row, context);
         assert.equal(checkbox?.getAttribute("aria-checked"), state === "absent" ? undefined : String(state === "checked"), context);
         // Rows start one inset from the pane edge whether or not a checkbox
-        // exists; with a mouse the checkbox overlays the avatar instead of
-        // claiming a column, so text never moves.
+        // exists; the checkbox sits at the far right of the row, as the
+        // owner asked, so the sender avatar and text never move.
         assert.equal(dom.window.getComputedStyle(row).paddingLeft, "var(--row-gutter, 16px)", context);
         assert.equal(dom.window.getComputedStyle(dom.window.document.querySelector(".list")!)
           .getPropertyValue("--row-gutter"), "var(--row-inset)", context);
         if (checkbox) {
           const style = dom.window.getComputedStyle(checkbox);
           assert.equal(style.position, "absolute", context);
-          assert.match(style.left, /var\(--row-gutter, 16px\).*var\(--avatar-size\)/, context);
+          assert.equal(style.left, "auto", context);
+          assert.equal(style.right, "12px", context);
           assert.equal(style.top, "50%", context);
           assert.equal(style.transform, "translateY(-50%)", context);
         }
@@ -92,7 +93,8 @@ test("unread dots badge the avatar corner in every layout and the account dot st
     // The badge hangs off the avatar's lower-right corner, ringed by the row
     // surface through --unread-ring in every hover, bulk and selected state.
     assert.match(rules, /\.avatar \.unread-dot \{[^}]*right:\s*-2px[^}]*bottom:\s*-2px[^}]*box-shadow:\s*0 0 0 2px var\(--unread-ring/s);
-    assert.match(rules, /\.mail-row:hover \.row:not\(\.selected\), \.list \.row\.selected \{ --unread-ring: var\(--hover\)/);
+    assert.match(rules, /\.mail-row:hover \.row:not\(\.selected\) \{ --unread-ring: var\(--row-hover-bed\)/);
+    assert.match(rules, /\.list \.row\.selected \{ --unread-ring: var\(--hover\)/);
     assert.match(rules, /\.list \.mail-row\.bulk-selected > \.row \{ --unread-ring: var\(--accent-soft\)/);
     assert.match(rules, /\.workspace\[data-reader-open\] \.list \.row\.selected \{ --unread-ring: var\(--selected-card\)/);
     // Headers keep sharing the one selection gutter with the row checkboxes.
@@ -100,7 +102,7 @@ test("unread dots badge the avatar corner in every layout and the account dot st
     assert.match(rules, /\.mail-category-bar[^}]*var\(--select-gutter\)/);
     // A narrow list column reuses the compact avatar so sender text keeps room.
     assert.match(rules, /@container \(max-width: 400px\) \{\s*\.list \.mail-row:has\(> \.row\.card\) \{[^}]*--avatar-size:\s*24px/s);
-    for (const [density, narrow, isCard] of [["compact", false, false], ["compact", true, true], ["comfortable", false, true]] as const) {
+    for (const [density, narrow, isCard] of [["compact", false, false], ["compact", true, true], ["comfortable", false, false]] as const) {
       const context = `${density}, narrow=${narrow}`;
       dom.window.document.body.innerHTML = renderToStaticMarkup(<div className={`list ${density}`}>
         <MailList messages={[mail]} selectedId={undefined} density={density} narrow={narrow} sort="newest"
@@ -114,6 +116,7 @@ test("unread dots badge the avatar corner in every layout and the account dot st
       assert.ok(dots[0].parentElement?.classList.contains("avatar"), `${context}: every layout badges the avatar`);
       // No earlier layer may hide the avatar that carries the unread badge.
       assert.notEqual(dom.window.getComputedStyle(row.querySelector(".avatar")!).display, "none", `${context}: avatar visible`);
+      assert.doesNotMatch(rules, /\.avatar > :not\(\.unread-dot\)\s*\{[^}]*opacity:\s*0(?:[;}])/, `${context}: hover and selection never hide the sender avatar`);
       assert.doesNotMatch(rules, /\.row\.card::after\s*\{\s*left:\s*18px/, `${context}: no layer pins the hairline into the avatar slot`);
       // Every message is the only child of its window wrapper, so a
       // :last-child rule would hide every hairline.
