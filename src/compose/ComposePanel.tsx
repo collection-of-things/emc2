@@ -87,6 +87,16 @@ export async function sendCompose(
     setBusy(false);
   }
 }
+function WindowGlyph({ kind }: { kind: "minimize" | "expand" | "collapse" | "pop-out" }) {
+  const path = {
+    minimize: "M4 12h8",
+    expand: "M9 3h4v4M7 13H3V9M13 3 9 7M3 13l4-4",
+    collapse: "M13 7H9V3M3 9h4v4M9 7l4-4M7 9l-4 4",
+    "pop-out": "M9 3h4v4M13 3 7 9M11 9v4H3V5h4",
+  }[kind];
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>;
+}
+
 export function ComposePanel({
   draft,
   setDraft,
@@ -103,9 +113,14 @@ export function ComposePanel({
   onAttachmentTask,
   source,
   api,
+  inline = false,
+  onPopOut,
 }: {
   draft: Compose;
   source?: Mail;
+  /* Shown in the reading pane under the email it answers, as Gmail does. */
+  inline?: boolean;
+  onPopOut?: () => void;
   api?: Api;
   setDraft: (value: Compose) => void;
   accounts: Account[];
@@ -122,6 +137,7 @@ export function ComposePanel({
 }) {
   const { on: privacy } = useContext(PrivacyContext);
   const [scheduleAt, setScheduleAt] = useState<number | undefined>();
+  const [windowSize, setWindowSize] = useState<"docked" | "minimized" | "expanded">("docked");
   const sourceKey = useMemo(() => mailBodyKey(source), [source]);
   const footerActions = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -184,17 +200,20 @@ export function ComposePanel({
   return (
     <Dialog
       toolbarAccess
-      actions={<button type="button" className="compose-discard" title="Delete draft" aria-label="Delete draft" disabled={busy || loadingFiles} onClick={() => {
-            if (confirm(draft.sendUnknown
-              ? "Discard this saved draft? This message may already have been sent."
-              : "Discard this draft from this device?")) onDiscard();
-          }}><Trash size={15} color="currentColor" /><span>Delete draft</span></button>}
+      actions={inline
+        ? onPopOut && <button type="button" className="icon compose-window-action" title="Pop out reply" aria-label="Pop out reply" onClick={onPopOut}><WindowGlyph kind="pop-out" /></button>
+        : <>
+          <button type="button" className="icon compose-window-action" title={windowSize === "minimized" ? "Restore" : "Minimize"} aria-label={windowSize === "minimized" ? "Restore message window" : "Minimize message window"}
+            onClick={() => setWindowSize(windowSize === "minimized" ? "docked" : "minimized")}><WindowGlyph kind="minimize" /></button>
+          <button type="button" className="icon compose-window-action" title={windowSize === "expanded" ? "Exit full screen" : "Full screen"} aria-label={windowSize === "expanded" ? "Exit full screen" : "Full screen"}
+            onClick={() => setWindowSize(windowSize === "expanded" ? "docked" : "expanded")}><WindowGlyph kind={windowSize === "expanded" ? "collapse" : "expand"} /></button>
+        </>}
       title={source || draft.inReplyTo ? "Reply" : "New message"}
-      className={source ? "compose-dialog compose-with-context" : "compose-dialog"}
+      className={["compose-dialog", inline ? "compose-inline" : source ? "compose-with-context" : "", !inline && windowSize !== "docked" ? `compose-${windowSize}` : ""].filter(Boolean).join(" ")}
       onClose={() => { if (!busy && !loadingFiles) onClose(); }}
     >
       <div className={source ? "compose-layout compose-reply-layout" : "compose-layout"}>
-      {source && <MailPrivacy mail={source}><aside className="compose-context" aria-label="Original email" tabIndex={0}>
+      {source && !inline && <MailPrivacy mail={source}><aside className="compose-context" aria-label="Original email" tabIndex={0}>
         <span className="compose-context-label">Replying to</span>
         <h3><Redact text={source.subject || "No subject"} /></h3>
         <p><Redact text={source.sender} /> · {new Date(source.date).toLocaleDateString()}</p>
@@ -307,9 +326,14 @@ export function ComposePanel({
             <button className="button primary-button compose-send" disabled={busy || loadingFiles || progress.phase === "error"} type="submit">
               {busy ? "Please wait" : scheduleAt === undefined ? "Send" : "Schedule send"}
             </button>
-            <button type="button" disabled={busy || loadingFiles} onClick={onClose}>Keep draft</button>
+            <button type="button" className="compose-schedule" disabled={busy || loadingFiles} onClick={() => setScheduleAt(scheduleAt === undefined ? followUpPreset("tomorrow", Date.now()) : undefined)}>{scheduleAt === undefined ? "Send later" : "Cancel scheduling"}</button>
             <p className={`compose-save-status${progress.phase === "error" ? " save-error" : ""}`} role="status">{progress.message}</p>
-            <button type="button" disabled={busy || loadingFiles} onClick={() => setScheduleAt(scheduleAt === undefined ? followUpPreset("tomorrow", Date.now()) : undefined)}>{scheduleAt === undefined ? "Send later" : "Cancel scheduling"}</button>
+            <button type="button" className="compose-keep" disabled={busy || loadingFiles} onClick={onClose}>Keep draft</button>
+            <button type="button" className="compose-discard" title="Delete draft" aria-label="Delete draft" disabled={busy || loadingFiles} onClick={() => {
+            if (confirm(draft.sendUnknown
+              ? "Discard this saved draft? This message may already have been sent."
+              : "Discard this draft from this device?")) onDiscard();
+          }}><Trash size={15} color="currentColor" /><span>Delete draft</span></button>
           </div>
 
         </div>

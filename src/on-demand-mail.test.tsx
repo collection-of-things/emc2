@@ -54,7 +54,7 @@ test("summary hydration preserves legacy content recovery and retry while images
     assert.equal(contentAttempts, 1, "missing legacy metadata must request content recovery after body hydration");
     assert.match(container.textContent || "", /Formatted email is unavailable/);
     assert.match(container.textContent || "", /Locally cached private body/);
-    assert.match(container.textContent || "", /Attachment metadata is not yet available/);
+    assert.equal(container.querySelector('[aria-label="Attachments"]'), null, "unknown attachment metadata adds no empty block");
     assert.equal(container.querySelectorAll(".avatar-logo").length, 1, "the local sender avatar is separate from message image consent");
     assert.equal(container.querySelectorAll('[aria-label="Email content"] img').length, 0);
     await act(async () => button("Retry formatted email").click());

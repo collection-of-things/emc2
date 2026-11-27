@@ -281,14 +281,21 @@
 .reader-secondary-tools .link { font-size: calc(12.5px * var(--text-scale, 1)); color: var(--text-2); }
 .reader-secondary-tools .link:hover:not(:disabled),
 .reader-secondary-tools .link:focus-visible { color: var(--accent); }
-/* Reply all is the strongest footer action: weight plus accent ink. */
-.reader-secondary-tools .reader-reply-all .link { font-weight: 500; color: var(--accent); }
-/* Reply all and Forward are Gmail's outlined pill buttons under the body. */
-.reader-secondary-tools :is(.reader-reply-all, .reader-forward) .link {
-  min-height: 36px; padding: 0 20px; border: 1px solid var(--line-3); border-radius: 18px;
-  font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; color: var(--text);
+/* Gmail's header icons beside the date, and its outlined Reply, Reply all
+   and Forward pills under the message. */
+.message-from .reader-head-actions { display: flex; align-items: center; gap: 2px; margin-left: 8px; color: var(--text-2); }
+.message-from .reader-head-actions .icon { width: 36px; height: 36px; border-radius: 50%; }
+.message-from .reader-head-actions .icon:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.message-from .reader-head-actions .icon[aria-pressed="true"] { color: #f4b400; }
+.message-from .reader-head-actions .icon[aria-pressed="true"] svg path { fill: currentColor; }
+.reader-reply-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 8px; padding-left: var(--reader-indent, 52px); }
+.reader-reply-actions button {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 20px 0 16px;
+  border: 1px solid var(--line-3); border-radius: 18px; background: transparent;
+  font-size: calc(14px * var(--text-scale, 1)); font-weight: 500; color: var(--text);
 }
-.reader-secondary-tools :is(.reader-reply-all, .reader-forward) .link:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.reader-reply-actions button:hover:not(:disabled) { background: var(--hover); }
+.reader-reply-actions .reader-forward svg { transform: scaleX(-1); }
 /* Offer times is a link, not a band; its form owns the row when open. */
 .reader-secondary-tools .offer-times { border: 0; padding: 0; margin: 0; }
 .reader-secondary-tools .offer-times:has(.settings-form) { flex-basis: 100%; }
@@ -486,9 +493,10 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
 .list .row time { color: var(--text-2); font-size: calc(12px * var(--text-scale, 1)); }
 .list .row:not(.card) time { min-width: 56px; }
 
-/* Gmail composer: a window docked to the bottom-right corner over the list
-   and reader, which stay visible and usable behind it. Phones keep the full
-   screen composer. */
+/* Gmail composer: a compact window docked to the bottom-right corner over
+   the list and reader, which stay visible behind it. It minimizes to its
+   title bar or expands to a centered window. Phones keep the full screen
+   composer. */
 @media (min-width: 761px) {
   .app .dialog-backdrop:has(> .compose-dialog), .app[data-view] .dialog-backdrop:has(> .compose-dialog) {
     inset: auto 16px 0 auto;
@@ -496,35 +504,69 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
     padding: 0;
   }
   .app .dialog.compose-dialog, .app:has(.sidebar.closed) .compose-dialog {
-    width: min(560px, calc(100vw - 32px));
-    height: min(600px, calc(100dvh - 64px));
+    width: min(540px, calc(100vw - 32px));
+    height: min(520px, calc(100dvh - 96px));
     overflow: hidden;
     border: 1px solid var(--line-2);
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
     box-shadow: 0 8px 10px 1px rgb(0 0 0 / 0.14), 0 3px 14px 2px rgb(0 0 0 / 0.12), 0 5px 5px -3px rgb(0 0 0 / 0.2);
   }
-  .app .compose-dialog.compose-with-context { height: min(720px, calc(100dvh - 64px)); }
-  .compose-dialog .compose-context { height: auto; max-height: 30%; margin: 0 16px; }
+  .app .compose-dialog.compose-minimized { width: 280px; height: auto; }
+  .compose-dialog.compose-minimized > .compose-layout { display: none; }
+  .app .dialog-backdrop:has(> .compose-expanded) { inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / 0.4); }
+  .app .compose-dialog.compose-expanded { width: min(1000px, calc(100vw - 96px)); height: calc(100dvh - 96px); border-bottom: 1px solid var(--line-2); border-radius: 8px; }
+  /* The email stays visible behind a docked reply, so the window does not
+     repeat it. */
+  .compose-dialog .compose-context { display: none; }
   .app:has(.compose-dialog) .draft-list { width: auto; }
   .compose-dialog .dialog-title {
     min-height: 40px;
-    gap: 4px;
+    gap: 2px;
     padding: 0 8px 0 16px;
     background: color-mix(in oklab, var(--text) 8%, var(--surface));
   }
   .compose-dialog .dialog-title h2 { flex: 1; font-size: calc(14px * var(--text-scale, 1)); font-weight: 500; }
   .compose-dialog .dialog-title > .icon { order: 2; }
-  .compose-dialog .dialog-title .compose-discard > span { display: none; }
-  .compose-dialog .compose-send { border-radius: 18px; padding-inline: 22px; }
+  .compose-dialog .dialog-title .icon { width: 28px; height: 28px; border-radius: 4px; color: var(--text-2); }
+  .compose-dialog .dialog-title .icon:hover { background: var(--hover); color: var(--text); }
   .compose-dialog .compose-envelope { border-radius: 0; background: transparent; }
+  /* Gmail's bottom bar: Send and Send later, formatting and files above it,
+     the save state, then Delete draft at the far end. Close keeps the draft. */
+  .compose-dialog .compose-scroll { display: flex; flex-direction: column; }
+  .compose-dialog .compose-scroll > :is(.compose-format-tools, .compose-link-controls) { order: 1; }
+  .compose-dialog .compose-scroll > .compose-extras { order: 2; }
+  .compose-dialog .compose-scroll > .compose-toolbar { order: 3; min-height: 32px; }
+  .compose-dialog .compose-format-tools { border-bottom: 0; }
+  .compose-dialog .compose-footer { padding: 8px 12px 8px 16px; border-top: 0; }
+  .compose-dialog .compose-actions { display: flex; align-items: center; gap: 4px; }
+  .compose-dialog .compose-send { border-radius: 18px 0 0 18px; padding-inline: 22px; }
+  .compose-dialog .compose-schedule { height: 34px; padding: 0 12px; border-radius: 0 18px 18px 0; background: var(--accent); color: var(--accent-ink, #fff); border: 0; border-left: 1px solid rgb(0 0 0 / 0.2); font-weight: 500; }
+  .compose-dialog .compose-save-status { margin: 0 auto 0 12px; }
+  .compose-dialog .compose-keep { display: none; }
+  .compose-dialog .compose-discard { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-2); }
+  .compose-dialog .compose-discard:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+  .compose-dialog .compose-discard > span { display: none; }
   /* A floating window needs its own bed: under glass, mail would show
      through the composer where it overlaps the list or drafts. */
   :root[data-glass] .app :is(.dialog.compose-dialog, .compose-dialog .compose-footer) { background: var(--surface); }
-  /* A docked reply keeps the mail visible behind it and stacks the original
-     above the form, since the window is too narrow for two columns. */
   .app:has(.compose-with-context) .app-main > :is(.mail-view, .work-pane, .settings-pane, .search-help),
   .app:has(.compose-with-context) .draft-list { visibility: visible; }
   .compose-dialog > .compose-reply-layout { display: flex; flex-direction: column; }
-  .compose-reply-layout > .compose-context { padding: 12px 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  /* Notices raised while composing sit at the bottom left, as Gmail's do,
+     clear of Send and Send later. */
+  .compose-backdrop .toast-stack { right: auto; left: calc(var(--sidebar, 0px) + 16px); bottom: 16px; }
 }
+
+/* An inline reply sits in the reader under the email it answers. */
+.reader-reply-host { margin: 24px 0 8px; padding-left: var(--reader-indent, 52px); }
+.app .reader-reply-host .dialog-backdrop:has(> .compose-dialog) { position: static; inset: auto; display: block; padding: 0; background: none; }
+.app .reader-reply-host .dialog.compose-dialog {
+  position: static; width: auto; height: auto; min-height: 260px; overflow: visible;
+  border: 0; border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
+}
+.app .reader-reply-host .compose-dialog .dialog-title { min-height: 36px; background: transparent; border-bottom: 0; }
+.app .reader-reply-host .compose-dialog .dialog-title h2 { font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; color: var(--text-2); }
+.app .reader-reply-host .compose-dialog .compose-form { overflow: visible; }
+.reader-actions-guard { display: contents; }

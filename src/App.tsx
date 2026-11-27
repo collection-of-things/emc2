@@ -14,7 +14,9 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { correspondents, inboxTab, inboxTabs, protectCorrespondent, type InboxTab } from "../shared/inbox-tabs";
 import type { Commitment, SentCoverage } from "../shared/workspace";
 import type { Draft, OutboxStatus, RendererMail as Mail, RendererState as State, StateResponse, BootstrapResponse } from "../shared/types";
@@ -733,6 +735,12 @@ export function App() {
   const currentReplySource = compose ? replyContext ? state.messages.find(mail => mail.id === replyContext.id && mail.accountId === compose.accountId &&
     mail.accountId === replyContext.accountId && mail.messageId === compose.inReplyTo) : replySource(state.messages, compose) : undefined;
   const hydratedReply = useMailBody(currentReplySource || undefined, api);
+  const [replyHost, setReplyHost] = useState<HTMLElement | null>(null);
+  const [replyPoppedOut, setReplyPoppedOut] = useState(false);
+  useEffect(() => { if (!compose) setReplyPoppedOut(false); }, [compose]);
+  // A reply opens inline under its email in the mail reader, as in Gmail.
+  const inlineReply = !!(compose && hydratedReply.mail && !replyPoppedOut && replyHost?.closest(".mail-view"));
+  const placeComposer = (panel: ReactNode) => inlineReply && replyHost ? createPortal(panel, replyHost) : panel;
   // Inbox total for the sidebar and unread counts for each category tab.
   const inboxMail = state.messages.filter((m) => m.direction !== "sent" && !m.archived && !isSnoozed(m) && !m.handled &&
     matchesLabel(m, activeLabel) && (accountFilter === "all" || accountFilter === m.accountId));
@@ -970,6 +978,7 @@ export function App() {
     { id: "teach", label: "Teach sorting", key: shortcut("teach"), disabled: composeBusy || syncing, description: busyReason, separator: true, run: () => setTeach(mail) },
   ];
   const showMailMenu = (event: ReactMouseEvent<HTMLElement> | ReactKeyboardEvent<HTMLElement>, mail: Mail, select = true) => {
+    if (compose) return;
     if (select) setSelectedId(mail.id);
     const request = mailMenuRequest(event, mail.id);
     const native = window.desktop?.mailMenu;
@@ -1354,13 +1363,17 @@ export function App() {
       onReviewingUnsubscribe={setReviewingUnsubscribe}
       provider={selectedAccount?.provider}
       labels={state.labels}
-      busy={composeBusy || syncing}
+      busy={composeBusy || syncing || !!compose}
       isMutationPending={mail => mailBusy(mail) || syncing}
       api={api}
       onOpen={inlineWorkView ? openWorkSource : jumpTo}
       onChanged={reload}
+      onReply={() => startCompose(selected)}
       onReplyAll={() => startCompose(selected, true)}
       onForward={() => void forwardMail(selected)}
+      onPin={() => void changeMessage(selected, selected.pinned ? "unpin" : "pin")}
+      replyHostId={compose && !replyPoppedOut ? hydratedReply.mail?.id : undefined}
+      onReplyHost={setReplyHost}
       paper={paper}
       onLabels={() => setLabelMail(selected)}
       onUnsnooze={() => void changeMessage(selected, "unsnooze")}
@@ -1602,7 +1615,7 @@ export function App() {
               reader={selected && opened ? <div ref={readerRef} className="today-mail">{actions}{reader}</div> : undefined} />}
           </main>
         ) : (
-          <div className={`mail-view${fullReader ? " full-reading" : ""}`} data-reader-toolbar={appearance.readerToolbar} inert={!!compose}>
+          <div className={`mail-view${fullReader ? " full-reading" : ""}`} data-reader-toolbar={appearance.readerToolbar} inert={!!compose && !inlineReply}>
               <h1 className="pane-title visually-hidden">{viewNames[view]}</h1>
               {(view === "sent" || view === "all") && <PaneHeader className="main-head mail-view-head" corner={null} maximized={maximized}>
                 {fullReader ? null : <div className="rail-select" ref={setRailSelect} />}
@@ -1631,7 +1644,7 @@ export function App() {
                 {combinedReaderToolbar && actions}
               </div>}
           <main className={split ? "workspace split" : "workspace"} data-reader-open={split && reader ? "" : undefined}>
-            <section className="list-pane">
+            <section className="list-pane" inert={inlineReply}>
               {!settings && <CredentialFallbackNotice mode={window.desktop?.credentialFallback} />}
               {fullReader && !combinedReaderToolbar && actions}
               <div
@@ -1706,7 +1719,7 @@ export function App() {
             {split && (
               <section className="reader-pane" aria-label="Reading pane" inert={bulkBlocking}>
                 <PaneHeader className="reader-head" corner={null} maximized={maximized}>
-                  {opened && actions}
+                  {opened && <div className="reader-actions-guard" inert={inlineReply}>{actions}</div>}
                 </PaneHeader>
                 <div ref={readerRef} className="reader-scroll" tabIndex={-1}>
                   <div key={selected && opened ? selected.id : "empty"} className="pane open">
@@ -1871,8 +1884,10 @@ export function App() {
         </Dialog>}
         {meetingMail && <MeetingDialog key={meetingMail.id} mail={meetingMail} state={state} api={api} onClose={() => setMeetingMail(null)} onDirtyChange={setEventDirty}
           onSaved={() => { setMeetingMail(null); pushToast("Meeting added to your Emc² calendar. No invitation was sent.", "success"); }} />}
-        {compose && (
+        {compose && placeComposer(
           <ComposePanel
+            inline={inlineReply}
+            onPopOut={() => setReplyPoppedOut(true)}
             onAttachmentTask={(task) => { attachmentTask.current = task; const clear = () => { if (attachmentTask.current === task) attachmentTask.current = undefined; }; void task.then(clear, clear); }}
             draft={compose}
             source={hydratedReply.mail}

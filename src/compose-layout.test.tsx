@@ -25,8 +25,8 @@ test("composer discloses empty Cc, keeps recovered recipients visible and preser
   try {
     await render(draft);
     const actions = document.querySelector(".compose-actions");
-    const schedule = actions?.querySelector('.compose-save-status')?.nextElementSibling;
-    assert.equal(schedule?.textContent, "Send later");
+    const schedule = actions?.children[1];
+    assert.equal(schedule?.textContent, "Send later", "Send later sits beside Send, as in Gmail");
     assert.equal(schedule?.getAttribute("type"), "button");
     assert.equal(actions?.firstElementChild?.getAttribute("type"), "submit", "Send leads the action row so tab order matches the visual order");
     assert.equal(cc(), null);

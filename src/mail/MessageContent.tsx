@@ -182,9 +182,7 @@ function ImageConsent({ mail, loadImages, loadContent, body, api, paper }: Image
     {body && mail.bodyUnavailable && <Notice text="Message body could not be parsed within the import limit. Downloadable attachment metadata is shown separately." />}
     {body && contentStatus === "loading" && <p role="status">Loading formatted email…</p>}
     {body && contentStatus === "error" && <><Notice text="Formatted email is unavailable. The text is shown instead." /><button type="button" className="link" onClick={() => void recoverContent()}>Retry formatted email</button></>}
-    {body && content.attachments?.length !== 0 && ((content.attachments || []).length
-      ? <Attachments api={api} mailId={mail.id} files={content.attachments!} />
-      : <section className="reader-attachments" aria-label="Attachments"><h2>Attachments</h2><p>{contentStatus === "ready" ? "No cached attachment metadata." : "Attachment metadata is not yet available."}</p></section>)}
+    {body && !!content.attachments?.length && <Attachments api={api} mailId={mail.id} files={content.attachments} />}
     <div id={region}>
       {/* Images load on their own, so a failure is a quiet status, not an alert. */}
       {imagesOn && status === "error" && <p className="image-retry" role="status">
