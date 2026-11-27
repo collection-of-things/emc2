@@ -218,7 +218,7 @@
 /* Gmail-style hover: an opaque wash plus a raised edge that sits over the
    neighbouring hairlines, so the pointed row reads as one lifted strip. */
 .list {
-  --row-hover-bed: color-mix(in oklab, var(--text) 5%, var(--mail-row-bed));
+  --row-hover-bed: color-mix(in oklab, var(--text) 4%, var(--mail-row-bed));
   --row-hover-lift: inset 1px 0 var(--line-2), inset -1px 0 var(--line-2),
     0 1px 2px rgb(0 0 0 / 0.22), 0 1px 3px 1px rgb(0 0 0 / 0.1);
 }
@@ -471,7 +471,7 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
 }
 
 /* Gmail list with the sender avatar kept and the checkbox at the far right.
-   Unread rows sit on a lighter bed in bold, read rows on the canvas.
+   Unread rows sit on a faintly lighter bed in bold, read rows on the canvas.
    Full-width rows are one line: sender, tags, subject - snippet, date.
    Side-by-side rows keep sender and date, tags and subject, snippet. The
    account shows as its colour dot only. */
@@ -486,8 +486,8 @@ section.work-calendar[data-layout="month"] > .calendar-day-title { margin: 10px 
 .list .row .row-account::after { content: none; }
 .list .row:not(.card) .row-line .row-meta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; margin: 0 8px 0 0; }
 .list .row.card .row-subject-line .row-meta { display: inline-flex; gap: 6px; margin-right: 6px; }
-.list { --row-unread-bed: color-mix(in oklab, var(--text) 3%, var(--mail-row-bed));
-  --row-hover-bed: color-mix(in oklab, var(--text) 7%, var(--mail-row-bed)); }
+.list { --row-unread-bed: color-mix(in oklab, var(--text) 1.5%, var(--mail-row-bed));
+  --row-hover-bed: color-mix(in oklab, var(--text) 4%, var(--mail-row-bed)); }
 .list .row.unread:not(.selected) { background-color: var(--row-unread-bed); }
 .list .row:is(.card, :not(.card)) :is(.row-line strong, .row-subject) { color: var(--text); font-weight: 400; }
 .list .row.unread:is(.card, :not(.card)) :is(.row-line strong, .row-subject, time) { color: var(--text); font-weight: 700; }
