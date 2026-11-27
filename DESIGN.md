@@ -129,7 +129,10 @@ appears over the avatar on hover, keyboard focus or selection, so no empty
 column sits left of the avatars and text never moves; touch keeps a visible
 checkbox column ahead of the avatar. The select-all checkbox centres over the
 avatar column. Hairlines divide rows across the full pane width, stay
-visible on hover and give way only around the selected row. Below 1200px, both densities use cards in
+visible on hover and give way only around the selected row. As in Gmail, the
+hovered row lifts above its neighbours with an opaque wash and a raised edge,
+and its actions replace the date inside that wash behind a short fade instead
+of a floating box. Below 1200px, both densities use cards in
 one reading column, and Inbox categories use a native picker with unread
 counts. Below 760px, the row inset is 12px; card avatars use 24px with an 8px
 text gap below 760px window width and when the list column is narrower than
@@ -143,7 +146,11 @@ neutral 8% white wash in dark and a faint accent tint in light. The keyboard
 focus ring is unchanged; while no message is open (or the list sits without a
 reader at every width), the same card is the keyboard cursor — transparent
 fill with a 1px accent outline. Sticky date headings cover the cards beneath them
-when glass is off. Reader subjects use 20px text; the supported mail body uses
+when glass is off, close with one `--line-2` hairline and take the pointer, so
+pointing at a pinned heading never hovers or opens the row hidden beneath it.
+Reader subjects use 22px regular-weight text over a 40px sender avatar, and
+everything under the sender line is indented to the sender name (no indent
+below 720px); the supported mail body uses
 15px text at 1.5 line height.
 
 Letter avatars take the mark's corner shape in percentages so it scales with
@@ -174,9 +181,9 @@ The importance marker follows the sender name in flow, so names and subjects
 start at one x. Unread dots badge the avatar's lower-right corner in every
 layout. Read senders use weight 500 and unread senders 600; date groups,
 sidebar headings and counts are sentence-case or tabular numerals in the
-interface face, not uppercase mono. The reader footer is a single row
-of quiet links at one size: Reply all carries weight 500 in accent, the rest
-are secondary text that turn accent on hover or focus. Attachment actions are quiet compact buttons in the link
+interface face, not uppercase mono. The reader footer is a single row:
+Reply all and Forward message are Gmail-style outlined pill buttons, the rest
+are quiet secondary links that turn accent on hover or focus. Attachment actions are quiet compact buttons in the link
 colour, keeping each row near 36px and ending on the reader's right inset.
 While the list loads, skeleton cards draw on the real row grid — the same
 avatar and text gutters, the longest bar at the preview's reach and a short

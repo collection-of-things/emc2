@@ -92,7 +92,8 @@ test("unread dots badge the avatar corner in every layout and the account dot st
     // The badge hangs off the avatar's lower-right corner, ringed by the row
     // surface through --unread-ring in every hover, bulk and selected state.
     assert.match(rules, /\.avatar \.unread-dot \{[^}]*right:\s*-2px[^}]*bottom:\s*-2px[^}]*box-shadow:\s*0 0 0 2px var\(--unread-ring/s);
-    assert.match(rules, /\.mail-row:hover \.row:not\(\.selected\), \.list \.row\.selected \{ --unread-ring: var\(--hover\)/);
+    assert.match(rules, /\.mail-row:hover \.row:not\(\.selected\) \{ --unread-ring: var\(--row-hover-bed\)/);
+    assert.match(rules, /\.list \.row\.selected \{ --unread-ring: var\(--hover\)/);
     assert.match(rules, /\.list \.mail-row\.bulk-selected > \.row \{ --unread-ring: var\(--accent-soft\)/);
     assert.match(rules, /\.workspace\[data-reader-open\] \.list \.row\.selected \{ --unread-ring: var\(--selected-card\)/);
     // Headers keep sharing the one selection gutter with the row checkboxes.

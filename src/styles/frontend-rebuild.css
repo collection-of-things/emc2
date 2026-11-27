@@ -137,9 +137,9 @@
 /* Rows run edge to edge: hover and selection fills meet both pane edges, and
    only text keeps an inset. */
 .workspace .list { padding-inline: 0; }
-/* A date heading closes with a heavier rule than the row hairlines, so a new
-   period reads as a section break. */
-.mail-window-date .group { padding-inline: var(--row-inset, 16px); border-bottom: 2px solid var(--line-2); }
+/* A date heading is a quiet label row closed by one hairline, one step
+   stronger than the row rules, like a Gmail section heading. */
+.mail-window-date .group { padding-inline: var(--row-inset, 16px); border-bottom: 1px solid var(--line-2); cursor: default; }
 /* The sticky date header must cover the row band fully while rows slide
    under it, so it keeps an opaque canvas. */
 :root:not([data-glass]) .mail-window-date { background: var(--rebuild-canvas); }
@@ -221,6 +221,13 @@
    so the badge reads in light and dark themes and every row state. */
 .list { --mail-row-bed: var(--rebuild-canvas); }
 :root[data-glass] .list { --mail-row-bed: var(--pane-glass); }
+/* Gmail-style hover: an opaque wash plus a raised edge that sits over the
+   neighbouring hairlines, so the pointed row reads as one lifted strip. */
+.list {
+  --row-hover-bed: color-mix(in oklab, var(--text) 5%, var(--mail-row-bed));
+  --row-hover-lift: inset 1px 0 var(--line-2), inset -1px 0 var(--line-2),
+    0 1px 2px rgb(0 0 0 / 0.22), 0 1px 3px 1px rgb(0 0 0 / 0.1);
+}
 .row { --unread-ring: var(--mail-row-bed); }
 .avatar .unread-dot {
   top: auto;
@@ -232,11 +239,17 @@
   height: calc(7px * var(--text-scale, 1));
   box-shadow: 0 0 0 2px var(--unread-ring, var(--surface));
 }
-.mail-row:hover .row:not(.selected), .list .row.selected { --unread-ring: var(--hover); }
+.mail-row:hover .row:not(.selected) { --unread-ring: var(--row-hover-bed); }
+.list .row.selected { --unread-ring: var(--hover); }
 .list .mail-row.bulk-selected > .row { --unread-ring: var(--accent-soft); }
 .workspace[data-reader-open] .list .row.selected { --unread-ring: var(--selected-card); }
 
-.row-actions { right: 8px; padding: 3px; border: 1px solid var(--line-2); border-radius: var(--radius-control); box-shadow: var(--shadow); }
+/* Hover actions replace the date in the row's own wash, as Gmail's do: no
+   floating box, just a short fade so clipped text does not end abruptly. */
+.row-actions { right: 0; padding: 0 8px 0 20px; border: 0; border-radius: 0; box-shadow: none;
+  background: linear-gradient(to right, transparent, var(--row-actions-bed, var(--row-hover-bed)) 16px); }
+.mail-row:has(> .row.selected) .row-actions { --row-actions-bed: var(--mail-row-bed); }
+.workspace[data-reader-open] .mail-row:has(> .row.selected) .row-actions { --row-actions-bed: var(--selected-card); }
 .row-actions button { border-radius: var(--radius-control); }
 
 /* The list and reading pane share a baseline and a single divider. */
@@ -251,9 +264,14 @@
 .reader-scroll, .full-reading .list { --reader-gutter: clamp(20px, 3vw, 36px); }
 .reader-scroll .message, .full-reading .list .message { padding: 24px var(--reader-gutter, 24px) 36px; }
 .conversation-subject { padding-top: 24px; }
-:is(.message h1, .conversation-subject) { font-size: calc(25px * var(--text-scale, 1)); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; }
-.message .message-from { margin-block: 18px 22px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-.message-from .avatar { width: 36px; height: 36px; }
+/* Gmail reading pane: a regular-weight subject, a 40px sender avatar, and
+   everything below the sender line indented to the sender name. */
+:is(.message h1, .conversation-subject) { font-size: calc(22px * var(--text-scale, 1)); font-weight: 400; line-height: 1.3; letter-spacing: 0; }
+.message { --reader-indent: calc(40px + 12px); }
+.message .message-from { margin-block: 20px 12px; padding-bottom: 0; border-bottom: 0; }
+.message-from .avatar { width: 40px; height: 40px; }
+.message > :not(h1, .message-from) { margin-left: var(--reader-indent); }
+@media (max-width: 720px) { .message { --reader-indent: 0px; } }
 .from-line strong { font-size: calc(14px * var(--text-scale, 1)); font-weight: 600; }
 .from-address, .from-to, .message-from time { font-size: calc(12px * var(--text-scale, 1)); }
 .message-from time { max-width: 36%; overflow: hidden; text-overflow: ellipsis; }
@@ -267,6 +285,12 @@
 .reader-secondary-tools .link:focus-visible { color: var(--accent); }
 /* Reply all is the strongest footer action: weight plus accent ink. */
 .reader-secondary-tools .reader-reply-all .link { font-weight: 500; color: var(--accent); }
+/* Reply all and Forward are Gmail's outlined pill buttons under the body. */
+.reader-secondary-tools :is(.reader-reply-all, .reader-forward) .link {
+  min-height: 36px; padding: 0 20px; border: 1px solid var(--line-3); border-radius: 18px;
+  font-size: calc(13px * var(--text-scale, 1)); font-weight: 500; color: var(--text);
+}
+.reader-secondary-tools :is(.reader-reply-all, .reader-forward) .link:hover:not(:disabled) { background: var(--hover); color: var(--text); }
 /* Offer times is a link, not a band; its form owns the row when open. */
 .reader-secondary-tools .offer-times { border: 0; padding: 0; margin: 0; }
 .reader-secondary-tools .offer-times:has(.settings-form) { flex-basis: 100%; }

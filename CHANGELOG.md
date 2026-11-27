@@ -14,6 +14,14 @@ unversioned history without treating it as a release record.
 
 ## Unreleased
 
+### Changed
+
+- The mail list and reading pane follow Gmail more closely. Pointing at a row lifts it above the dividers with the actions in its own wash instead of a floating box, date headings are a single hairline, and the reader uses a regular-weight subject, a larger sender avatar, a body aligned with the sender name and outlined Reply all and Forward buttons.
+
+### Fixed
+
+- Pointing at a date heading pinned at the top of the mail list no longer highlights, shows actions for or opens the email hidden beneath it.
+
 ## 0.2.43 - 2026-11-25
 
 ### Added

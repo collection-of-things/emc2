@@ -13,6 +13,15 @@ test('hover exposes row actions and removes the overlapping timestamp', () => {
  assert.match(css, /\.mail-row:hover \.row time\s*\{\s*opacity: 0;/);
  assert.doesNotMatch(css, /\.mail-row(?::focus-within|:has\(\.row\.selected\)) \.row-actions/);
 });
+test('a pinned date heading takes the pointer and the hovered row lifts beneath it', () => {
+ const css = ['./styles/mail-list.css', './styles/frontend-rebuild.css'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n');
+ assert.match(css, /\.mail-window-date\s*\{[^}]*pointer-events: none;/, 'the date container spanning its rows stays inert');
+ assert.match(css, /\.mail-window-date \.group\s*\{[^}]*pointer-events: auto;/, 'the visible heading never passes hover to the row hidden under it');
+ assert.match(css, /\.mail-window-row\s*\{[^}]*z-index: 0;/, 'each row is its own layer below the sticky heading');
+ assert.match(css, /\.mail-window-row:hover\s*\{\s*z-index: 1;/, 'the hovered row rises over neighbouring hairlines');
+ assert.match(css, /\.mail-row:hover \.row:not\(\.selected\)\s*\{[^}]*box-shadow: var\(--row-hover-lift/, 'hover draws a lifted edge');
+ assert.doesNotMatch(css, /\.row-actions\s*\{[^}]*border: 1px solid/, 'hover actions sit in the row wash, not a floating box');
+});
 test('each row offers one More actions button that opens the message menu', () => {
  const html=renderToStaticMarkup(<MailList messages={[mail]} selectedId={undefined} density="comfortable" narrow={false} sort="newest" opening="double" accounts={[]} listRef={{current:null}} focusSelection={false} onOpen={()=>{}} onSelect={()=>{}} onMenu={()=>{}} onMenuKey={()=>{}} />);
  assert.ok(html.includes('class="row-more"'),'rows carry the overflow button');

@@ -92,7 +92,7 @@ function SingleReader({ mail, provider, labels, busy, isMutationPending, api, on
         <footer className="reader-secondary-tools">
         {hydrated && <UnsubscribeAction key={`unsubscribe:${mailBodyKey(mail)}`} mail={hydrated} api={api} busy={mutationBusy} onOpenDraft={onOpenDraft} onReviewing={onReviewingUnsubscribe} />}
         {onReplyAll && <div className="message-labels reader-reply-all"><button type="button" className="link" disabled={busy} onClick={onReplyAll}>Reply all</button></div>}
-        {onForward && <div className="message-labels"><button type="button" className="link" disabled={busy} onClick={onForward}>Forward message</button></div>}
+        {onForward && <div className="message-labels reader-forward"><button type="button" className="link" disabled={busy} onClick={onForward}>Forward message</button></div>}
         {state && onOpenDraft && <OfferTimes key={`offers:${mail.id}`} mail={mail} state={state} api={api} onOpenDraft={onOpenDraft} />}
         {provider === "gmail" && (
           <div className="message-labels">
