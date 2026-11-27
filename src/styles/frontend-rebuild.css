@@ -248,6 +248,10 @@
    floating box, just a short fade so clipped text does not end abruptly. */
 .row-actions { right: 0; padding: 0 8px 0 20px; border: 0; border-radius: 0; box-shadow: none;
   background: linear-gradient(to right, transparent, var(--row-actions-bed, var(--row-hover-bed)) 16px); }
+/* Only the buttons take the pointer: a click on text showing through the fade
+   or the gaps still reaches the email row. */
+.row-actions { pointer-events: none; }
+.row-actions > * { pointer-events: auto; }
 .mail-row:has(> .row.selected) .row-actions { --row-actions-bed: var(--mail-row-bed); }
 .workspace[data-reader-open] .mail-row:has(> .row.selected) .row-actions { --row-actions-bed: var(--selected-card); }
 .row-actions button { border-radius: var(--radius-control); }

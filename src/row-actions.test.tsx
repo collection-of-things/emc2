@@ -21,6 +21,7 @@ test('a pinned date heading takes the pointer and the hovered row lifts beneath 
  assert.match(css, /\.mail-window-row:hover\s*\{\s*z-index: 1;/, 'the hovered row rises over neighbouring hairlines');
  assert.match(css, /\.mail-row:hover \.row:not\(\.selected\)\s*\{[^}]*box-shadow: var\(--row-hover-lift/, 'hover draws a lifted edge');
  assert.doesNotMatch(css, /\.row-actions\s*\{[^}]*border: 1px solid/, 'hover actions sit in the row wash, not a floating box');
+ assert.match(css, /\.row-actions\s*\{\s*pointer-events: none;\s*\}\s*\.row-actions > \*\s*\{\s*pointer-events: auto;/, 'the fade and gaps pass clicks to the email row');
 });
 test('each row offers one More actions button that opens the message menu', () => {
  const html=renderToStaticMarkup(<MailList messages={[mail]} selectedId={undefined} density="comfortable" narrow={false} sort="newest" opening="double" accounts={[]} listRef={{current:null}} focusSelection={false} onOpen={()=>{}} onSelect={()=>{}} onMenu={()=>{}} onMenuKey={()=>{}} />);
