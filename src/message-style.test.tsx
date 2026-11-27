@@ -116,6 +116,7 @@ test("unread dots badge the avatar corner in every layout and the account dot st
       assert.ok(dots[0].parentElement?.classList.contains("avatar"), `${context}: every layout badges the avatar`);
       // No earlier layer may hide the avatar that carries the unread badge.
       assert.notEqual(dom.window.getComputedStyle(row.querySelector(".avatar")!).display, "none", `${context}: avatar visible`);
+      assert.doesNotMatch(rules, /\.avatar > :not\(\.unread-dot\)\s*\{[^}]*opacity:\s*0(?:[;}])/, `${context}: hover and selection never hide the sender avatar`);
       assert.doesNotMatch(rules, /\.row\.card::after\s*\{\s*left:\s*18px/, `${context}: no layer pins the hairline into the avatar slot`);
       // Every message is the only child of its window wrapper, so a
       // :last-child rule would hide every hairline.
