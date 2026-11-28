@@ -140,21 +140,25 @@ export async function updateMessage(
       providerStarted?.();
       identity = await providers[a.provider].update(a, m, input.action);
     }
-    const latest = findMail(id);
-    const removedLabel = input.action === "read" ? "UNREAD" : input.action === "archive" ? "INBOX" : null;
-    const updated = {
-      ...latest,
-      // Restoring to Inbox ends the recorded archive-folder binding.
-      ...(input.action === "inbox" ? { mailbox: undefined } : {}),
-      ...(identity || {}),
-      labelIds: removedLabel ? latest.labelIds?.filter((labelId) => labelId !== removedLabel) : input.action === "unread" || input.action === "inbox" ? [...new Set([...(latest.labelIds || []), input.action === "unread" ? "UNREAD" : "INBOX"])] : latest.labelIds,
-      unread: input.action === "read" ? false : input.action === "unread" ? true : latest.unread,
-      archived: input.action === "inbox" ? false : input.action === "archive" || latest.archived,
-      snoozedUntil: latest.snoozedUntil,
-    };
-    put("mail", m.id, updated);
-    return updated;
+    return saveProviderChange(id, input.action as "read" | "unread" | "inbox" | "archive", identity);
   });
+}
+
+function saveProviderChange(id: string, action: "read" | "unread" | "inbox" | "archive", identity?: void | { remoteId?: string; mailbox?: Mail["mailbox"] }) {
+  const latest = findMail(id);
+  const removedLabel = action === "read" ? "UNREAD" : action === "archive" ? "INBOX" : null;
+  const updated = {
+    ...latest,
+    // Restoring to Inbox ends the recorded archive-folder binding.
+    ...(action === "inbox" ? { mailbox: undefined } : {}),
+    ...(identity || {}),
+    labelIds: removedLabel ? latest.labelIds?.filter((labelId) => labelId !== removedLabel) : action === "unread" || action === "inbox" ? [...new Set([...(latest.labelIds || []), action === "unread" ? "UNREAD" : "INBOX"])] : latest.labelIds,
+    unread: action === "read" ? false : action === "unread" ? true : latest.unread,
+    archived: action === "inbox" ? false : action === "archive" || latest.archived,
+    snoozedUntil: latest.snoozedUntil,
+  };
+  put("mail", id, updated);
+  return updated;
 }
 
 export async function sendMail(value: unknown, beforeExecution?: () => void) {
@@ -197,30 +201,79 @@ export const mailBatchSchema = z.object({
   operation: messageActionSchema.refine(input => ["read", "unread", "archive", "inbox", "snooze", "pin", "unpin", "trash"].includes(input.action), "Unsupported batch action."),
 }).strict();
 
+type BatchItem = z.infer<typeof mailBatchSchema>["items"][number];
+type BatchStatus = MailBatchResponse["results"][number]["status"];
+
 export function updateMessages(value: unknown, beforeExecution?: () => void): Promise<MailBatchResponse> {
   const input = mailBatchSchema.parse(value);
   return trackMailWork(async () => {
-    const results: MailBatchResponse["results"] = [];
-    for (const item of input.items) {
+    const statuses = new Map<string, BatchStatus>();
+    const action = input.operation.action;
+    const check = (item: BatchItem) => {
+      beforeExecution?.();
+      const mail = findMail(item.id);
+      if (mail.accountId !== item.accountId) throw new Error("Message account changed.");
+      if (mail.archived && action === "snooze")
+        throw new Error("Archived mail cannot be snoozed. Move it to Inbox first.");
+      if (mail.direction === "sent" && !["pin", "unpin", "trash"].includes(action))
+        throw new Error("This action is unavailable for Sent mail.");
+      return mail;
+    };
+    const single = action === "read" || action === "unread" ? await updateFlags(input.items, action, check, statuses) : input.items;
+    for (const item of single) {
       let providerAttempted = false;
       try {
-        await updateMessage(item.id, input.operation, () => {
-          beforeExecution?.();
-          const mail = findMail(item.id);
-          if (mail.accountId !== item.accountId) throw new Error("Message account changed.");
-          if (mail.archived && input.operation.action === "snooze")
-            throw new Error("Archived mail cannot be snoozed. Move it to Inbox first.");
-          if (mail.direction === "sent" && !["pin", "unpin", "trash"].includes(input.operation.action))
-            throw new Error("This action is unavailable for Sent mail.");
-        }, () => { providerAttempted = true; });
-        results.push({ ...item, status: "done" });
+        await updateMessage(item.id, input.operation, () => { check(item); }, () => { providerAttempted = true; });
+        statuses.set(item.id, "done");
       } catch {
         // Provider errors can follow a committed remote mutation. Never guess or retry.
-        results.push({ ...item, status: providerAttempted ? "unknown" : "failed" });
+        statuses.set(item.id, providerAttempted ? "unknown" : "failed");
       }
     }
-    return { results };
+    return { results: input.items.map((item) => ({ ...item, status: statuses.get(item.id) ?? "failed" })) };
   });
+}
+
+// Read state changes one provider round trip per account, so a large selection
+// holds the mail queue briefly instead of once per message. Returns the items
+// the provider could not batch.
+async function updateFlags(items: BatchItem[], action: "read" | "unread", check: (item: BatchItem) => Mail, statuses: Map<string, BatchStatus>) {
+  const accounts = new Map<string, BatchItem[]>();
+  for (const item of items) accounts.set(item.accountId, [...(accounts.get(item.accountId) ?? []), item]);
+  const single: BatchItem[] = [];
+  for (const [accountId, group] of accounts) {
+    await runMailWork(async () => {
+      const pending: Mail[] = [];
+      for (const item of group) {
+        try {
+          const mail = check(item);
+          if (action === "read" ? mail.unread : !mail.unread) pending.push(mail);
+          else statuses.set(item.id, "done");
+        } catch { statuses.set(item.id, "failed"); }
+      }
+      if (!pending.length) return;
+      let a: ReturnType<typeof account>;
+      try { a = account(accountId); }
+      catch { for (const mail of pending) statuses.set(mail.id, "failed"); return; }
+      let untouched: Set<string>;
+      try {
+        untouched = new Set(await providers[a.provider].updateFlags(a, pending, action));
+      } catch (error) {
+        const skipped = new Set((error as { untouched?: string[] }).untouched ?? []);
+        for (const mail of pending) {
+          if (skipped.has(mail.id)) single.push(group.find((item) => item.id === mail.id)!);
+          else statuses.set(mail.id, "unknown");
+        }
+        return;
+      }
+      for (const mail of pending) {
+        if (untouched.has(mail.id)) { single.push(group.find((item) => item.id === mail.id)!); continue; }
+        try { saveProviderChange(mail.id, action); statuses.set(mail.id, "done"); }
+        catch { statuses.set(mail.id, "unknown"); }
+      }
+    });
+  }
+  return single;
 }
 
 export function undoMessage(id: string, accountId: string, token: string, beforeExecution?: () => void) {
